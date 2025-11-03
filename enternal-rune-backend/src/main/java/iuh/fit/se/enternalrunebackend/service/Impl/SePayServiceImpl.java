@@ -4,8 +4,11 @@ import iuh.fit.se.enternalrunebackend.config.QRConfig;
 import iuh.fit.se.enternalrunebackend.dto.request.TransactionRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.QRCodeResponse;
 import iuh.fit.se.enternalrunebackend.entity.Order;
+import iuh.fit.se.enternalrunebackend.entity.OrderRefundRequest;
 import iuh.fit.se.enternalrunebackend.entity.Transaction;
 import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
+import iuh.fit.se.enternalrunebackend.entity.enums.ShippingStatus;
+import iuh.fit.se.enternalrunebackend.repository.OrderRefundRequestRepository;
 import iuh.fit.se.enternalrunebackend.repository.OrderRepository;
 import iuh.fit.se.enternalrunebackend.repository.TransactionRepository;
 import iuh.fit.se.enternalrunebackend.service.SePayService;
@@ -17,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class SePayServiceImpl implements SePayService {
@@ -31,6 +35,9 @@ public class SePayServiceImpl implements SePayService {
 
     @Autowired
     private TransactionRepository transactionRepository;
+
+    @Autowired
+    private OrderRefundRequestRepository orderRefundRequestRepository;
 
     public QRCodeResponse getQRCode(BigDecimal amount, String description) throws IOException {
         String url = generateQRURL.getQRURL(qrConfig, amount, description);
@@ -78,5 +85,62 @@ public class SePayServiceImpl implements SePayService {
 
     public Order createOrder(Order orderInformation) {
         return orderRepository.save(orderInformation);
+    }
+
+    @Override
+    public List<Order> getOrdersByCustomerId(Long customerId) {
+        return orderRepository.findOrdersByCustomerId(customerId);
+    }
+
+    @Override
+    public OrderRefundRequest updateRefundRequestPaymentStatus(TransactionRequest transactionRequest) {
+        // Extract refund request ID from transaction content or description
+        // Assuming the content contains the refund request ID
+        String content = transactionRequest.getContent();
+
+        // Parse the ID from content (adjust parsing logic based on your format)
+        // Example: "Refund for request #123" -> extract 123
+        Integer refundRequestId = extractRefundRequestIdFromContent(content);
+
+        if (refundRequestId != null) {
+            OrderRefundRequest refundRequest = orderRefundRequestRepository.findById(refundRequestId)
+                    .orElseThrow(() -> new RuntimeException("Refund request not found with ID: " + refundRequestId));
+
+            // Update payment status to PAID
+            refundRequest.setOrPayment(PaymentStatus.PAID);
+
+            return orderRefundRequestRepository.save(refundRequest);
+        }
+
+        throw new RuntimeException("Cannot extract refund request ID from transaction content");
+    }
+
+    @Override
+    public Order updateOrderShippingStatus(int orderId, ShippingStatus shippingStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
+
+        order.setOrderShippingStatus(shippingStatus);
+
+        return orderRepository.save(order);
+    }
+
+    private Integer extractRefundRequestIdFromContent(String content) {
+        // Extract ID from content - adjust this logic based on your actual format
+        // This is a simple example assuming format like "Refund-123" or "123"
+        try {
+            if (content == null || content.isEmpty()) {
+                return null;
+            }
+
+            // Try to find numbers in the content
+            String numbers = content.replaceAll("[^0-9]", "");
+            if (!numbers.isEmpty()) {
+                return Integer.parseInt(numbers);
+            }
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return null;
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.math.BigDecimal;
+import java.util.List;
 
 @RepositoryRestResource(path = "orders")
 public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecificationExecutor<Order>{
@@ -19,6 +20,9 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
     @Transactional
     @Query("UPDATE Order o SET o.orderPaymentStatus = :status WHERE o.orderId = :id and o.orderTotalAmount = :total and o.orderPaymentStatus = :preStatus")
     int updateOrderStatusByID(@Param("id") Integer id, @Param("total") BigDecimal total, @Param("status") PaymentStatus status, @Param("preStatus")  PaymentStatus preStatus);
+
+    @Query("SELECT o FROM Order o WHERE o.orderUser.userId = :customerId")
+    List<Order> findOrdersByCustomerId(@Param("customerId") Long customerId);
 //    ==========================SUMMARY========================
 // Tổng số đơn hàng
 @Query("SELECT COUNT(o) FROM Order o")
