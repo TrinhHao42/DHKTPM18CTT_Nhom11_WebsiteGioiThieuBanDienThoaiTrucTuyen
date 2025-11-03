@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,6 +52,9 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "brand_id", nullable = false)
     Brand prodBrand;
+    // ngày tạo sản phẩm
+    @Column(name = "created_at")
+    LocalDate createdAt = LocalDate.now();
 
 //    @OneToMany(mappedBy = "ciProduct", cascade = CascadeType.ALL, orphanRemoval = true)
 //    List<CartItem> cartItems;
