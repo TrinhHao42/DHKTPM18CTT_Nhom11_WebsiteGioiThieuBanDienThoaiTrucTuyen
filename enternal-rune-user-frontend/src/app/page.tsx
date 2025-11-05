@@ -3,6 +3,7 @@ import HomeScreen from './HomeScreen/page';
 
 const page = () => {
   return (
+    
     <div>
       <HomeScreen />
     </div>
