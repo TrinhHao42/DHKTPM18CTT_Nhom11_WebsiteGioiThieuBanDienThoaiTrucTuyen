@@ -14,12 +14,16 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -62,18 +66,35 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, Endpoints.PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.POST, Endpoints.PUBLIC_POST_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, Endpoints.ADMIN_GET_ENDPOINTS).hasRole("ADMIN")
-                        .requestMatchers("/oauth2/**", "/login/**").permitAll()
+                                .requestMatchers("/oauth/**","/login/**","/oauth2/**","/api/oauth/**").permitAll()//OAuth endpoint
+//                        .requestMatchers("/oauth2/**", "/login/**").permitAll()
                         // Giữ nguyên đường dẫn test tạm thời
-                        .requestMatchers("/auth/oauth2/token-success").permitAll()
+//                        .requestMatchers("/auth/oauth2/token-success").permitAll()
                         .anyRequest().authenticated()
                 )
+
                 // OAuth2 login với handler tuỳ chỉnh
-                .oauth2Login(oauth -> oauth
-                        .successHandler(oAuth2SuccessHandler)
-                        .failureUrl("/login?error=true")
-                )
+//                .oauth2Login(oauth -> oauth
+//                        .successHandler(oAuth2SuccessHandler)
+//                        .failureUrl("/login?error=true")
+//                )
                 .formLogin(form -> form.disable())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(userRequest -> {
+                                    var delegate = new DefaultOAuth2UserService();
+                                    var oauth2User = delegate.loadUser(userRequest);
+
+                                    // Assign ROLE_APPLICANT to every OAuth user
+                                    return new DefaultOAuth2User(
+                                            List.of(new SimpleGrantedAuthority("ROLE_USER")),
+                                            oauth2User.getAttributes(),
+                                            "email"
+                                    );
+                                })
+                        )
+                )
                 .build();
     }
 

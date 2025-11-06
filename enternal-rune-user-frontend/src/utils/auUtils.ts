@@ -35,7 +35,7 @@ export const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("username");
         localStorage.removeItem("userRole");
-        window.dispatchEvent(new Event("userSessionChanged")); // 🔥 thông báo logout
+        window.dispatchEvent(new Event("userSessionChanged")); // thông báo logout
         window.location.href = '/';
     }
 };

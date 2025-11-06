@@ -62,8 +62,9 @@ public class AccountServiceImpl implements AccountService {
     private void sendEmailActivated(String email, String activatedId){
         String subject = "Kích hoạt tài khoản tại Enternal Rune";
 
-//        String url = "http://localhost:3000/activate/" + email + "/" + activatedId;
-        String url = "http://localhost:8080/account/activate?email=" + email + "&activateId=" + activatedId;
+//        String url = "http://localhost:3000/AccountActiveScreen/" + email + "/" + activatedId;
+        String url = "http://localhost:3000/ActivateAccountScreen?email=" + email + "&activateId=" + activatedId;
+//        String url = "http://localhost:3000/activate-account?email=" + email + "&activateId=" + activatedId;
 
         String text = "<html><body>";
         text += "<p>Xin chào,</p>";
@@ -75,7 +76,6 @@ public class AccountServiceImpl implements AccountService {
 
         emailService.sendMessage("enternalrune@gmail.com", email, subject, text);
     }
-
 
     @Override
     public ResponseEntity<?> activateAccount(String email, String activateId) {

@@ -50,7 +50,7 @@ public class OAuthController {
     public Map<String, String> exchangeToken(@RequestBody Map<String, String> body) {
         String code = body.get("code");
 
-        String redirectUri = "http://localhost:8080/login/oauth2/code/google";
+        String redirectUri = "http://localhost:3000/oauthlogon";
 
         String tokenUrl = "https://oauth2.googleapis.com/token";
 

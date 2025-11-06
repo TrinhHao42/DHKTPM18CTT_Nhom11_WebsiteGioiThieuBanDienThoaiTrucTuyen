@@ -45,26 +45,22 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody UserRequestDTO userRequestDTO) {
         return accountService.userRegister(userRequestDTO);
     }
+    // AuthController.java
+
     @GetMapping("/activate")
-    public ResponseEntity<String> activateAccount(@RequestParam String email, @RequestParam String activateId) {
+    public ResponseEntity<?> activateAccount(@RequestParam String email, @RequestParam String activateId) {
         ResponseEntity<?> result = accountService.activateAccount(email, activateId);
 
         if (result.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.ok(
-                    "<html><body><h2 style='color:green;'>Kích hoạt tài khoản thành công!</h2></body></html>"
-            );
+            // 🔥 Trả về JSON khi thành công
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Kích hoạt tài khoản thành công");
+            return ResponseEntity.ok(response);
         } else {
-            // Lấy message lỗi từ ResponseEntity body
-            Object body = result.getBody();
-            String message = "Kích hoạt không thành công";
-
-            if (body instanceof ErrorMessage) {
-                message = ((ErrorMessage) body).getMessage();
-            }
-
-            return ResponseEntity
-                    .badRequest()
-                    .body("<html><body><h2 style='color:red;'>" + message + "</h2></body></html>");
+            // 🔥 Trả về JSON khi thất bại (sử dụng ErrorMessage hoặc Map)
+            return result;
+            // Vì accountService.activateAccount đã trả về ResponseEntity.badRequest().body(new ErrorMessage(...))
+            // nên ta chỉ cần trả về result.
         }
     }
 

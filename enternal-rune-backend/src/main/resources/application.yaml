@@ -47,6 +47,7 @@ spring:
             jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
             user-name-attribute: sub
 
+
 qr:
   acc: ${QR_ACC}
   bank: ${QR_BANK}

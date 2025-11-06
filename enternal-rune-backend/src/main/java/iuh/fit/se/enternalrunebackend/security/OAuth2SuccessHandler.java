@@ -66,8 +66,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         }
         String token = jwtUtil.generateToken(user.getEmail());
 //        String redirectUrl = "http://localhost:3000/oauth-success?token=" + token;
-        String testRedirectUrl = "http://localhost:8080/auth/oauth2/token-success?token=" + token;
-        getRedirectStrategy().sendRedirect(request, response, testRedirectUrl);
+//        String testRedirectUrl = "http://localhost:8080/auth/oauth2/token-success?token=" + token;
+        String frontendRedirectUrl = "http://localhost:3000/LoginScreen?token=" + token; // Hoặc trang chủ
+        getRedirectStrategy().sendRedirect(request, response, frontendRedirectUrl);
+//        getRedirectStrategy().sendRedirect(request, response, testRedirectUrl);
     }
 
 }
