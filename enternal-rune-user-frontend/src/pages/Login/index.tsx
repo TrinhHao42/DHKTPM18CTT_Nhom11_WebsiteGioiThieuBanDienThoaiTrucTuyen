@@ -14,26 +14,23 @@ export default function LoginPage() {
   const handleAuthSuccess = (res: LoginResp) => {
     // 1. Lưu token vào localStorage
     localStorage.setItem('token', res.token);
-
-    // 2. Lưu vai trò chính vào localStorage (có thể dùng ở đây hoặc trong Context/Redux)
     const userRole = res.roles.find(role => role === 'ROLE_ADMIN' || role === 'ROLE_USER') || 'ROLE_USER';
     localStorage.setItem('userRole', userRole);
-
     // 3. Điều hướng dựa trên vai trò
     const isAdmin = res.roles.includes('ROLE_ADMIN');
     if (isAdmin) {
-      router.push("/Admin"); 
+      router.push("/Admin");
     } else {
-      router.push("/"); 
+      router.push("/");
     }
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const res: LoginResp = await apiLogin({ email, password });
-       saveUserSession(res.token, res.username, res.roles?.[0] || "ROLE_USER");
+      saveUserSession(res.token, res.username, res.roles?.[0] || "ROLE_USER");
       alert("Đăng nhập thành công!");
       handleAuthSuccess(res);
     } catch (err) {
@@ -44,38 +41,39 @@ export default function LoginPage() {
     }
   };
 
-  async function handleGoogleSignIn() {
+  const handleGoogleSignIn = async () => {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
     if (!clientId) {
-      alert("Thiếu Google client id");
+      alert("Thiếu Google Client ID trong biến môi trường!");
       return;
     }
+    const redirectUri = "http://localhost:3000/oauthlogon";
+
     const codeClient = (window as any).google?.accounts?.oauth2?.initCodeClient?.({
       client_id: clientId,
       scope: "openid email profile",
+      redirect_uri: redirectUri,
       ux_mode: "popup",
       callback: async (response: { code: string }) => {
         try {
           const exchange: LoginResp = await apiExchangeGoogleCode(response.code);
-          console.log("Google Login thành công, token:", exchange.token, "roles:", exchange.roles);
-
-          // SỬ DỤNG HÀM CHUNG
           handleAuthSuccess(exchange);
-
         } catch (e) {
           const error = e as ApiError;
           alert(error.message || "Đăng nhập Google thất bại");
         }
       },
     });
+
     if (!codeClient) {
-      alert("Google SDK chưa được tải");
+      alert("Google SDK chưa sẵn sàng. Hãy tải lại trang.");
       return;
     }
-    codeClient.requestCode();
-  }
 
-  
+    codeClient.requestCode();
+  };
+
+
 
   return (
     <div className="min-h-screen flex bg-slate-50 overflow-hidden">
@@ -85,13 +83,13 @@ export default function LoginPage() {
       <div className="hidden lg:flex flex-1 items-center justify-center relative bg-white border-l border-slate-200">
         <div className="absolute inset-0 bg-blue-50/50 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,#f1f5f9)]"></div>
         <img
-       
+
           src="/images/iphone_card.png"
           alt="Sản phẩm nổi bật"
           className="w-[450px] drop-shadow-2xl transition-all duration-700 hover:scale-[1.02] cursor-pointer"
         />
         <div className="absolute bottom-12 text-center">
-          <h3 className="text-2xl font-bold text-slate-800">TechZone - Công Nghệ Dẫn Đầu</h3>
+          <h3 className="text-2xl font-bold text-slate-800">EnternalRune - Công Nghệ Dẫn Đầu</h3>
           <p className="text-slate-500 mt-2">Đăng nhập để nhận ưu đãi lên đến 15% cho đơn hàng đầu tiên.</p>
         </div>
       </div>
@@ -103,7 +101,7 @@ export default function LoginPage() {
             Chào mừng trở lại!
           </h1>
           <p className="text-slate-500 mb-8">
-            Tiếp tục mua sắm các sản phẩm công nghệ tại TechZone.
+            Tiếp tục mua sắm các sản phẩm công nghệ tại EnternalRune.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -157,7 +155,7 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8 text-center text-xs text-slate-400">
-            &copy; {new Date().getFullYear()} TechZone. All rights reserved.
+            &copy; {new Date().getFullYear()} EnternalRune. All rights reserved.
           </div>
         </div>
       </div>
