@@ -89,7 +89,6 @@ public class OAuthController {
                 null,
                 new ParameterizedTypeReference<Map<String, Object>>() {}
         );
-
         Map<String, Object> body = response.getBody();
         return body;
     }

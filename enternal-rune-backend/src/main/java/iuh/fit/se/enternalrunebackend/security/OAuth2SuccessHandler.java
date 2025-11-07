@@ -16,6 +16,8 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,6 +57,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             user.setName(name);
             user.setAuthProvider(User.AuthProvider.GOOGLE);
             user.setPassword(UUID.randomUUID().toString());
+
+            // Gán role mặc định
             Role defaultRole = roleRepository.findByRoleName("USER");
             if (defaultRole == null) {
                 defaultRole = new Role();
@@ -64,12 +68,27 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             user.setRoles(Collections.singletonList(defaultRole));
             userRepository.save(user);
         }
+
+        // Tạo JWT token
         String token = jwtUtil.generateToken(user.getEmail());
-//        String redirectUrl = "http://localhost:3000/oauth-success?token=" + token;
-//        String testRedirectUrl = "http://localhost:8080/auth/oauth2/token-success?token=" + token;
-        String frontendRedirectUrl = "http://localhost:3000/LoginScreen?token=" + token; // Hoặc trang chủ
-        getRedirectStrategy().sendRedirect(request, response, frontendRedirectUrl);
-//        getRedirectStrategy().sendRedirect(request, response, testRedirectUrl);
+
+        // Lấy username và role
+        String username = user.getName() != null ? user.getName() : user.getEmail();
+        String role = user.getRoles().stream()
+                .findFirst()
+                .map(r -> "ROLE_" + r.getRoleName().toUpperCase())
+                .orElse("ROLE_USER");
+
+        //  Redirect về frontend kèm thông tin
+        String redirectUrl = String.format(
+                "http://localhost:3000/oauth-success?token=%s&username=%s&role=%s",
+                token,
+                URLEncoder.encode(username, StandardCharsets.UTF_8),
+                URLEncoder.encode(role, StandardCharsets.UTF_8)
+        );
+
+        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
+
 
 }
