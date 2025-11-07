@@ -1,10 +1,9 @@
-// src/utils/authUtils.ts
+
 export type UserSession = {
     isLoggedIn: boolean;
     username: string | null;
     role: string | null;
 };
-
 export const getUserSession = (): UserSession => {
     if (typeof window === "undefined") {
         return { isLoggedIn: false, username: null, role: null };
@@ -35,7 +34,7 @@ export const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("username");
         localStorage.removeItem("userRole");
-        window.dispatchEvent(new Event("userSessionChanged")); // thông báo logout
+        window.dispatchEvent(new Event("userSessionChanged"));
         window.location.href = '/';
     }
 };

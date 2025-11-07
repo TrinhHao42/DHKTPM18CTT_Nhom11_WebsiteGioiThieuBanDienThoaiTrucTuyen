@@ -10,13 +10,11 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-
   const handleAuthSuccess = (res: LoginResp) => {
     // 1. Lưu token vào localStorage
     localStorage.setItem('token', res.token);
     const userRole = res.roles.find(role => role === 'ROLE_ADMIN' || role === 'ROLE_USER') || 'ROLE_USER';
     localStorage.setItem('userRole', userRole);
-    // 3. Điều hướng dựa trên vai trò
     const isAdmin = res.roles.includes('ROLE_ADMIN');
     if (isAdmin) {
       router.push("/Admin");
@@ -40,41 +38,9 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
-
-  const handleGoogleSignIn = async () => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
-    if (!clientId) {
-      alert("Thiếu Google Client ID trong biến môi trường!");
-      return;
-    }
-    const redirectUri = "http://localhost:3000/oauthlogon";
-
-    const codeClient = (window as any).google?.accounts?.oauth2?.initCodeClient?.({
-      client_id: clientId,
-      scope: "openid email profile",
-      redirect_uri: redirectUri,
-      ux_mode: "popup",
-      callback: async (response: { code: string }) => {
-        try {
-          const exchange: LoginResp = await apiExchangeGoogleCode(response.code);
-          handleAuthSuccess(exchange);
-        } catch (e) {
-          const error = e as ApiError;
-          alert(error.message || "Đăng nhập Google thất bại");
-        }
-      },
-    });
-
-    if (!codeClient) {
-      alert("Google SDK chưa sẵn sàng. Hãy tải lại trang.");
-      return;
-    }
-
-    codeClient.requestCode();
+  const handleGoogleSignIn = () => {
+    window.location.href = "http://localhost:8080/oauth2/authorization/google";
   };
-
-
-
   return (
     <div className="min-h-screen flex bg-slate-50 overflow-hidden">
 
