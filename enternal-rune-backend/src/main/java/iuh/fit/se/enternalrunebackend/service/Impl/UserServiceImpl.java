@@ -1,4 +1,9 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
+
+import iuh.fit.se.enternalrunebackend.dto.request.AddressRequestDTO;
+import iuh.fit.se.enternalrunebackend.dto.request.UserRequestDTO;
+import iuh.fit.se.enternalrunebackend.dto.response.UserResponseDTO;
+import iuh.fit.se.enternalrunebackend.entity.Address;
 import iuh.fit.se.enternalrunebackend.entity.Role;
 import iuh.fit.se.enternalrunebackend.entity.User;
 import iuh.fit.se.enternalrunebackend.repository.RoleRepository;
@@ -9,6 +14,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -18,7 +24,8 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     private RoleRepository roleRepository;
-
+    @Autowired
+    private PasswordEncoder passwordEncoder;
     @Autowired
     public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
@@ -29,6 +36,8 @@ public class UserServiceImpl implements UserService {
     public User findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
+
+
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

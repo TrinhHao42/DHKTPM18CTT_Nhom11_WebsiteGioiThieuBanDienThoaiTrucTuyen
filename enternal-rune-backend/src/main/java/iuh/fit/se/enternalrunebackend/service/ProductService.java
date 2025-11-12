@@ -1,5 +1,9 @@
 package iuh.fit.se.enternalrunebackend.service;
 
+import iuh.fit.se.enternalrunebackend.dto.response.ProductDashboardResponse;
+
+
+
 import iuh.fit.se.enternalrunebackend.entity.Product;
 import org.springframework.data.domain.Page;
 
@@ -20,4 +24,5 @@ public interface ProductService {
             int page,
             int size
     );
+    public ProductDashboardResponse getProductDashboard();
 }

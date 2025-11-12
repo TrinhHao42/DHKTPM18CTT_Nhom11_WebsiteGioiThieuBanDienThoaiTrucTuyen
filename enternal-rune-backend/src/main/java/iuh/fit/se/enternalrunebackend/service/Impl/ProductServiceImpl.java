@@ -1,16 +1,22 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
 
-import iuh.fit.se.enternalrunebackend.entity.Product;
-import iuh.fit.se.enternalrunebackend.entity.ProductPrice;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductDashboardResponse;
+import iuh.fit.se.enternalrunebackend.repository.BrandRepository;
 import iuh.fit.se.enternalrunebackend.repository.ProductRepository;
 import iuh.fit.se.enternalrunebackend.service.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import iuh.fit.se.enternalrunebackend.entity.Product;
+import iuh.fit.se.enternalrunebackend.entity.ProductPrice;
 import jakarta.persistence.criteria.Join;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +25,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private final ProductRepository productRepository;
-
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private BrandRepository brandRepository;
     @Override
     public List<Product> getAllProductsWithActivePrice() {
         return productRepository.findAllWithActivePrice();
@@ -102,5 +110,37 @@ public class ProductServiceImpl implements ProductService {
         Pageable pageable = PageRequest.of(page, size);
         return productRepository.findAll(distinctSpec, pageable);
     }
+
+    @Override
+    public ProductDashboardResponse getProductDashboard() {
+//        LocalDate now = LocalDate.now();
+//        int year = now.getYear();
+//        int month = now.getMonthValue();
+//
+//        // Tháng trước
+//        int prevMonth = (month == 1) ? 12 : month - 1;
+//        int prevYear = (month == 1) ? year - 1 : year;
+
+        //Tổng sản phẩm
+        long totalProducts = productRepository.countTotalProducts();
+//        long totalThisMonth = productRepository.countProductsByMonth(year, month);
+//        long totalPrevMonth = productRepository.countProductsByMonth(prevYear, prevMonth);
+
+        // Tổng danh mục
+        long totalBrand = brandRepository.countTotalBrands();
+
+        //Còn hàng
+        long available = productRepository.countAvailableProducts();
+
+        //Hết hàng
+        long outOfStock = productRepository.countOutOfStockProducts();
+        return new ProductDashboardResponse(
+                totalProducts,
+                totalBrand,
+                available,
+                outOfStock
+        );
+    }
+
 
 }

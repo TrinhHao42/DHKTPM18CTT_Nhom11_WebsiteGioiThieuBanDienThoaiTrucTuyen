@@ -26,14 +26,16 @@ public class User {
     String password;
     @Column(name = "user_active")
     boolean userActive;
+    @Column(name = "activate_id")
+    private String activateId;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     AuthProvider authProvider;
     public enum AuthProvider {
-        LOCAL, GOOGLE
+        LOCAL, GOOGLE,FACEBOOK
     }
     @ManyToMany(fetch = FetchType.EAGER,cascade = {
-            CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST,CascadeType.REFRESH
+            CascadeType.DETACH, CascadeType.MERGE,CascadeType.REFRESH
     })
     @JoinTable(
             name = "user_role",
@@ -54,4 +56,10 @@ public class User {
 
     @OneToMany(mappedBy = "cmUser", cascade = CascadeType.ALL)
     List<Comment> comments;
+    public User(String name, String email, String password, Address userAddress) {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+        this.userAddress = userAddress;
+    }
 }

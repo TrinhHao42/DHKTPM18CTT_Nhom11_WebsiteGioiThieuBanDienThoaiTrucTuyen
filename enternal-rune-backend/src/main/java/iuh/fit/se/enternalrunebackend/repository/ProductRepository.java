@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
-
 import java.util.List;
+
 
 @RepositoryRestResource(path = "products")
 public interface ProductRepository extends JpaRepository<Product, Integer>, JpaSpecificationExecutor<Product> {
@@ -49,4 +49,25 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
           LIMIT :limit
       """, nativeQuery = true)
   List<Product> findProductsByBrand(@Param("brandName") String brandName, @Param("limit") int limit);
+  // Tổng số sản phẩm
+    @Query("SELECT COUNT(p) FROM Product p")
+    long countTotalProducts();
+
+    // Số sản phẩm còn hàng
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.productStatus = 'ACTIVE'")
+    long countAvailableProducts();
+
+    // Số sản phẩm hết hàng
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.productStatus = 'OUT_OF_STOCK'")
+    long countOutOfStockProducts();
+
+    // Đếm sản phẩm được tạo trong 1 tháng cụ thể
+    @Query("""
+        SELECT COUNT(p)
+        FROM Product p
+        WHERE EXTRACT(YEAR FROM p.createdAt) = :year
+          AND EXTRACT(MONTH FROM p.createdAt) = :month
+    """)
+    long countProductsByMonth(@Param("year") int year, @Param("month") int month);
+
 }
