@@ -9,14 +9,7 @@ import lombok.Setter;
 @Setter
 public class ProductDashboardResponse {
     private long totalProducts;
-    private double totalProductsChange;
-
     private long totalCategories;
-    private double totalCategoriesChange;
-
     private long availableProducts;
-    private double availableChange;
-
     private long outOfStockProducts;
-    private double outOfStockChange;
 }
