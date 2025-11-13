@@ -6,7 +6,8 @@ import Link from 'next/link';
 
 
 export default function ProductCard({ product }: { product: Product }) {
-    const originalPrice = product.prodOriginalPrice || (product.prodPrice ? product.prodPrice * 1.15 : 0);
+    const currentPrice = product.productPrices?.[0]?.ppPrice || 0;
+    const originalPrice = currentPrice * 1.15;
 
     return (
         <Link href={`/products/${product.prodId}`} className="block">
@@ -14,7 +15,7 @@ export default function ProductCard({ product }: { product: Product }) {
             {/* Image Container */}
             <div className="relative p-4 bg-gradient-to-br from-blue-50 to-white group-hover:from-blue-100 group-hover:to-blue-50 transition-colors duration-300">
                 <Image
-                    src={product.prodImgUrl[0].imageData || "/images/iphone.png"}
+                    src={product.images[0].imageData || "/images/iphone.png"}
                     alt={product.prodName}
                     className="mx-auto w-32 h-32 object-contain rounded-2xl group-hover:scale-110 transition-transform duration-500"
                     width={128}
@@ -68,7 +69,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 <div className="flex items-center justify-between mb-3">
                     <div>
                         <div className="text-lg font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                            {formatPrice(product.prodPrice || 0)}
+                            {formatPrice(currentPrice)}
                         </div>
                         <div className="text-gray-400 line-through text-sm">
                             {formatPrice(originalPrice)}
@@ -78,18 +79,18 @@ export default function ProductCard({ product }: { product: Product }) {
                     <div className="text-right">
                         <div className="text-xs text-gray-500">Tiết kiệm</div>
                         <div className="text-sm font-semibold text-red-500">
-                            {Math.round(((originalPrice - (product.prodPrice || 0)) / originalPrice) * 100)}%
+                            {originalPrice > 0 ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100) : 0}%
                         </div>
                     </div>
                 </div>
 
                 <div className="flex gap-2">
-                    <button className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-3 rounded-xl font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2 group/btn">
+                    <button className="cursor-pointer flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-3 rounded-xl font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2 group/btn">
                         <ShoppingCart className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span>Mua ngay</span>
                     </button>
 
-                    <button className="bg-blue-50 text-blue-600 py-2 px-3 rounded-xl font-semibold text-sm hover:bg-blue-100 transition-all duration-300 border border-blue-200 hover:border-blue-300">
+                    <button className="cursor-pointer bg-blue-50 text-blue-600 py-2 px-3 rounded-xl font-semibold text-sm hover:bg-blue-100 transition-all duration-300 border border-blue-200 hover:border-blue-300">
                         So sánh
                     </button>
                 </div>

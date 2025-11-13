@@ -16,6 +16,38 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: eternalrune.comerce@gmail.com
+    password: cxae xnjb smfw yedu
+    protocol: smtp
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+    default-encoding: UTF-8
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+            user-name-attribute: sub
+
+
 qr:
   acc: ${QR_ACC}
   bank: ${QR_BANK}
@@ -24,6 +56,7 @@ qr:
 
 sepay:
   api: ${SEPAY_API}
+
 
 server:
   port: 8080

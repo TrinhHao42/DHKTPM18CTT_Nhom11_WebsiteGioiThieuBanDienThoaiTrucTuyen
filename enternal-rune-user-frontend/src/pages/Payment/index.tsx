@@ -46,7 +46,7 @@ const Payment = () => {
     const orderItems = checkoutItems.map((item) => ({
         id: item.ciId,
         name: item.ciProductVariant.prodvName,
-        image: item.ciProductVariant.prodvImage.imageData,
+        image: item.ciProductVariant.prodvImage.imgData,
         quantity: item.ciQuantity,
         price: item.ciProductVariant.prodvPrice.ppPrice
     }));

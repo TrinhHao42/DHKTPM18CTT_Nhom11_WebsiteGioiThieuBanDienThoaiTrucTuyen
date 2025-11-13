@@ -1,8 +1,9 @@
 "use client"
-import ProductCard from "./ProductCard"
+import ProductCard from "../../../components/ProductCard"
 import { FaArrowRight } from "react-icons/fa6";
 import { useProducts } from "@/context/ProductsContext";
 import { Product } from "@/types/Product";
+import Link from "next/link";
 
 
 export const renderBestSellers = (products: Product[], hideButton = false) => {
@@ -17,15 +18,17 @@ export const renderBestSellers = (products: Product[], hideButton = false) => {
                 )}
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6">
-                {products.slice(8, 12).map((product) => (
+                {products.map((product) => (
                     <ProductCard key={product.prodId} product={product} />
                 ))}
             </div>
 
             {hideButton && (
-                <button className="mt-8 mx-auto bg-white text-black flex h-[42px] px-5 py-[10px] justify-center items-center gap-[10px] rounded-lg border border-[#565656] transition-all hover:bg-gray-100 hover:shadow-md hover:border-gray-400">
-                    Xem thêm
-                </button>
+                <Link href={'/ProductListScreen'}>
+                    <button className="mt-8 mx-auto bg-white text-black flex h-[42px] px-5 py-[10px] justify-center items-center gap-[10px] rounded-lg border border-[#565656] transition-all hover:bg-gray-100 hover:shadow-md hover:border-gray-400">
+                        Xem thêm
+                    </button>
+                </Link>
             )}
         </div>
     );
@@ -33,7 +36,7 @@ export const renderBestSellers = (products: Product[], hideButton = false) => {
 
 
 export default function ProductList() {
-    const { products, loading, error } = useProducts();
+    const { products, productLatest, loading, error } = useProducts();
 
     if (loading) {
         return <div className="text-center py-8">Đang tải sản phẩm...</div>;
@@ -55,10 +58,13 @@ export default function ProductList() {
                     <ProductCard key={product.prodId} product={product} />
                 ))}
             </div>
-            <button className="mt-8 mx-auto bg-white text-black flex h-[42px] px-5 py-[10px] justify-center items-center gap-[10px] rounded-lg border border-[#565656] transition-all hover:bg-gray-100 hover:shadow-md hover:border-gray-400">
-                Xem thêm
-            </button>
-            {renderBestSellers(products, false)}
+            <Link href={'/ProductListScreen'}>
+                <button className="mt-8 mx-auto bg-white text-black flex h-[42px] px-5 py-[10px] justify-center items-center gap-[10px] rounded-lg border border-[#565656] transition-all hover:bg-gray-100 hover:shadow-md hover:border-gray-400">
+                    Xem thêm
+                </button>
+            </Link>
+
+            {renderBestSellers(productLatest, false)}
         </>
     )
 }

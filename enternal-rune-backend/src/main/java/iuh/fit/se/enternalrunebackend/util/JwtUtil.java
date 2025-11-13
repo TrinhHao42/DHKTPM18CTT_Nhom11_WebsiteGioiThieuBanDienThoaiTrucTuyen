@@ -9,6 +9,7 @@ import iuh.fit.se.enternalrunebackend.entity.Role;
 import iuh.fit.se.enternalrunebackend.entity.User;
 import iuh.fit.se.enternalrunebackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -27,6 +28,7 @@ public class JwtUtil {
     private static final long EXPIRATION_TIME = 86400000; // 1 ngày
 
     @Autowired
+    @Lazy
     private UserService userService;
 
     private Key getSigningKey() {

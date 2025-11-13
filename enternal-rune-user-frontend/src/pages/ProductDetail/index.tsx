@@ -6,22 +6,63 @@ import ProductImageGallery from '@/pages/ProductDetail/ProductImageGallery'
 import ProductInfoPanel from '@/pages/ProductDetail/ProductInfoPanel'
 import SpecificationsSection from '@/pages/ProductDetail/SpecificationsSection'
 import { Product } from '@/types/Product'
-import { useProducts } from '@/context/ProductsContext'
 import { renderBestSellers } from '../Home/components/ProductList'
+import { ProductService } from '@/services/productService'
+
+const RelatedProducts = () => {
+  const [items, setItems] = useState<Product[]>([])
+
+  useEffect(() => {
+    let mounted = true
+    ProductService.getFilteredProducts({ page: 0, size: 4 })
+      .then(data => { if (mounted) setItems(data) })
+      .catch(() => { })
+    return () => { mounted = false }
+  }, [])
+
+  return (
+    <div className="pt-6">
+      {renderBestSellers(items, false)}
+    </div>
+  )
+}
 
 export default function ProductDetail() {
   const params = useParams()
-  const { products, loading, error } = useProducts()
-  const [product, setProduct] = useState<Product>()
+  const [product, setProduct] = useState<Product | undefined>()
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (params?.id && products.length > 0) {
-      const foundProduct = products.find(p => p.prodId === parseInt(params.id as string))
-      setProduct(foundProduct)
+    const id = params?.id as string | undefined
+    if (!id) {
+      setError('ID sản phẩm không hợp lệ')
+      setLoading(false)
+      return
     }
-  }, [params?.id, products])
 
-  console.log(product);
+    let mounted = true
+    setLoading(true)
+    ProductService.getProductById(id)
+      .then(p => {
+        if (!mounted) return
+        if (!p) setError('Sản phẩm không tồn tại')
+        setProduct(p || undefined)
+      })
+      .catch(err => {
+        console.error(err)
+        if (!mounted) return
+        setError(err instanceof Error ? err.message : 'Lỗi khi tải sản phẩm')
+      })
+      .finally(() => {
+        if (!mounted) return
+        setLoading(false)
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [params?.id])
 
 
   if (loading) {
@@ -52,21 +93,42 @@ export default function ProductDetail() {
     )
   }
 
-  const images = product.prodImgUrl?.map(img => img.imageData) || ['/images/iphone.png']
-  const specifications = {
-    'Service Provider': 'Unlocked',
-    'CPU Model': 'Snapdragon 8 Gen 3',
-    'Front Camera': '12 MP',
-    'RAM Memory': '12 GB',
-    'Screen Size': '6.8 inches',
-    'Weight': '218 g',
-    'Storage': '512 GB',
-    'Operating System': 'Android 14',
-    'Battery': '5000 mAh',
-    'Network': '5G',
-    'Display Type': 'Dynamic AMOLED 2X',
-    'Water Resistance': 'IP68'
+  const images = product?.images?.map(img => img.imageData) || ['/images/iphone.png']
+
+  // Chuyển đổi prodSpecs từ product sang định dạng phù hợp cho SpecificationsSection
+  const getSpecificationsForDisplay = (prodSpecs?: { [key: string]: string | number | boolean }) => {
+    if (!prodSpecs) return {}
+
+    const displayMap: { [key: string]: string } = {
+      screenSize: 'Kích thước màn hình',
+      displayTech: 'Công nghệ màn hình',
+      resolution: 'Độ phân giải',
+      displayFeatures: 'Tính năng màn hình',
+      rearCamera: 'Camera sau',
+      frontCamera: 'Camera trước',
+      chipset: 'Chipset',
+      cpuType: 'Loại CPU',
+      ram: 'RAM',
+      storage: 'Bộ nhớ trong',
+      battery: 'Pin',
+      os: 'Hệ điều hành',
+      th_sim: 'SIM',
+      nfcTech: 'Công nghệ NFC',
+      cm_bin: 'Cảm Biến'
+    }
+
+    const specifications: Record<string, string> = {}
+
+    Object.entries(prodSpecs).forEach(([key, value]) => {
+      const displayKey = displayMap[key] || key
+      const displayValue = String(value)
+      specifications[displayKey] = displayValue
+    })
+
+    return specifications
   }
+
+  const specifications = getSpecificationsForDisplay(product?.prodSpecs)
 
   return (
     <div className="container mx-auto px-20 py-6">
@@ -90,8 +152,20 @@ export default function ProductDetail() {
           product={product}
         />
       </div>
-      <SpecificationsSection specifications={specifications} />
-      {renderBestSellers(products, true)}
+      {/* Hiển thị thông số kỹ thuật */}
+      {product.prodSpecs && Object.keys(product.prodSpecs).length > 0 ? (
+        <SpecificationsSection specifications={specifications} />
+      ) : (
+        <div className="w-full bg-gray-50 rounded-2xl p-8 text-center">
+          <div className="animate-pulse">
+            <div className="h-6 bg-gray-300 rounded w-1/3 mx-auto mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+          </div>
+          <p className="text-gray-500 mt-4">Đang tải thông tin sản phẩm...</p>
+        </div>
+      )}
+      <RelatedProducts />
     </div>
   )
 }
+

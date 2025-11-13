@@ -1,5 +1,7 @@
 package iuh.fit.se.enternalrunebackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -19,8 +21,9 @@ public class CartItem {
     @Column(name = "cart_item_quantity")
     long ciQuantity;
     //relationship
-    @ManyToOne
-    @JoinColumn(name="cart_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="cart_id",nullable = false)
+    @JsonBackReference
     Cart ciCart;
     @ManyToOne
     @JoinColumn(name="product_variant_id")

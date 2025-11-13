@@ -1,11 +1,14 @@
 package iuh.fit.se.enternalrunebackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +36,7 @@ public class Brand {
     @Column(name = "brand_status", length = 20)
     private String brandStatus;
 
-    @OneToMany(mappedBy = "prodBrand", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_id")
     private List<Product> products = new ArrayList<>();
 }

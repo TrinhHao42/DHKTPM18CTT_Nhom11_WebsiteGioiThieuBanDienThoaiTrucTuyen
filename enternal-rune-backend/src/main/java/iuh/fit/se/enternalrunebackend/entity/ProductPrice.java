@@ -31,13 +31,13 @@ public class ProductPrice {
     @Column(name="pp_end_date")
     LocalDate ppEndDate;
     //relationship
-    @ManyToOne
-    @JoinColumn(name="product_id",nullable = false)
-    Product ppProduct;
+//    @ManyToOne
+//    @JoinColumn(name="product_id",nullable = false)
+//    Product ppProduct;
     @ManyToOne
     @JoinColumn(name="discount_id")
     Discount discount;
-    @OneToMany(mappedBy = "odPrice", cascade = CascadeType.ALL)
-    List<OrderDetail> orderDetails = new ArrayList<>();
+//    @OneToMany(mappedBy = "odPrice", cascade = CascadeType.ALL)
+//    List<OrderDetail> orderDetails = new ArrayList<>();
 
 }

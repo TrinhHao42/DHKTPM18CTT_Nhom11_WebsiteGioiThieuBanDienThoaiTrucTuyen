@@ -2,10 +2,12 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { Product } from "@/types/Product"
-import { ProductPrice } from "@/types/ProductPrice"
+import AxiosInstance from "@/configs/AxiosInstance"
+import { API_ROUTES } from '@/router/router'
 
 type ProductsContextType = {
-    products: Product[]
+    products: Product[],
+    productLatest: Product[],
     loading: boolean
     error: string | null
     refetch: () => void
@@ -15,6 +17,7 @@ const ProductsContext = createContext<ProductsContextType | undefined>(undefined
 
 export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     const [products, setProducts] = useState<Product[]>([])
+    const [productLatest, setProductLatest] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -23,43 +26,16 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
         setError(null)
 
         try {
-            // Gọi song song cả 2 API
-            const [productsRes, pricesRes] = await Promise.all([
-                fetch("http://localhost:3001/products"),
-                fetch("http://localhost:3001/product_prices"),
-            ])
-
-            if (!productsRes.ok || !pricesRes.ok) {
-                throw new Error("Không thể tải dữ liệu sản phẩm hoặc giá.")
+            const productsRes = await AxiosInstance.get(API_ROUTES.PRODUCTS_TOP_BRAND)
+            const productLatest = await AxiosInstance.get(API_ROUTES.PRODUCTS_LATEST)
+            if (!productsRes || productsRes.status !== 200) {
+                throw new Error("Không thể tải dữ liệu sản phẩm.")
             }
-
-            const [productsData, pricesData]: [Product[], ProductPrice[]] = await Promise.all([
-                productsRes.json(),
-                pricesRes.json(),
-            ])
-
-            // Tạo Map giá theo productId để tìm nhanh
-            const priceMap = new Map<number, ProductPrice>(
-                pricesData.map((p) => [p.ppProduct, p])
-            )
-
-            // Merge dữ liệu sản phẩm với giá
-            const mergedProducts: Product[] = productsData.map((prod) => {
-                const priceInfo = priceMap.get(prod.prodId)
-                const activePrice = priceInfo?.ppPriceStatus === "ACTIVE" ? priceInfo.ppPrice : 0
-
-                return {
-                    ...prod,
-                    prodPrice: activePrice,
-                    prodOriginalPrice: activePrice ? activePrice * 1.15 : 0, // Giá gốc (tăng 15%)
-                }
-            })
-
-            setProducts(mergedProducts)
+            setProducts(productsRes.data)
+            setProductLatest(productLatest.data)
         } catch (err) {
-            const message = err instanceof Error ? err.message : "Lỗi không xác định khi tải dữ liệu"
-            console.error("Error fetching products:", message)
-            setError(message)
+            console.error("Error fetching products:", err)
+            setError(err instanceof Error ? err.message : "Lỗi không xác định khi tải dữ liệu")
         } finally {
             setLoading(false)
         }
@@ -70,7 +46,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     }, [])
 
     return (
-        <ProductsContext.Provider value={{ products, loading, error, refetch: fetchProducts }}>
+        <ProductsContext.Provider value={{ products, productLatest, loading, error, refetch: fetchProducts }}>
             {children}
         </ProductsContext.Provider>
     )

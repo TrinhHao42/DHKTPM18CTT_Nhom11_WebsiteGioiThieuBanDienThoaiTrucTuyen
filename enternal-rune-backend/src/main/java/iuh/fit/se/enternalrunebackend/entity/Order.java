@@ -27,7 +27,7 @@ public class Order {
     int orderId;
 
     @Column(name = "order_date", nullable = false)
-    LocalDate orderDate;
+    LocalDate orderDate = LocalDate.now();
 
     @Column(name = "order_total_amount", nullable = false)
     BigDecimal orderTotalAmount;

@@ -30,15 +30,6 @@ public class Transaction {
     @Column(name = "trans_account_number", nullable = false, length = 50)
     String transAccountNumber;
 
-    @Column(name = "trans_sub_account", nullable = false, length = 50)
-    String transSubAccount;
-
-    @Column(name = "trans_code", nullable = false)
-    String transCode;
-
-    @Column(name = "trans_accumulated", nullable = false)
-    BigDecimal transAccumulated;
-
     @Column(name = "trans_amount_in", nullable = false)
     BigDecimal transAmountIn;
 

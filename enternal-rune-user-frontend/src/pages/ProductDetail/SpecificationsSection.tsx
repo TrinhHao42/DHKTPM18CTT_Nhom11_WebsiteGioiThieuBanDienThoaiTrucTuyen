@@ -1,6 +1,6 @@
 'use client'
 import React from 'react'
-import { Cpu, Camera, Memory, Battery, Weight, Screen, Detail } from '@/lib/icons'
+import { Camera, Cpu, Memory, Screen, Weight, Detail, FaSimCard, GrSystem, IoBatteryChargingOutline, LuMemoryStick, LuSmartphoneNfc }from '@/lib/icons'
 
 interface SpecificationsSectionProps {
   specifications: Record<string, string>
@@ -14,10 +14,14 @@ export default function SpecificationsSection({ specifications }: Specifications
     const lower = key.toLowerCase()
     if (lower.includes('cpu')) return <Cpu className="w-6 h-6 text-blue-500" />
     if (lower.includes('camera')) return <Camera className="w-6 h-6 text-green-500" />
-    if (lower.includes('memory') || lower.includes('ram')) return <Memory className="w-6 h-6 text-purple-500" />
-    if (lower.includes('screen')) return <Screen className="w-6 h-6 text-orange-500" />
-    if (lower.includes('battery')) return <Battery className="w-6 h-6 text-yellow-500" />
-    if (lower.includes('weight')) return <Weight className="w-6 h-6 text-red-500" />
+    if (lower.includes('bộ nhớ')) return <Memory className="w-6 h-6 text-purple-500" />
+    if (lower.includes('kích thước màn hình')) return <Screen className="w-6 h-6 text-orange-500" />
+    if (lower.includes('ram')) return <LuMemoryStick className="w-6 h-6 text-yellow-500" />
+    if (lower.includes('trọng lượng')) return <Weight className="w-6 h-6 text-red-500" />
+    if (lower.includes('sim')) return <FaSimCard className="w-6 h-6 text-pink-500" />
+    if (lower.includes('hệ điều hành') || lower.includes('os')) return <GrSystem className="w-6 h-6 text-teal-500" />
+    if (lower.includes('pin')) return <IoBatteryChargingOutline className="w-6 h-6 text-indigo-500" />
+    if (lower.includes('nfc')) return <LuSmartphoneNfc className="w-6 h-6 text-cyan-500" />
     return <Detail className="w-6 h-6 text-gray-400" />
   }
 
@@ -41,7 +45,10 @@ export default function SpecificationsSection({ specifications }: Specifications
                   <dt className="text-sm font-medium text-gray-600 mb-2 group-hover:text-blue-600 transition-colors">
                     {key}
                   </dt>
-                  <dd className="text-sm font-semibold text-gray-900 group-hover:text-blue-800 transition-colors">
+                  <dd
+                    title={String(value)}
+                    className="text-sm font-semibold text-gray-900 group-hover:text-blue-800 transition-colors line-clamp-1 overflow-hidden"
+                  >
                     {value}
                   </dd>
                 </div>

@@ -1,5 +1,6 @@
 package iuh.fit.se.enternalrunebackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -19,9 +20,9 @@ public class Image {
     @Column(name = "image_name")
     String imageName;
     @Column(name="image_data",columnDefinition = "TEXT")
-    @Lob
+//    @Lob
     String imageData;
-    @ManyToOne
-    @JoinColumn(name = "product_id",nullable = false)
-    Product product;
+//    @ManyToOne
+//    @JoinColumn(name = "product_id",nullable = false)
+//    Product product;
 }

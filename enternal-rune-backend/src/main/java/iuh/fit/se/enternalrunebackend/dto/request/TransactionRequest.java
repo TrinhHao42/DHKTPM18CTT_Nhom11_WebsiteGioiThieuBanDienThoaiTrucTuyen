@@ -19,12 +19,9 @@ public class TransactionRequest {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime transactionDate;
     private String accountNumber;
-    private String subAccount;
-    private String code;
     private String content;
     private String transferType;
     private String description;
     private BigDecimal transferAmount;
     private String referenceCode;
-    private BigDecimal accumulated;
 }
