@@ -10,4 +10,36 @@ const AxiosInstance = axios.create({
   },
 })
 
+// ✅ Thêm interceptor để tự động gửi token
+AxiosInstance.interceptors.request.use(
+  (config) => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token')
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// ✅ Thêm interceptor để xử lý response errors
+AxiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired hoặc invalid
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/LoginScreen'
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
 export default AxiosInstance

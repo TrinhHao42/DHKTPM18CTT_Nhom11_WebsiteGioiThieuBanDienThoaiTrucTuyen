@@ -1,6 +1,6 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
 
-import iuh.fit.se.enternalrunebackend.dto.request.UserRequestDTO;
+import iuh.fit.se.enternalrunebackend.dto.request.UserRequest;
 import iuh.fit.se.enternalrunebackend.entity.ErrorMessage;
 import iuh.fit.se.enternalrunebackend.entity.User;
 import iuh.fit.se.enternalrunebackend.repository.AddressRepository;
@@ -32,20 +32,20 @@ public class AccountServiceImpl implements AccountService {
 
 
     @Override
-    public ResponseEntity<?> userRegister(UserRequestDTO userRequestDTO) {
-        if (userRepository.existsByEmail(userRequestDTO.getEmail())) {
+    public ResponseEntity<?> userRegister(UserRequest userRequest) {
+        if (userRepository.existsByEmail(userRequest.getEmail())) {
             return ResponseEntity.badRequest().body(new ErrorMessage("Email đã tồn tại"));
         }
 
         // Mã hóa mật khẩu
-        String encryptPassword = passwordEncoder.encode(userRequestDTO.getPassword());
+        String encryptPassword = passwordEncoder.encode(userRequest.getPassword());
 
 
 
         // Tạo user
         User user = new User();
-        user.setName(userRequestDTO.getName());
-        user.setEmail(userRequestDTO.getEmail());
+        user.setName(userRequest.getName());
+        user.setEmail(userRequest.getEmail());
         user.setPassword(encryptPassword);
         user.setAuthProvider(User.AuthProvider.LOCAL);
         // Gán trạng thái active

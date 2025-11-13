@@ -1,3 +1,4 @@
+import { User } from "@/types/User";
 
 const API = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
 export type RegisterPayload = {
@@ -13,7 +14,7 @@ export type LoginPayload = {
 };
 export type LoginResp = {
     token: string;
-    username?: string;
+    user?: User;
     roles: string[];
 };
 

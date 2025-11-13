@@ -4,36 +4,23 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext"; // ✅ Import useAuth
 import { Cart } from "@/lib/icons";
-import { getUserSession, handleLogout } from "@/utils/auUtils";
 
 export const Navbar = () => {
     const [open, setOpen] = useState(false);
     const { cartQuantity } = useCart();
-    const [user, setUser] = useState(getUserSession());
+    const { user, token, logout } = useAuth(); // ✅ Lấy user, token, logout từ context
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
-
-        // Cập nhật user khi nhận event "userSessionChanged"
-        const handleUserSessionChange = () => {
-            setUser(getUserSession());
-        };
-
-        // Lắng nghe 2 loại event
-        window.addEventListener("userSessionChanged", handleUserSessionChange);
-        window.addEventListener("storage", handleUserSessionChange);
-
-        // Cleanup khi component unmount
-        return () => {
-            window.removeEventListener("userSessionChanged", handleUserSessionChange);
-            window.removeEventListener("storage", handleUserSessionChange);
-        };
     }, []);
 
 
     if (!mounted) return null;
+    
+    const isLoggedIn = !!token && !!user; // ✅ Kiểm tra đăng nhập từ context
 
     return (
         <header className="flex items-center justify-between px-6 md:px-16 py-5 border-b border-gray-200 bg-white">
@@ -73,25 +60,29 @@ export const Navbar = () => {
 
             <div className="hidden md:flex space-x-4 items-center">
                 {/* Giỏ hàng */}
-                <Link href="/CartScreen" className="relative px-5 py-2">
-                    <Cart style={{ color: "gray", width: "24px", height: "24px" }} />
-                    {cartQuantity > 0 && (
-                        <span className="absolute top-0 right-1 px-2 py-1 text-xs font-bold text-white bg-amber-500 rounded-full">
-                            {cartQuantity}
-                        </span>
-                    )}
-                </Link>
+                {
+                    isLoggedIn && (
+                        <Link href="/CartScreen" className="relative px-5 py-2">
+                            <Cart style={{ color: "gray", width: "24px", height: "24px" }} />
+                            {cartQuantity > 0 && (
+                                <span className="absolute top-0 right-1 px-2 py-1 text-xs font-bold text-white bg-amber-500 rounded-full">
+                                    {cartQuantity}
+                                </span>
+                            )}
+                        </Link>
+                    )
+                }
 
-                {user.isLoggedIn ? (
+                {isLoggedIn ? (
                     <>
                         <span className="text-sm text-gray-700">
                             Hi,{" "}
                             <strong className="text-blue-600">
-                                {user.username?.split("@")[0] ?? user.username}
+                                {user?.userName}
                             </strong>
                         </span>
                         <button
-                            onClick={handleLogout}
+                            onClick={logout}
                             className="bg-red-500 text-white px-5 py-2 rounded-full text-sm hover:bg-red-600 transition"
                         >
                             Đăng xuất
