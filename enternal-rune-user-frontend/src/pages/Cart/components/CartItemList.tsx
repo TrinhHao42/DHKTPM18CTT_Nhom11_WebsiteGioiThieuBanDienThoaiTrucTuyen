@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { Minus, Plus, Trash2, Loader2 } from 'lucide-react'
 import { CartItem } from '@/types/CartItem'
 import { useCart } from '@/context/CartContext'
+import { useToast } from '@/hooks/useToast'
 
 interface CartItemListProps {
     item: CartItem;
@@ -12,10 +13,50 @@ interface CartItemListProps {
 
 const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
     const { removeCartItem, updateCartItemQuantity } = useCart();
+    const toast = useToast();
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [isRemoving, setIsRemoving] = useState(false);
+
+    const handleIncrease = async () => {
+        setIsUpdating(true);
+        try {
+            await updateCartItemQuantity(item.cartItemId, item.quantity + 1);
+        } catch (error) {
+            toast.error('Không thể cập nhật số lượng');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleDecrease = async () => {
+        if (item.quantity > 1) {
+            setIsUpdating(true);
+            try {
+                await updateCartItemQuantity(item.cartItemId, item.quantity - 1);
+            } catch (error) {
+                toast.error('Không thể cập nhật số lượng');
+            } finally {
+                setIsUpdating(false);
+            }
+        }
+    };
+
+    const handleRemove = async () => {
+        setIsRemoving(true);
+        try {
+            await removeCartItem(item.cartItemId);
+            toast.success('Đã xóa sản phẩm khỏi giỏ hàng');
+        } catch (error) {
+            toast.error('Không thể xóa sản phẩm');
+            setIsRemoving(false);
+        }
+    };
 
     return (
         <div
-            className={`relative flex items-start gap-4 p-4 border-b last:border-b-0 transition-colors duration-150 ${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+            className={`relative flex items-start gap-4 p-4 border-b last:border-b-0 transition-all duration-150 ${
+                isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+            } ${isRemoving ? 'opacity-50 pointer-events-none' : ''}`}
         >
             {/* Blue left border when selected */}
             {isSelected && (
@@ -24,8 +65,8 @@ const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
 
             {/* Image */}
             <Image
-                alt={item.ciProductVariant.prodvImage.imageName}
-                src={item.ciProductVariant.prodvImage.imageData}
+                alt={item.productVariant.variantName}
+                src={item.productVariant.imageUrl || '/placeholder.png'}
                 width={100}
                 height={100}
                 className="rounded-md object-cover border border-gray-200 w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0"
@@ -35,7 +76,7 @@ const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
             <div className="flex-1 items-start mb-3">
 
                 <h3 className="text-xs sm:text-sm font-semibold text-gray-900 mb-1.5 line-clamp-2">
-                    {item.ciProductVariant.prodvName}
+                    {item.productVariant.variantName}
                 </h3>
                 <p className="text-[10px] sm:text-xs text-gray-500 mb-2">
                     Còn hàng
@@ -71,18 +112,20 @@ const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
 
                 {/* Quantity Controls */}
                 <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-2.5 py-1.5 self-end">
-                    <button className=
-                        "p-0.5 hover:text-blue-500 rounded transition cursor-pointer active:scale-95"
-                        onClick={() => updateCartItemQuantity(item.ciId, -1)}
+                    <button 
+                        className="p-0.5 hover:text-blue-500 rounded transition cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleDecrease}
+                        disabled={isUpdating || item.quantity <= 1}
                     >
-                        <Minus className="w-3.5 h-3.5 text-gray-600" />
+                        {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Minus className="w-3.5 h-3.5 text-gray-600" />}
                     </button>
                     <span className="text-xs sm:text-sm font-medium text-gray-900 min-w-[20px] text-center">
-                        {item.ciQuantity}
+                        {item.quantity}
                     </span>
                     <button
-                        className="p-0.5 hover:text-blue-500 rounded transition cursor-pointer active:scale-95"
-                        onClick={() => updateCartItemQuantity(item.ciId, 1)}
+                        className="p-0.5 hover:text-blue-500 rounded transition cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleIncrease}
+                        disabled={isUpdating}
                     >
                         <Plus className="w-3.5 h-3.5 text-gray-600" />
                     </button>
@@ -91,16 +134,21 @@ const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
                 {/* Price and Actions */}
                 <div className="flex items-center gap-3 self-end">
                     <p className="text-base sm:text-lg font-bold text-gray-900">
-                        {item.ciProductVariant.prodvPrice.ppPrice.toLocaleString("vi-VN", {
+                        {item.productVariant.price.toLocaleString("vi-VN", {
                             style: "currency",
                             currency: "VND",
                         })}
                     </p>
                     <button
-                        className="text-gray-400 hover:text-red-500 cursor-pointer transition-colors duration-150 active:scale-95 p-1"
-                        onClick={() => removeCartItem(item.ciId)}
+                        className="text-gray-400 hover:text-red-500 cursor-pointer transition-colors duration-150 active:scale-95 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleRemove}
+                        disabled={isRemoving}
                     >
-                        <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        {isRemoving ? (
+                            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                        ) : (
+                            <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        )}
                     </button>
                 </div>
             </div>

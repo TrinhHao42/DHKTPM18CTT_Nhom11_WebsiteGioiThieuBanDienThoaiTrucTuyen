@@ -1,24 +1,33 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { User } from "@/types/User";
 
 export default function OAuthSuccessPage() {
   const router = useRouter();
   const params = useSearchParams();
-  const token = params.get("token");
-  const username = params.get("username");
-  const role = params.get("role") || "ROLE_USER";
+  const { login } = useAuth();
+  
+  const token = params?.get("token");
+  const loginUser = params?.get("user");
+  const role = params?.get("role") || "ROLE_USER";
 
   useEffect(() => {
-    if (token) {
-      localStorage.setItem("token", token);
-      if (username) localStorage.setItem("username", username);
+    if (token && loginUser) {
+      const user: User = JSON.parse(decodeURIComponent(loginUser)) || null;
+
+      console.log(user)
+      
+      login(token, user);
+      
       localStorage.setItem("userRole", role);
       localStorage.setItem("isLoggedIn", "true");
+      
       window.dispatchEvent(new Event("userSessionChanged"));
       setTimeout(() => router.push("/"), 1500);
     }
-  }, [token, username, role, router]);
+  }, [token, loginUser, role, router, login]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white text-gray-800">
