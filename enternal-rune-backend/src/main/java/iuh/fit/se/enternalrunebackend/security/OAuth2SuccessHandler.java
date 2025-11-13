@@ -14,8 +14,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-
+import java.nio.charset.StandardCharsets;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -65,11 +66,22 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             userRepository.save(user);
         }
         String token = jwtUtil.generateToken(user.getEmail());
-//        String redirectUrl = "http://localhost:3000/oauth-success?token=" + token;
-//        String testRedirectUrl = "http://localhost:8080/auth/oauth2/token-success?token=" + token;
-        String frontendRedirectUrl = "http://localhost:3000/LoginScreen?token=" + token; // Hoặc trang chủ
-        getRedirectStrategy().sendRedirect(request, response, frontendRedirectUrl);
-//        getRedirectStrategy().sendRedirect(request, response, testRedirectUrl);
+        String username = user.getName() != null ? user.getName() : user.getEmail();
+        String role = user.getRoles().stream()
+                .findFirst()
+                .map(r -> "ROLE_" + r.getRoleName().toUpperCase())
+                .orElse("ROLE_USER");
+        String encodedUsername = URLEncoder.encode(username, StandardCharsets.UTF_8);
+        String encodedRole = URLEncoder.encode(role, StandardCharsets.UTF_8);
+
+        String redirectUrl = String.format(
+                "http://localhost:3000/oauth-success?token=%s&username=%s&role=%s",
+                token,
+                encodedUsername,
+                encodedRole
+        );
+
+        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
 
 }

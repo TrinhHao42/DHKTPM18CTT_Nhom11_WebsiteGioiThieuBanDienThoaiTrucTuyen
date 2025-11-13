@@ -49,7 +49,6 @@ export default function LoginPage() {
       <div className="hidden lg:flex flex-1 items-center justify-center relative bg-white border-l border-slate-200">
         <div className="absolute inset-0 bg-blue-50/50 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,#f1f5f9)]"></div>
         <img
-
           src="/images/iphone_card.png"
           alt="Sản phẩm nổi bật"
           className="w-[450px] drop-shadow-2xl transition-all duration-700 hover:scale-[1.02] cursor-pointer"

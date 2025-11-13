@@ -14,11 +14,10 @@ export default function RegisterPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            
             await apiRegister({ name, email, password });
             alert("Đăng ký thành công! Hãy đăng nhập để bắt đầu trải nghiệm.");
             router.push("/LoginScreen");
-        } catch (err: any) { // Đảm bảo bắt lỗi đúng kiểu
+        } catch (err: any) { 
             alert(err.message || "Đăng ký thất bại");
         } finally { setLoading(false); }
     };
