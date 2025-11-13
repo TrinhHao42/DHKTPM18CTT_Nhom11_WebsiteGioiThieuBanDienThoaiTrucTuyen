@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import FloatChatButton from "@/components/FloatChatButton";
 import { ProductsProvider } from "@/context/ProductsContext";
 import { CartProvider } from "@/context/CartContext";
 import { CheckoutProvider } from "@/context/CheckoutContext";
@@ -34,6 +35,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <CheckoutProvider>
+<<<<<<< Updated upstream
           <AuthProvider>
             <CartProvider>
               <ProductsProvider>
@@ -45,6 +47,18 @@ export default function RootLayout({
               </ProductsProvider>
             </CartProvider>
           </AuthProvider>
+=======
+          <CartProvider>
+            <ProductsProvider>
+              <div className="flex flex-col min-h-screen">
+                <Navbar />
+                {children}
+                <Footer />
+              </div>
+              <FloatChatButton />
+            </ProductsProvider>
+          </CartProvider>
+>>>>>>> Stashed changes
         </CheckoutProvider>
       </body>
     </html>
