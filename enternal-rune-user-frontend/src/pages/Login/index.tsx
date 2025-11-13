@@ -3,18 +3,26 @@ import { useState } from "react";
 import { useRouter } from 'next/navigation'
 import { apiLogin, apiExchangeGoogleCode, LoginResp } from "@/services/authService";
 import { saveUserSession } from "@/utils/auUtils";
+import { User } from "@/types/User";
+import { useAuth } from "@/context/AuthContext";
 
 type ApiError = Error & { message?: string };
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth(); // ✅ Sử dụng login từ AuthContext
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  
   const handleAuthSuccess = (res: LoginResp) => {
-    // 1. Lưu token vào localStorage
-    localStorage.setItem('token', res.token);
+    // 1. Lưu vào AuthContext (sẽ tự động trigger load cart)
+    login(res.token, res.user as User);
+    
+    // 2. Lưu userRole
     const userRole = res.roles.find(role => role === 'ROLE_ADMIN' || role === 'ROLE_USER') || 'ROLE_USER';
     localStorage.setItem('userRole', userRole);
+    
+    // 3. Redirect theo role
     const isAdmin = res.roles.includes('ROLE_ADMIN');
     if (isAdmin) {
       router.push("/Admin");
@@ -28,7 +36,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res: LoginResp = await apiLogin({ email, password });
-      saveUserSession(res.token, res.username, res.roles?.[0] || "ROLE_USER");
+      saveUserSession(res.token, res.user as User, res.roles?.[0] || "ROLE_USER");
       alert("Đăng nhập thành công!");
       handleAuthSuccess(res);
     } catch (err) {

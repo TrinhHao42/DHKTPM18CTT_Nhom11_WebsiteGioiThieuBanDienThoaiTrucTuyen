@@ -44,11 +44,11 @@ const Payment = () => {
 
     // Convert checkout items to order items format
     const orderItems = checkoutItems.map((item) => ({
-        id: item.ciId,
-        name: item.ciProductVariant.prodvName,
-        image: item.ciProductVariant.prodvImage.imgData,
-        quantity: item.ciQuantity,
-        price: item.ciProductVariant.prodvPrice.ppPrice
+        id: item.cartItemId,
+        name: item.productVariant.variantName,
+        image: item.productVariant.imageUrl || '/placeholder.png',
+        quantity: item.quantity,
+        price: item.productVariant.price
     }));
 
     const steps = [

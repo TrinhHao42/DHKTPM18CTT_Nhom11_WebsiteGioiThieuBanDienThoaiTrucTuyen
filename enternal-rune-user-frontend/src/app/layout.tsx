@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { ProductsProvider } from "@/context/ProductsContext";
 import { CartProvider } from "@/context/CartContext";
 import { CheckoutProvider } from "@/context/CheckoutContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,15 +34,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <CheckoutProvider>
-          <CartProvider>
-            <ProductsProvider>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                {children}
-                <Footer />
-              </div>
-            </ProductsProvider>
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <ProductsProvider>
+                <div className="flex flex-col min-h-screen">
+                  <Navbar />
+                  {children}
+                  <Footer />
+                </div>
+              </ProductsProvider>
+            </CartProvider>
+          </AuthProvider>
         </CheckoutProvider>
       </body>
     </html>

@@ -1,15 +1,15 @@
-package iuh.fit.se.enternalrunebackend.dto.request;
+package iuh.fit.se.enternalrunebackend.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@AllArgsConstructor
-@NoArgsConstructor
 @Getter
 @Setter
-public class AddressRequestDTO {
+@NoArgsConstructor
+@AllArgsConstructor
+public class AddressResponse {
     private String street;
     private String ward;
     private String city;
