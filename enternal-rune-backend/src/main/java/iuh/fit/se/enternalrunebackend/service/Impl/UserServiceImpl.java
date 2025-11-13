@@ -1,9 +1,5 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
 
-import iuh.fit.se.enternalrunebackend.dto.request.AddressRequestDTO;
-import iuh.fit.se.enternalrunebackend.dto.request.UserRequestDTO;
-import iuh.fit.se.enternalrunebackend.dto.response.UserResponseDTO;
-import iuh.fit.se.enternalrunebackend.entity.Address;
 import iuh.fit.se.enternalrunebackend.entity.Role;
 import iuh.fit.se.enternalrunebackend.entity.User;
 import iuh.fit.se.enternalrunebackend.repository.RoleRepository;

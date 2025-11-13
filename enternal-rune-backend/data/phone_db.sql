@@ -39,11 +39,12 @@ INSERT INTO addresses (address_id, street_name, ward_name, city_name, country_na
                                                                                         (17, '10 Nguyễn Văn Cừ', 'Nguyễn Cư Trinh', 'Thành phố Hồ Chí Minh', 'Việt Nam'),
                                                                                         (18, '243/46 Hoàng Diệu', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam'),
                                                                                         (19, '368 Tôn Đản', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam'),
-<<<<<<< HEAD
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
                                                                                         (20, '56 Khánh Hội', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam');
-
-
-
 =======
                                                                                         (20, '56 Khánh Hội', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam');
->>>>>>> 160d6283eca1914937fd0bf2855fe38654d25dda
+>>>>>>> Stashed changes
+=======
+                                                                                        (20, '56 Khánh Hội', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam');
+>>>>>>> Stashed changes
