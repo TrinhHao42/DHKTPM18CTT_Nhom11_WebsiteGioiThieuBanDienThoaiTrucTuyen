@@ -52,7 +52,7 @@ export default function CategoryMetrics() {
         trendValue="8.2%"
         icon={
           <svg
-            className="text-brand"
+            className="text-brand dark:text-white/90"
             width="24"
             height="24"
             viewBox="0 0 24 24"
@@ -82,7 +82,7 @@ export default function CategoryMetrics() {
         value="12"
         icon={
           <svg
-            className="text-brand"
+            className="text-brand dark:text-white/90"
             width="24"
             height="24"
             viewBox="0 0 24 24"
@@ -112,7 +112,7 @@ export default function CategoryMetrics() {
         value="36"
         icon={
           <svg
-            className="text-brand"
+            className="text-brand dark:text-white/90"
             width="24"
             height="24"
             viewBox="0 0 24 24"
@@ -166,7 +166,7 @@ export default function CategoryMetrics() {
         trendValue="12.5%"
         icon={
           <svg
-            className="text-brand"
+            className="text-brand dark:text-white/90"
             width="24"
             height="24"
             viewBox="0 0 24 24"
