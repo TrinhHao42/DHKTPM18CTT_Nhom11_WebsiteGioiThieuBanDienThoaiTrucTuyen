@@ -67,17 +67,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, Endpoints.PUBLIC_POST_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, Endpoints.ADMIN_GET_ENDPOINTS).hasRole("ADMIN")
                                 .requestMatchers("/oauth/**","/login/**","/oauth2/**","/api/oauth/**").permitAll()//OAuth endpoint
-//                        .requestMatchers("/oauth2/**", "/login/**").permitAll()
-                        // Giữ nguyên đường dẫn test tạm thời
-//                        .requestMatchers("/auth/oauth2/token-success").permitAll()
                         .anyRequest().authenticated()
                 )
 
-                // OAuth2 login với handler tuỳ chỉnh
-//                .oauth2Login(oauth -> oauth
-//                        .successHandler(oAuth2SuccessHandler)
-//                        .failureUrl("/login?error=true")
-//                )
                 .formLogin(form -> form.disable())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth -> oauth
@@ -94,6 +86,7 @@ public class SecurityConfig {
                                     );
                                 })
                         )
+                        .successHandler(oAuth2SuccessHandler)
                 )
                 .build();
     }

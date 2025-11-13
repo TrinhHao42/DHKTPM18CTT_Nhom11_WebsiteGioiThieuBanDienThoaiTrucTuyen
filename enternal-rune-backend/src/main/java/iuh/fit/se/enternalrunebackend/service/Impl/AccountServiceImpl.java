@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -54,7 +55,7 @@ public class AccountServiceImpl implements AccountService {
 
         userRepository.save(user);
         sendEmailActivated(user.getEmail(), activateId);
-        return ResponseEntity.ok("Đăng ký thành công!");
+        return ResponseEntity.ok(Map.of("message", "Đăng ký thành công!"));
     }
 
 

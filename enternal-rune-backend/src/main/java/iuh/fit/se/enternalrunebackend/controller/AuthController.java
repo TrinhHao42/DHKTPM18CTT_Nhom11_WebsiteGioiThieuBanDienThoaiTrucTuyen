@@ -35,7 +35,6 @@ public class AuthController {
     @Autowired
     private AccountService accountService;
 
-    // DTO login request
     public static class LoginRequest {
         public String email;
         public String password;
@@ -45,56 +44,64 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody UserRequestDTO userRequestDTO) {
         return accountService.userRegister(userRequestDTO);
     }
-    // AuthController.java
 
     @GetMapping("/activate")
     public ResponseEntity<?> activateAccount(@RequestParam String email, @RequestParam String activateId) {
         ResponseEntity<?> result = accountService.activateAccount(email, activateId);
 
         if (result.getStatusCode().is2xxSuccessful()) {
-            // 🔥 Trả về JSON khi thành công
             Map<String, String> response = new HashMap<>();
             response.put("message", "Kích hoạt tài khoản thành công");
             return ResponseEntity.ok(response);
         } else {
-            // 🔥 Trả về JSON khi thất bại (sử dụng ErrorMessage hoặc Map)
             return result;
-            // Vì accountService.activateAccount đã trả về ResponseEntity.badRequest().body(new ErrorMessage(...))
-            // nên ta chỉ cần trả về result.
         }
     }
 
 
-    // TRONG AuthController.java
-
     @PostMapping("/login")
     public Map<String, Object> login(@RequestBody LoginRequest loginRequest) {
-        // ... (Xác thực và tạo token giữ nguyên)
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.email, loginRequest.password)
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Lấy user details
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
         // Tạo token
         String token = jwtUtil.generateToken(userDetails.getUsername());
 
-
+        // Lấy roles
         List<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority) // Lấy chuỗi tên vai trò (e.g., "ROLE_ADMIN")
+                .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
 
-        // Trả về response
+        var user = userService.findByEmail(userDetails.getUsername());
+
+        String fullAddress = null;
+        if (user.getUserAddress() != null) {
+            var addr = user.getUserAddress();
+            fullAddress = String.join(", ",
+                    addr.getStreetName(),
+                    addr.getWardName(),
+                    addr.getCityName(),
+                    addr.getCountryName()
+            );
+        }
+
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
         response.put("username", userDetails.getUsername());
-        response.put("roles", roles); // Sử dụng List<String> đã chuyển đổi
+        response.put("roles", roles);
+        response.put("userId", user.getUserId());
+        response.put("name", user.getName());
+        response.put("email", user.getEmail());
+        response.put("address", fullAddress);
+
         return response;
     }
-    // TRONG AuthController.java
+
 
     @GetMapping("/me")
     public Map<String, Object> getCurrentUser(Authentication authentication) {
@@ -102,7 +109,6 @@ public class AuthController {
         if (authentication != null && authentication.getPrincipal() instanceof UserDetails) {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-            // 🔥 SỬA ĐỔI QUAN TRỌNG TẠI ĐÂY: Chuyển đổi GrantedAuthority sang List<String>
             List<String> roles = userDetails.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority) // Lấy chuỗi tên vai trò
                     .collect(Collectors.toList());

@@ -45,7 +45,7 @@ public class User {
     @JsonIgnore
     List<Role> roles;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "address_id")
     Address userAddress;
     @OneToMany(mappedBy = "orHandleBy", cascade = CascadeType.ALL)
