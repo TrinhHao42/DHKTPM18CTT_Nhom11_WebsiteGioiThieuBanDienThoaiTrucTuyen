@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback, ReactNode } from "react";
 import { User } from "@/types/User";
+import { Address } from "@/types/Address";
 import { createContext, useContextSelector } from "use-context-selector";
 
 type AuthContextType = {
@@ -11,6 +12,7 @@ type AuthContextType = {
   setUser: (u: User | null) => void;
   login: (token: string, user: User) => void;
   logout: () => void;
+  addUserAddress: (address: Omit<Address, 'addressId'>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,10 +66,50 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [setToken, setUser]);
 
+  // ✅ Thêm địa chỉ mới cho user
+  const addUserAddress = useCallback(async (address: Omit<Address, 'addressId'>) => {
+    if (!user || !token) {
+      throw new Error("Vui lòng đăng nhập để thêm địa chỉ");
+    }
+
+    const API_URL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
+
+    try {
+      const response = await fetch(`${API_URL}/api/users/${user.userId}/address`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(address),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Không thể thêm địa chỉ';
+        
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorMessage;
+        } catch {
+          errorMessage = `Lỗi ${response.status}: ${response.statusText}`;
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const updatedUser = await response.json();
+      setUser(updatedUser);
+    } catch (error: any) {
+      console.error('Failed to add address:', error);
+      throw error;
+    }
+  }, [user, token, setUser]);
+
   // ✅ Memoize context value để tránh re-render không cần thiết
   const value = useMemo(
-    () => ({ token, user, setToken, setUser, login, logout }),
-    [token, user, setToken, setUser, login, logout]
+    () => ({ token, user, setToken, setUser, login, logout, addUserAddress }),
+    [token, user, setToken, setUser, login, logout, addUserAddress]
   );
 
   return (
