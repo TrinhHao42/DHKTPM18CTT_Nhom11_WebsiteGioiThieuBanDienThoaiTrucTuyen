@@ -1,8 +1,10 @@
+'use client'
+
 import React from 'react'
 import { moonDance } from '@/lib/fonts'
 import Cart from '@/pages/Cart'
 
-const page = () => {
+const CartPage = () => {
   return (
     <div className='flex-1'>
       <p
@@ -15,4 +17,4 @@ const page = () => {
   )
 }
 
-export default page
+export default CartPage

@@ -11,6 +11,7 @@ public class Endpoints {
             "/account/login",
             "/account/register",
             "/api/auth/**",
+            "/api/users/*/address",
             "/addresses/**",
             "/payment/**",
             "/api/ai/support"

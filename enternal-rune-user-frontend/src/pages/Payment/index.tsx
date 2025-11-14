@@ -88,14 +88,12 @@ const Payment = () => {
     };
 
     const handlePayment = () => {
-        // This is now only called from step 1
         setShowQRPayment(true);
         setCurrentStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handlePaymentSuccess = () => {
-        // Payment successful, move to complete step
         setShowQRPayment(false);
         setCurrentStep(3);
         window.scrollTo({ top: 0, behavior: 'smooth' });
