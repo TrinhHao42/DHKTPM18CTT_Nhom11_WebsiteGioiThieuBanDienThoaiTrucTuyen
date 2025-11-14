@@ -1,7 +1,7 @@
 'use client'
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useMemo } from 'react'
 import styles from './Cart.module.scss'
-import { useCart } from '@/context/CartContext'
+import { useCartState, useCartActions } from '@/context/CartContext'
 import { TriangleAlert, Loader2, ArrowBigLeft, Trash2 } from "lucide-react"
 import { Cart as CartIcon } from '@/lib/icons'
 import { useRouter } from 'next/navigation'
@@ -12,7 +12,11 @@ import { useToast } from '@/hooks/useToast'
 
 const Cart = () => {
   const router = useRouter();
-  const { cartItems, loading, error, clearCart } = useCart();
+  
+  const { cartItems, loading, error } = useCartState();
+  
+  const { clearCart } = useCartActions();
+  
   const toast = useToast();
   const [choosedItems, setChoosedItems] = useState<CartItem[]>([]);
   const [isClearing, setIsClearing] = useState(false);
@@ -40,7 +44,7 @@ const Cart = () => {
     return choosedItems.some(i => i.cartItemId === item.cartItemId);
   }, [choosedItems]);
 
-  const handleClearCart = async () => {
+  const handleClearCart = useCallback(async () => {
     if (!confirm('Bạn có chắc muốn xóa toàn bộ giỏ hàng?')) return;
     
     setIsClearing(true);
@@ -53,7 +57,12 @@ const Cart = () => {
     } finally {
       setIsClearing(false);
     }
-  };
+  }, [clearCart, toast]);
+
+  const isAllSelected = useMemo(() => 
+    choosedItems.length === cartItems.length && cartItems.length > 0,
+    [choosedItems.length, cartItems.length]
+  );
 
   if (loading)
     return (
@@ -111,7 +120,7 @@ const Cart = () => {
                 <input
                   type="checkbox"
                   id="select-all"
-                  checked={choosedItems.length === cartItems.length && cartItems.length > 0}
+                  checked={isAllSelected}
                   onChange={handleSelectAll}
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 />

@@ -70,4 +70,14 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
     """)
     long countProductsByMonth(@Param("year") int year, @Param("month") int month);
 
+  @Query("""
+      SELECT DISTINCT p
+      FROM Product p
+      LEFT JOIN p.prodBrand b
+      WHERE LOWER(p.prodName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+         OR LOWER(COALESCE(p.prodDescription, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+         OR LOWER(COALESCE(b.brandName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+      """)
+  List<Product> searchProductsForAssistant(@Param("keyword") String keyword, Pageable pageable);
+
 }

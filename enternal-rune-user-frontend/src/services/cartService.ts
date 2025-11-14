@@ -28,9 +28,7 @@ export class CartService {
    */
   static async getCart(userId: number): Promise<CartResponse> {
     try {
-      console.log('🛒 CartService: Fetching cart for userId:', userId)
       const response = await AxiosInstance.get<CartResponse>(`/cart/${userId}`)
-      console.log('✅ CartService: Cart loaded successfully', response.data)
       return response.data
     } catch (error: any) {
       console.error('❌ CartService: Failed to fetch cart', {
