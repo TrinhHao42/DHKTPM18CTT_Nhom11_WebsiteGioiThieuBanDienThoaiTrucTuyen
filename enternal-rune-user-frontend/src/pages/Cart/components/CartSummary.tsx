@@ -52,7 +52,7 @@ const CartSummary = ({ choosedItems }: { choosedItems: CartItem[] }) => {
                 <span className="text-gray-600">Sản phẩm ({choosedItems.length})</span>
                 <span className="font-semibold text-gray-900">
                     {choosedItems.reduce((total, item) =>
-                        total + (item.ciProductVariant.prodvPrice.ppPrice * item.ciQuantity), 0
+                        total + (item.productVariant.price * item.quantity), 0
                     ).toLocaleString("vi-VN", {
                         style: "currency",
                         currency: "VND",
@@ -76,7 +76,7 @@ const CartSummary = ({ choosedItems }: { choosedItems: CartItem[] }) => {
                 <span className="text-base font-bold text-gray-900">Tổng cộng :</span>
                 <span className="text-lg font-bold text-gray-900">
                     {(choosedItems.reduce((total, item) =>
-                        total + (item.ciProductVariant.prodvPrice.ppPrice * item.ciQuantity), 0
+                        total + (item.productVariant.price * item.quantity), 0
                     )).toLocaleString("vi-VN", {
                         style: "currency",
                         currency: "VND",

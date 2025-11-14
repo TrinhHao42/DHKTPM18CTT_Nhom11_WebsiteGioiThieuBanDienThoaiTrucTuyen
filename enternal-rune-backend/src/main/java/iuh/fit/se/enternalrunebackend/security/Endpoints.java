@@ -11,10 +11,8 @@ public class Endpoints {
             "/account/login",
             "/account/register",
             "/api/auth/**",
-            "/api/cart/**",
             "/addresses/**",
             "/payment/**"
-
     };
     public static final String[] ADMIN_GET_ENDPOINTS = {
             "/addresses/**",
