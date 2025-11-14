@@ -6,7 +6,8 @@ export const API_ROUTES = {
 	PRODUCTS_LATEST: '/products/latest',
 	BRANDS_NAMES: '/brands/names',
 	PRODUCTS_FILTER: '/products/filter',
-	PRODUCTS_BY_ID: (id: string | number) => `/products/${id}/active-price`
+	PRODUCTS_BY_ID: (id: string | number) => `/products/${id}/active-price`,
+	AI_SUPPORT_CHAT: '/api/ai/support'
 } as const
 
 export default API_ROUTES

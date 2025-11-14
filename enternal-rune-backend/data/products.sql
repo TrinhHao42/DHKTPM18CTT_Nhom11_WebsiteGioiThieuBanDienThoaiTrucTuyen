@@ -6066,7 +6066,7 @@ INSERT INTO product_price (
       (310, 1890000, 'ACTIVE', '2025-10-02', NULL, 310, NULL),
       (311, 9990000, 'ACTIVE', '2025-08-31', NULL, 311, NULL),
       (312, 22990000, 'ACTIVE', '2025-10-03', NULL, 312, NULL),
-      (313, 3290000, 'ACTIVE', '2025-10-14', NULL, 313, NULL)
+      (313, 3290000, 'ACTIVE', '2025-10-14', NULL, 313, NULL);
 
 INSERT INTO product_specifications (prod_id, screen_size, display_tech, rear_camera, front_camera,
                                     chipset, nfc_tech, ram, storage, battery, th_sim, os,
