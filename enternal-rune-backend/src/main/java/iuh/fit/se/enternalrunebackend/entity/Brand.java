@@ -22,7 +22,7 @@ public class Brand {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "brand_id")
-    private int brandId;
+    private Integer brandId;
 
     @Column(name = "brand_name", nullable = false, length = 100)
     private String brandName;
@@ -37,6 +37,5 @@ public class Brand {
     private String brandStatus;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JoinColumn(name = "brand_id")
     private List<Product> products = new ArrayList<>();
 }

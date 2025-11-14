@@ -1,5 +1,6 @@
 package iuh.fit.se.enternalrunebackend.controller;
 
+import iuh.fit.se.enternalrunebackend.dto.request.ProductRequest;
 import iuh.fit.se.enternalrunebackend.entity.Product;
 import iuh.fit.se.enternalrunebackend.entity.Brand;
 import iuh.fit.se.enternalrunebackend.service.ProductService;
@@ -111,6 +112,22 @@ public class ProductController {
         images,
         productPrices
     );
+    }
+
+    @PostMapping("/dashboard/add")
+    public ResponseEntity<String> addProduct(@RequestBody ProductRequest request){
+        productService.addProduct(request);
+        return ResponseEntity.ok("Product created successfully");
+    }
+    @DeleteMapping("/dashboard/delete/{id}")
+    public ResponseEntity<String> deleteProduct(@PathVariable Integer id){
+        productService.deleteProduct(id);
+        return ResponseEntity.ok("Xóa sản phẩm thành công");
+    }
+
+    @PutMapping("/dashboard/update/{id}")
+    public Product updateProduct(@PathVariable Integer id, @RequestBody ProductRequest request){
+        return productService.updateProduct(id, request);
     }
 
 }
