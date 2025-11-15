@@ -6,8 +6,8 @@ public class Endpoints {
             "/products/**",
             "/account/activate",
             "/account/me",
-            "/api/dashboard/**",
-            "/brands/**"
+            "/brands/**",
+
     };
     public static final String[] PUBLIC_POST_ENDPOINTS = {
             "/account/login",
@@ -17,18 +17,18 @@ public class Endpoints {
             "/payment/**",
             "/brands/**",
             "/products/**"
-
     };
     public static final String[] PUBLIC_DELETE_ENDPOINTS = {
-            "/brands/**"
+            "/brands/**",
+            "/products/**"
     };
     public static final String[] PUBLIC_PUT_ENDPOINTS = {
-            "/brands/**"
+            "/brands/**",
+            "/products/dashboard/update/**"
     };
     public static final String[] ADMIN_GET_ENDPOINTS = {
             "/addresses/**",
     };
     public static final String[] ADMIN_POST_ENDPOINTS = {
-
     };
 }

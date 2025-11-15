@@ -1,15 +1,16 @@
 package iuh.fit.se.enternalrunebackend.controller;
 
 import iuh.fit.se.enternalrunebackend.dto.request.ProductRequest;
+import iuh.fit.se.enternalrunebackend.dto.response.*;
 import iuh.fit.se.enternalrunebackend.entity.Product;
 import iuh.fit.se.enternalrunebackend.entity.Brand;
+import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
 import iuh.fit.se.enternalrunebackend.service.ProductService;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ImageResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.BrandResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductPriceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -82,7 +83,6 @@ public class ProductController {
         if (b != null) {
             brandDto = new BrandResponse(b.getBrandId(), b.getBrandName());
         }
-
     List<ImageResponse> images = p.getImages() == null ? java.util.Collections.emptyList() : p.getImages().stream()
         .map(img -> new ImageResponse(img.getImageId(), img.getImageName(), img.getImageData()))
         .toList();
@@ -98,7 +98,6 @@ public class ProductController {
             pp.getDiscount() == null ? null : pp.getDiscount().getDiscountName()
         ))
         .toList();
-
     return new ProductResponse(
         p.getProdId(),
         p.getProdName(),
@@ -113,7 +112,6 @@ public class ProductController {
         productPrices
     );
     }
-
     @PostMapping("/dashboard/add")
     public ResponseEntity<String> addProduct(@RequestBody ProductRequest request){
         productService.addProduct(request);
@@ -124,10 +122,26 @@ public class ProductController {
         productService.deleteProduct(id);
         return ResponseEntity.ok("Xóa sản phẩm thành công");
     }
-
     @PutMapping("/dashboard/update/{id}")
     public Product updateProduct(@PathVariable Integer id, @RequestBody ProductRequest request){
         return productService.updateProduct(id, request);
     }
+    @GetMapping("/dashboard/statistics")
+    public ProductDashboardResponse getDashboard() {
+        return productService.getProductDashboard();
+    }
+    @GetMapping("/dashboard/list")
+// http://localhost:8080/products/dashboard/list?page=0&size=8&keyword=Realme
+    public Page<ProductDashboardListResponse> getProductDashboardList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) ProductStatus status
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return productService.getProductDashboardList(keyword, brand, status, pageable);
+    }
+
 
 }
