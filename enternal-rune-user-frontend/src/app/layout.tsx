@@ -35,7 +35,6 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <CheckoutProvider>
-<<<<<<< Updated upstream
           <AuthProvider>
             <CartProvider>
               <ProductsProvider>
@@ -44,21 +43,10 @@ export default function RootLayout({
                   {children}
                   <Footer />
                 </div>
+                <FloatChatButton />
               </ProductsProvider>
             </CartProvider>
           </AuthProvider>
-=======
-          <CartProvider>
-            <ProductsProvider>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                {children}
-                <Footer />
-              </div>
-              <FloatChatButton />
-            </ProductsProvider>
-          </CartProvider>
->>>>>>> Stashed changes
         </CheckoutProvider>
       </body>
     </html>

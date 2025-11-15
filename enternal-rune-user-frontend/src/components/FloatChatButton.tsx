@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import AxiosInstance from "@/configs/AxiosInstance";
+import { formatPrice } from "@/lib/format";
 
 export default function FloatChatButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,6 +11,7 @@ export default function FloatChatButton() {
     Array<{ id: string; text: string; isUser: boolean; timestamp: Date }>
   >([]);
   const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -26,7 +29,7 @@ export default function FloatChatButton() {
   }, [isOpen]);
 
   const handleSend = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isLoading) return;
 
     const userMessage = {
       id: Date.now().toString(),
@@ -36,7 +39,9 @@ export default function FloatChatButton() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const messageToSend = inputValue;
     setInputValue("");
+    setIsLoading(true);
 
     // Scroll to bottom sau khi user message được thêm
     setTimeout(() => {
@@ -46,16 +51,40 @@ export default function FloatChatButton() {
       }
     }, 50);
 
-    // Simulate AI response (thay bằng API call thực tế)
-    setTimeout(() => {
+    try {
+      // Gọi API AI - backend nhận String trong body
+      const response = await AxiosInstance.post<string>("/ai/generate", messageToSend, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        transformRequest: [(data) => data], // Gửi trực tiếp string, không stringify
+      });
+
       const aiMessage = {
         id: (Date.now() + 1).toString(),
-        text: "Xin chào! Tôi là trợ lý AI của cửa hàng. Tôi có thể giúp bạn tìm sản phẩm, tư vấn về điện thoại, hoặc hỗ trợ đặt hàng. Bạn cần hỗ trợ gì?",
+        text: response.data || "Xin lỗi, tôi không thể xử lý yêu cầu này.",
         isUser: false,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMessage]);
-      
+    } catch (error) {
+      console.error("Error calling AI API:", error);
+      let errorText = "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.";
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } }; message?: string };
+        errorText = axiosError.response?.data?.message || axiosError.message || errorText;
+      } else if (error instanceof Error) {
+        errorText = error.message || errorText;
+      }
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        text: errorText,
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
       // Scroll to bottom sau khi AI message được thêm
       setTimeout(() => {
         if (chatContainerRef.current) {
@@ -63,7 +92,7 @@ export default function FloatChatButton() {
             chatContainerRef.current.scrollHeight;
         }
       }, 50);
-    }, 800);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -71,6 +100,132 @@ export default function FloatChatButton() {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  // Format markdown text thành JSX đẹp hơn
+  const formatMessage = (text: string) => {
+    if (!text) return null;
+
+    // Tách text theo line breaks
+    const lines = text.split('\n').filter(line => line.trim());
+    const elements: React.ReactNode[] = [];
+
+    lines.forEach((line, lineIndex) => {
+      // Kiểm tra nếu là list item (bắt đầu bằng * hoặc -)
+      if (line.trim().startsWith('*') || line.trim().startsWith('-')) {
+        const listContent = line.trim().substring(1).trim();
+        elements.push(
+          <div key={`line-${lineIndex}`} className="flex items-start gap-2 my-1.5">
+            <span className="text-[#1447E6] mt-1.5">•</span>
+            <span className="flex-1">{formatInlineMarkdown(listContent)}</span>
+          </div>
+        );
+      } else {
+        // Text thường, format inline markdown
+        elements.push(
+          <div key={`line-${lineIndex}`} className="my-1.5">
+            {formatInlineMarkdown(line)}
+          </div>
+        );
+      }
+    });
+
+    return <div>{elements}</div>;
+  };
+
+  // Format inline markdown (bold, số tiền)
+  const formatInlineMarkdown = (text: string): React.ReactNode[] => {
+    const parts: React.ReactNode[] = [];
+    let currentIndex = 0;
+
+    // Regex để tìm **bold** và số tiền (bao gồm scientific notation)
+    const boldRegex = /\*\*(.*?)\*\*/g;
+    // Nhận diện: số thường, số có dấu chấm, scientific notation (2.799E7), kèm theo VNĐ hoặc đ
+    const priceRegex = /(\d+(?:\.\d+)?(?:[Ee][+-]?\d+)?)\s*(?:VNĐ|đ|VND)/gi;
+    const matches: Array<{ type: 'bold' | 'price'; start: number; end: number; content: string; formatted?: string }> = [];
+
+    // Tìm tất cả bold
+    let match;
+    while ((match = boldRegex.exec(text)) !== null) {
+      matches.push({
+        type: 'bold',
+        start: match.index,
+        end: match.index + match[0].length,
+        content: match[1],
+      });
+    }
+
+    // Tìm tất cả số tiền (bao gồm scientific notation)
+    while ((match = priceRegex.exec(text)) !== null) {
+      const priceStr = match[1];
+      let priceNum: number;
+      
+      // Convert scientific notation hoặc số thường sang number
+      try {
+        priceNum = parseFloat(priceStr);
+        if (!isNaN(priceNum)) {
+          // Format lại theo formatPrice
+          const formatted = formatPrice(priceNum);
+          matches.push({
+            type: 'price',
+            start: match.index,
+            end: match.index + match[0].length,
+            content: match[0], // Original text để replace
+            formatted: formatted, // Formatted text để hiển thị
+          });
+        }
+      } catch {
+        // Nếu không parse được, giữ nguyên
+        matches.push({
+          type: 'price',
+          start: match.index,
+          end: match.index + match[0].length,
+          content: match[0],
+        });
+      }
+    }
+
+    // Sắp xếp matches theo vị trí
+    matches.sort((a, b) => a.start - b.start);
+
+    // Nếu không có matches, trả về text gốc
+    if (matches.length === 0) {
+      return [text];
+    }
+
+    // Xử lý từng phần
+    matches.forEach((m, idx) => {
+      // Thêm text trước match
+      if (m.start > currentIndex) {
+        const beforeText = text.substring(currentIndex, m.start);
+        if (beforeText) parts.push(beforeText);
+      }
+
+      // Thêm formatted content
+      if (m.type === 'bold') {
+        parts.push(
+          <strong key={`bold-${idx}`} className="font-semibold text-slate-900">
+            {m.content}
+          </strong>
+        );
+      } else if (m.type === 'price') {
+        parts.push(
+          <span key={`price-${idx}`} className="font-semibold text-[#1447E6]">
+            {m.formatted || m.content}
+          </span>
+        );
+      }
+
+      currentIndex = m.end;
+    });
+
+    // Thêm phần còn lại
+    if (currentIndex < text.length) {
+      const remainingText = text.substring(currentIndex);
+      if (remainingText) parts.push(remainingText);
+    }
+
+    return parts.length > 0 ? parts : [text];
   };
 
   return (
@@ -178,33 +333,53 @@ export default function FloatChatButton() {
                 <p className="text-sm">Chào mừng! Hãy bắt đầu cuộc trò chuyện</p>
               </div>
             ) : (
-              messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.isUser ? "justify-end" : "justify-start"}`}
-                >
+              <>
+                {messages.map((msg) => (
                   <div
-                    className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                      msg.isUser
-                        ? "text-white rounded-br-sm"
-                        : "bg-white text-slate-900 border border-slate-200 rounded-bl-sm"
-                    }`}
-                    style={msg.isUser ? { backgroundColor: '#1447E6' } : {}}
+                    key={msg.id}
+                    className={`flex ${msg.isUser ? "justify-end" : "justify-start"}`}
                   >
-                    <p className="text-sm leading-relaxed">{msg.text}</p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        msg.isUser ? "text-white/60" : "text-slate-400"
+                    <div
+                      className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+                        msg.isUser
+                          ? "text-white rounded-br-sm"
+                          : "bg-white text-slate-900 border border-slate-200 rounded-bl-sm"
                       }`}
+                      style={msg.isUser ? { backgroundColor: '#1447E6' } : {}}
                     >
-                      {msg.timestamp.toLocaleTimeString("vi-VN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
+                      {msg.isUser ? (
+                        <p className="text-sm leading-relaxed">{msg.text}</p>
+                      ) : (
+                        <div className="text-sm leading-relaxed">{formatMessage(msg.text)}</div>
+                      )}
+                      <p
+                        className={`text-xs mt-1 ${
+                          msg.isUser ? "text-white/60" : "text-slate-400"
+                        }`}
+                      >
+                        {msg.timestamp.toLocaleTimeString("vi-VN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-white text-slate-900 border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-2 max-w-[75%]">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                        <span className="text-xs text-slate-500">AI đang suy nghĩ...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -224,27 +399,50 @@ export default function FloatChatButton() {
               />
               <button
                 onClick={handleSend}
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() || isLoading}
                 className="w-10 h-10 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 style={{ backgroundColor: '#1447E6' }}
                 onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = '#0d3bb8' }}
                 onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = '#1447E6' }}
                 aria-label="Gửi tin nhắn"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                  />
-                </svg>
+                {isLoading ? (
+                  <svg
+                    className="animate-spin w-5 h-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                    />
+                  </svg>
+                )}
               </button>
             </div>
           </div>

@@ -1,4 +1,29 @@
 spring:
+  ai:
+    vectorstore:
+      pgvector:
+        index-type: hnsw
+        distance-type: cosine_distance
+        dimensions: 768
+        max-document-batch-size: 10000
+        initialize-schema: true
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: gemini-2.0-flash
+        embedding:
+          api-key: ${GEMINI_API_KEY}
+
+
+
+  #    vectorstore:
+#      pgvector:
+#      index-type: HNSW
+#      distance-type: COSINE_DISTANCE
+#      dimensions: 1536
+#      max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
   application:
     name: enternal-rune-backend
 
@@ -56,6 +81,7 @@ qr:
 
 sepay:
   api: ${SEPAY_API}
+
 
 
 server:
