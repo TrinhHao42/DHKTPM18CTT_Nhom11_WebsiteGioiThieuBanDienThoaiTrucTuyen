@@ -72,26 +72,6 @@ spring:
             jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
             user-name-attribute: sub
 
-  # SỬA ĐÚNG CHO GEMINI (Spring AI Google Gemini)
-  ai:
-    google:
-      gemini:
-        api-key: ${SPRING_AI_GEMINI_API_KEY}
-        chat:
-          options:
-            model: ${SPRING_AI_GEMINI_MODEL}
-            api-version: v1
-        embedding:
-          options:
-            model: text-embedding-004
-            api-version: v1
-
-app:
-  ai:
-    embedding:
-      model: ${SPRING_AI_GEMINI_EMBEDDING_MODEL}
-      dimension: ${SPRING_AI_GEMINI_EMBEDDING_DIMENSION}
-      bootstrap-on-startup: ${SPRING_AI_GEMINI_EMBEDDING_BOOTSTRAP}
 
 qr:
   acc: ${QR_ACC}

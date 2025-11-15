@@ -1,3 +1,3 @@
 export const formatPrice = (price: number) => {
-    return price.toLocaleString("vi-VN") + "VND"
+    return price.toLocaleString("vi-VN") + " đ"
 }
