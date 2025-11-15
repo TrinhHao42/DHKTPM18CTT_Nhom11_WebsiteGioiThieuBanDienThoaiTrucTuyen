@@ -5,10 +5,7 @@ public class Endpoints {
     public static final String[] PUBLIC_GET_ENDPOINTS = {
             "/products/**",
             "/account/activate",
-            "/account/me",
-            "/api/orders/status/**",
-            "/api/orders/user/**",
-            "/api/orders/*"
+            "/account/me"
     };
     public static final String[] PUBLIC_POST_ENDPOINTS = {
             "/account/login",
@@ -17,13 +14,11 @@ public class Endpoints {
             "/api/users/*/address",
             "/addresses/**",
             "/payment/**",
-            "/api/ai/support",
-            "/api/orders"
+            "/api/ai/support"
     };
     public static final String[] ADMIN_GET_ENDPOINTS = {
             "/addresses/**",
     };
     public static final String[] ADMIN_POST_ENDPOINTS = {
-
     };
 }
