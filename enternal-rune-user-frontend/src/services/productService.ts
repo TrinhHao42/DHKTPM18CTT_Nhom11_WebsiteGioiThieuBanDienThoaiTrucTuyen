@@ -12,6 +12,7 @@ export interface FilterParams {
   priceRange?: string[]
   colors?: string[]
   memory?: string[]
+  search?: string
   page?: number
   size?: number
 }
@@ -28,6 +29,7 @@ export class ProductService {
           priceRange: params.priceRange?.join(','),
           colors: params.colors?.join(','),
           memory: params.memory?.join(','),
+          search: params.search,
           page: params.page || 0,
           size: params.size || 20
         }

@@ -1,4 +1,29 @@
 spring:
+  ai:
+    vectorstore:
+      pgvector:
+        index-type: hnsw
+        distance-type: cosine_distance
+        dimensions: 768
+        max-document-batch-size: 10000
+        initialize-schema: true
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: gemini-2.0-flash
+        embedding:
+          api-key: ${GEMINI_API_KEY}
+
+
+
+  #    vectorstore:
+#      pgvector:
+#      index-type: HNSW
+#      distance-type: COSINE_DISTANCE
+#      dimensions: 1536
+#      max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
   application:
     name: enternal-rune-backend
 
@@ -47,26 +72,6 @@ spring:
             jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
             user-name-attribute: sub
 
-  # SỬA ĐÚNG CHO GEMINI (Spring AI Google Gemini)
-  ai:
-    google:
-      gemini:
-        api-key: ${SPRING_AI_GEMINI_API_KEY}
-        chat:
-          options:
-            model: ${SPRING_AI_GEMINI_MODEL}
-            api-version: v1
-        embedding:
-          options:
-            model: text-embedding-004
-            api-version: v1
-
-app:
-  ai:
-    embedding:
-      model: ${SPRING_AI_GEMINI_EMBEDDING_MODEL}
-      dimension: ${SPRING_AI_GEMINI_EMBEDDING_DIMENSION}
-      bootstrap-on-startup: ${SPRING_AI_GEMINI_EMBEDDING_BOOTSTRAP}
 
 qr:
   acc: ${QR_ACC}
@@ -76,6 +81,8 @@ qr:
 
 sepay:
   api: ${SEPAY_API}
+
+
 
 server:
   port: 8080

@@ -6,6 +6,12 @@ import iuh.fit.se.enternalrunebackend.entity.Product;
 import iuh.fit.se.enternalrunebackend.entity.Brand;
 import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
 import iuh.fit.se.enternalrunebackend.service.ProductService;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.ImageResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.BrandResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductPriceResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductSpecificationsResponse;
+import iuh.fit.se.enternalrunebackend.entity.ProductSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -65,10 +71,11 @@ public class ProductController {
             @RequestParam(required = false) List<String> priceRange,
             @RequestParam(required = false) List<String> colors,
             @RequestParam(required = false) List<String> memory,
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        Page<Product> products = productService.filterProducts(brands, priceRange, colors, memory, page, size);
+        Page<Product> products = productService.filterProducts(brands, priceRange, colors, memory, search, page, size);
         List<ProductResponse> dtoList = products.getContent().stream().map(this::toDto).toList();
         org.springframework.data.domain.Page<ProductResponse> dtoPage = new org.springframework.data.domain.PageImpl<>(
                 dtoList, products.getPageable(), products.getTotalElements()
@@ -98,6 +105,28 @@ public class ProductController {
             pp.getDiscount() == null ? null : pp.getDiscount().getDiscountName()
         ))
         .toList();
+
+    ProductSpecificationsResponse specsDto = null;
+    if (p.getProductSpecifications() != null) {
+        ProductSpecifications ps = p.getProductSpecifications();
+        specsDto = new ProductSpecificationsResponse(
+            ps.getScreenSize(),
+            ps.getDisplayTech(),
+            ps.getRearCamera(),
+            ps.getFrontCamera(),
+            ps.getChipset(),
+            ps.getNfcTech(),
+            ps.getRam(),
+            ps.getStorage(),
+            ps.getBattery(),
+            ps.getTh_sim(),
+            ps.getOs(),
+            ps.getResolution(),
+            ps.getDisplayFeatures(),
+            ps.getCpuType()
+        );
+    }
+
     return new ProductResponse(
         p.getProdId(),
         p.getProdName(),
@@ -109,7 +138,8 @@ public class ProductController {
         p.getProdRating(),
         brandDto,
         images,
-        productPrices
+    productPrices,
+    specsDto
     );
     }
     @PostMapping("/dashboard/add")
