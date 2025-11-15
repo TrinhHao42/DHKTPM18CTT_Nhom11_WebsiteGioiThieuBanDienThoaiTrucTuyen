@@ -5,7 +5,8 @@ public class Endpoints {
     public static final String[] PUBLIC_GET_ENDPOINTS = {
             "/products/**",
             "/account/activate",
-            "/account/me"
+            "/account/me",
+            "/brands/names"
     };
     public static final String[] PUBLIC_POST_ENDPOINTS = {
             "/account/login",
