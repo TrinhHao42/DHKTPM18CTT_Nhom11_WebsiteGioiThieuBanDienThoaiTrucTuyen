@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -14,5 +16,5 @@ public class UserResponse {
     private Long userId;
     private String userName;
     private String userEmail;
-    private Address userAddress;
+    private List<Address> userAddress;
 }

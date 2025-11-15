@@ -1,7 +1,10 @@
 'use client'
 import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCheckout } from '@/context/CheckoutContext'
+import { useAuth } from '@/context/AuthContext'
+import { useCartActions } from '@/context/CartContext'
+import { createOrder, CreateOrderResponse } from '@/services/checkoutService'
 import PersonalDetails from './components/PersonalDetails'
 import QRPayment from './components/QRPayment'
 import Complete from './components/Complete'
@@ -10,10 +13,20 @@ import ProgressStepper from './components/ProgressStepper'
 
 const Payment = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { checkoutItems } = useCheckout();
+    const { user } = useAuth();
+    const { removeCartItem } = useCartActions();
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [showQRPayment, setShowQRPayment] = useState(false);
+    const [createdOrder, setCreatedOrder] = useState<CreateOrderResponse | null>(null);
+    const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+    
+    // Get query params
+    const orderId = searchParams?.get('orderId');
+    const fromOrder = searchParams?.get('fromOrder');
+    const orderDataParam = searchParams?.get('orderData');
 
     // Form data states
     const [personalData, setPersonalData] = useState({
@@ -33,14 +46,41 @@ const Payment = () => {
         cvv: ''
     });
 
-    // Redirect to cart if no items selected
+    // Check if coming from order management with order data
     useEffect(() => {
-        if (checkoutItems.length === 0) {
+        if (fromOrder === 'true' && orderId && orderDataParam) {
+            try {
+                // Decode and parse order data from URL
+                const decodedOrderData = JSON.parse(decodeURIComponent(orderDataParam));
+                
+                // Transform to CreateOrderResponse format expected by QRPayment
+                const orderResponse: CreateOrderResponse = {
+                    success: true,
+                    message: 'Order retrieved successfully',
+                    orderId: decodedOrderData.orderId,
+                    orderDate: decodedOrderData.orderDate,
+                    totalAmount: decodedOrderData.totalAmount,
+                    paymentStatus: decodedOrderData.paymentStatus,
+                    shippingStatus: decodedOrderData.shippingStatus
+                };
+                
+                setCreatedOrder(orderResponse);
+                setCurrentStep(2);
+                setShowQRPayment(true);
+                setIsLoading(false);
+            } catch (error) {
+                console.error('Failed to parse order data:', error);
+                // Redirect back to Order Management on parse error
+                router.push('/OrderManagementScreen');
+            }
+        } else if (checkoutItems.length === 0 && fromOrder !== 'true') {
+            // No items and not from order - redirect to cart
             router.push('/CartScreen');
         } else {
+            // Normal flow from cart
             setIsLoading(false);
         }
-    }, [checkoutItems, router]);
+    }, [orderId, fromOrder, orderDataParam, checkoutItems, router]);
 
     // Convert checkout items to order items format
     const orderItems = checkoutItems.map((item) => ({
@@ -61,13 +101,8 @@ const Payment = () => {
         setPersonalData(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleCardDataChange = (field: string, value: string) => {
-        setCardData(prev => ({ ...prev, [field]: value }));
-    };
-
     const handleNextStep = () => {
         if (currentStep === 1) {
-            // After personal details, show QR payment directly
             setShowQRPayment(true);
             setCurrentStep(2);
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -77,20 +112,66 @@ const Payment = () => {
         }
     };
 
-    const handlePreviousStep = () => {
-        if (showQRPayment) {
-            setShowQRPayment(false);
-            setCurrentStep(1);
-        } else if (currentStep > 1) {
-            setCurrentStep(currentStep - 1);
+    const handlePayment = async () => {
+        if (!user) {
+            alert('Vui lòng đăng nhập để đặt hàng!');
+            router.push('/LoginScreen');
+            return;
         }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
 
-    const handlePayment = () => {
-        setShowQRPayment(true);
-        setCurrentStep(2);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Kiểm tra user có địa chỉ không
+        if (!user.userAddress || user.userAddress.length === 0) {
+            alert('Vui lòng thêm địa chỉ giao hàng!');
+            return;
+        }
+
+        // Lấy addressId từ personalData hoặc địa chỉ đầu tiên
+        const addressId = parseInt(user.userAddress[0].addressId);
+
+        try {
+            setIsCreatingOrder(true);
+
+            // Chuẩn bị request data
+            const orderRequest = {
+                userId: user.userId,
+                addressId: addressId,
+                orderItems: checkoutItems.map(item => ({
+                    productVariantId: item.productVariant.variantId,
+                    quantity: item.quantity
+                })),
+                discountId: null // Có thể thêm logic chọn discount sau
+            };
+
+            // Gọi API tạo order
+            const response = await createOrder(orderRequest);
+
+            if (response.success) {
+                setCreatedOrder(response);
+                alert(`Đặt hàng thành công! Mã đơn hàng: ${response.orderId}`);
+                
+                // Xóa các items đã đặt hàng khỏi giỏ hàng
+                try {
+                    for (const item of checkoutItems) {
+                        await removeCartItem(item.cartItemId);
+                    }
+                    console.log('✅ Đã xóa các items đã đặt hàng khỏi giỏ hàng');
+                } catch (cartError) {
+                    console.error('❌ Lỗi khi xóa giỏ hàng:', cartError);
+                }
+                
+                // Chuyển sang bước thanh toán QR
+                setShowQRPayment(true);
+                setCurrentStep(2);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                alert('Không thể tạo đơn hàng: ' + response.message);
+            }
+        } catch (error: any) {
+            console.error('Lỗi khi tạo đơn hàng:', error);
+            alert(error.response?.data?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại!');
+        } finally {
+            setIsCreatingOrder(false);
+        }
     };
 
     const handlePaymentSuccess = () => {
@@ -138,10 +219,9 @@ const Payment = () => {
                             />
                         )}
 
-                        {currentStep === 2 && showQRPayment && (
+                        {currentStep === 2 && showQRPayment && createdOrder && (
                             <QRPayment
-                                totalAmount={calculateTotal()}
-                                orderDescription={`Đơn hàng ${orderItems.length} sản phẩm`}
+                                order={createdOrder}
                                 onPaymentSuccess={handlePaymentSuccess}
                             />
                         )}
@@ -158,10 +238,10 @@ const Payment = () => {
                             {currentStep < 3 && !showQRPayment && (
                                 <button
                                     onClick={currentStep === 1 ? handlePayment : handleNextStep}
-                                    disabled={!isStepValid()}
+                                    disabled={!isStepValid() || isCreatingOrder}
                                     className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 active:scale-95 transition-all duration-150 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-400"
                                 >
-                                    {currentStep === 1 && "Đặt hàng"}
+                                    {currentStep === 1 && (isCreatingOrder ? "Đang đặt hàng..." : "Đặt hàng")}
                                 </button>
                             )}
                         </div>

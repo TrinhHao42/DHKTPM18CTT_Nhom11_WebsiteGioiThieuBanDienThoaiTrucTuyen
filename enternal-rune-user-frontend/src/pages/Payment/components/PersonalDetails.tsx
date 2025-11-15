@@ -27,7 +27,10 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
     });
     const [loading, setLoading] = useState(false);
 
-    const address = user?.userAddress ?? null;
+    // 🟦 Selected address id state
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+
+    const addresses = user?.userAddress ?? [];
 
     // 🟦 Prefill dữ liệu từ user khi component load
     useEffect(() => {
@@ -36,11 +39,13 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
         if (user.userName) onInputChange("fullName", user.userName);
         if (user.userEmail) onInputChange("email", user.userEmail);
 
-        if (address) {
-            onInputChange("street", address.streetName || "");
-            onInputChange("city", address.cityName || "");
-            onInputChange("district", address.wardName || "");
-            onInputChange("ward", address.wardName || "");
+        if (addresses.length > 0) {
+            const firstAddress = addresses[0];
+            setSelectedAddressId(firstAddress.addressId);
+            onInputChange("street", firstAddress.streetName || "");
+            onInputChange("city", firstAddress.cityName || "");
+            onInputChange("district", firstAddress.wardName || "");
+            onInputChange("ward", firstAddress.wardName || "");
         }
     }, [user]);
 
@@ -93,21 +98,32 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
 
         try {
             setLoading(true);
-            console.log('Đang thêm địa chỉ:', newAddress);
-            console.log('User ID:', user?.userId);
             
-            await addUserAddress(newAddress);
-            
-            console.log('Thêm địa chỉ thành công!');
+            const addedAddress = await addUserAddress(newAddress);
+
             alert('Thêm địa chỉ thành công!');
-            
-            // Reset form và đóng
+            console.log(addedAddress)
+
+            if (addedAddress) {
+
+                // Cập nhật select option về địa chỉ mới
+                setSelectedAddressId(addedAddress.addressId);
+
+                // Cập nhật formData với địa chỉ mới
+                onInputChange("street", addedAddress.streetName || "");
+                onInputChange("city", addedAddress.cityName || "");
+                onInputChange("district", addedAddress.wardName || "");
+                onInputChange("ward", addedAddress.wardName || "");
+            }
+
+            // Reset form nhưng giữ form mở
             setNewAddress({
                 streetName: '',
                 wardName: '',
                 cityName: '',
                 countryName: 'Việt Nam'
             });
+
             setShowAddressForm(false);
         } catch (err: any) {
             console.error('Lỗi khi thêm địa chỉ:', err);
@@ -118,19 +134,15 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
     };
 
     return (
-        <>
-            <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Thông tin cá nhân</h2>
+        <div className="bg-white rounded-lg shadow-sm p-6 md:p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Thông tin cá nhân</h2>
 
             <div className="space-y-6">
                 {/* Họ tên + Email */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
                     {/* Họ tên */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Họ và tên
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Họ và tên</label>
                         <input
                             disabled
                             type="text"
@@ -139,7 +151,7 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
                             onBlur={() => handleBlur("fullName")}
                             placeholder="Nguyễn Văn A"
                             className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition 
-                                ${errors.fullName && touched.fullName ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"}`}
+                            ${errors.fullName && touched.fullName ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"}`}
                         />
                         {errors.fullName && touched.fullName && (
                             <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
@@ -148,9 +160,7 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
 
                     {/* Email */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Email
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                         <input
                             type="email"
                             disabled
@@ -159,7 +169,7 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
                             onBlur={() => handleBlur("email")}
                             placeholder="example@mail.com"
                             className={`w-full px-4 py-3 border rounded-lg focus:outline-none transition 
-                                ${errors.email && touched.email ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"}`}
+                            ${errors.email && touched.email ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"}`}
                         />
                         {errors.email && touched.email && (
                             <p className="mt-1 text-sm text-red-600">{errors.email}</p>
@@ -169,38 +179,36 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
 
                 {/* Địa chỉ Select + Button */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Địa chỉ đã lưu <span className="text-red-500">*</span>
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Địa chỉ đã lưu <span className="text-red-500">*</span></label>
                     <div className="flex gap-2">
                         <select
-                            value={address ? address.addressId : ''}
+                            value={selectedAddressId || ''}
                             onChange={(e) => {
-                                if (address && e.target.value === address.addressId) {
-                                    onInputChange("street", address.streetName || "");
-                                    onInputChange("city", address.cityName || "");
-                                    onInputChange("ward", address.wardName || "");
+                                setSelectedAddressId(e.target.value);
+                                const selected = addresses.find(addr => addr.addressId === e.target.value);
+                                if (selected) {
+                                    onInputChange("street", selected.streetName || "");
+                                    onInputChange("city", selected.cityName || "");
+                                    onInputChange("ward", selected.wardName || "");
+                                    onInputChange("district", selected.wardName || "");
                                 }
                             }}
                             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                            {!address && (
-                                <option value="">Chưa có địa chỉ</option>
-                            )}
-                            {address && (
-                                <option value={address.addressId}>
-                                    {address.streetName}, {address.wardName}, {address.cityName}
+                            {addresses.length === 0 && <option value="">Chưa có địa chỉ</option>}
+                            {addresses.map(addr => (
+                                <option key={addr.addressId} value={addr.addressId}>
+                                    {addr.streetName}, {addr.wardName}, {addr.cityName}
                                 </option>
-                            )}
+                            ))}
                         </select>
                         <button
                             type="button"
                             onClick={() => setShowAddressForm(!showAddressForm)}
-                            className={`px-4 py-3 rounded-lg transition font-medium ${
-                                showAddressForm 
-                                    ? 'bg-gray-600 hover:bg-gray-700' 
-                                    : 'bg-blue-600 hover:bg-blue-700'
-                            } text-white`}
+                            className={`px-4 py-3 rounded-lg transition font-medium ${showAddressForm
+                                ? 'bg-gray-600 hover:bg-gray-700'
+                                : 'bg-blue-600 hover:bg-blue-700'
+                                } text-white`}
                             title={showAddressForm ? "Đóng form" : "Thêm địa chỉ mới"}
                         >
                             {showAddressForm ? '−' : '+'}
@@ -212,13 +220,11 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
                 {showAddressForm && (
                     <div className="border-2 border-blue-200 rounded-lg p-6 bg-blue-50">
                         <h3 className="text-lg font-semibold text-gray-900 mb-4">Thêm địa chỉ mới</h3>
-                        
+
                         <div className="space-y-4">
                             {/* Tỉnh/Thành phố */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Tỉnh/Thành phố <span className="text-red-500">*</span>
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Tỉnh/Thành phố <span className="text-red-500">*</span></label>
                                 <select
                                     value={newAddress.cityName}
                                     onChange={(e) => setNewAddress(prev => ({ ...prev, cityName: e.target.value }))}
@@ -235,9 +241,7 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
 
                             {/* Quận/Huyện */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Quận/Huyện <span className="text-red-500">*</span>
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Quận/Huyện <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     value={newAddress.wardName}
@@ -249,9 +253,7 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
 
                             {/* Số nhà, tên đường */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Số nhà, tên đường <span className="text-red-500">*</span>
-                                </label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Số nhà, tên đường <span className="text-red-500">*</span></label>
                                 <input
                                     type="text"
                                     value={newAddress.streetName}
@@ -285,7 +287,6 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
                 )}
             </div>
         </div>
-        </>
     );
 };
 
