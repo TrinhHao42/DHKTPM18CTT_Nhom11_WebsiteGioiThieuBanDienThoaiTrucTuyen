@@ -1,5 +1,6 @@
 package iuh.fit.se.enternalrunebackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -32,8 +33,10 @@ public class Address {
     String countryName;
 
     @OneToMany(mappedBy = "orderShippingAddress", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     List<Order> orders;
 
-    @OneToMany(mappedBy = "userAddress", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToMany(mappedBy = "addresses")
+    @JsonIgnore
     List<User> users;
 }

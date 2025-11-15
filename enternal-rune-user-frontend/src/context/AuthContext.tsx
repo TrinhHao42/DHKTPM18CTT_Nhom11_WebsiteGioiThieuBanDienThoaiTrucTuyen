@@ -12,7 +12,7 @@ type AuthContextType = {
   setUser: (u: User | null) => void;
   login: (token: string, user: User) => void;
   logout: () => void;
-  addUserAddress: (address: Omit<Address, 'addressId'>) => Promise<void>;
+  addUserAddress: (address: Omit<Address, 'addressId'>) => Promise<Address>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -98,8 +98,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error(errorMessage);
       }
 
-      const updatedUser = await response.json();
-      setUser(updatedUser);
+      const addedAddress = await response.json();
+      setUser({ ...user, userAddress: [addedAddress, ...user.userAddress] });
+      return addedAddress;
     } catch (error: any) {
       console.error('Failed to add address:', error);
       throw error;

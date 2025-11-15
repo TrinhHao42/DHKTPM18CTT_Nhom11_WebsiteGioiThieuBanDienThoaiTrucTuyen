@@ -10,8 +10,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AddressResponse {
-    private String street;
-    private String ward;
-    private String city;
-    private String country;
+    private int addressId;
+    private String streetName;
+    private String wardName;
+    private String cityName;
+    private String countryName;
 }

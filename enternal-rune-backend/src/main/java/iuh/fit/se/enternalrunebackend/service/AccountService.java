@@ -8,5 +8,4 @@ import org.springframework.stereotype.Service;
 public interface AccountService {
     ResponseEntity<?> userRegister(UserRequest userRequest);
     ResponseEntity<?> activateAccount(String email, String activateId);
-
 }
