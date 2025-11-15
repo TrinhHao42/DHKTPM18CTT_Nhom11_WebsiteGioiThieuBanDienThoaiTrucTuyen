@@ -26,9 +26,6 @@ public class ProductVectorService {
     public void syncProductsToVector() {
         if(vectorStore.similaritySearch("products").isEmpty()) {
             List<Product> products = productService.getAllProductsWithActivePrice();
-            products.forEach(product -> {
-                System.out.println(product.getProductPrices().getFirst().getPpPrice());
-            });
             List<Document> documents = products.stream()
                     .map(p -> Document.builder()
                             .id(UUID.randomUUID().toString())  // id duy nhất
