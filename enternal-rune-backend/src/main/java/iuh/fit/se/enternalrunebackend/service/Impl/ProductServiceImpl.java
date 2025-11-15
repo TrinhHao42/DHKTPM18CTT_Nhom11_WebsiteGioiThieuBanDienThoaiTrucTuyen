@@ -51,10 +51,24 @@ public class ProductServiceImpl implements ProductService {
             List<String> priceRanges,
             List<String> colors,
             List<String> memory,
+            String search,
             int page,
             int size
     ) {
         Specification<Product> spec = Specification.allOf();
+
+        // 🔹 Filter theo search keyword (product name, model, brand name)
+        if (search != null && !search.trim().isEmpty()) {
+            spec = spec.and((root, query, cb) -> {
+                String searchPattern = "%" + search.toLowerCase() + "%";
+                return cb.or(
+                    cb.like(cb.lower(root.get("prodName")), searchPattern),
+                    cb.like(cb.lower(root.get("prodModel")), searchPattern),
+                    cb.like(cb.lower(root.get("prodBrand").get("brandName")), searchPattern),
+                    cb.like(cb.lower(root.get("prodDescription")), searchPattern)
+                );
+            });
+        }
 
         // 🔹 Filter theo brand ID (ManyToOne)
         if (brands != null && !brands.isEmpty()) {

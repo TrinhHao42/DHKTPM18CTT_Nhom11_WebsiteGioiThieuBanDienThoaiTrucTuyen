@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { ProductListProvider, useProductList } from '@/context/ProductListContext'
 import FilterSidebar from '@/pages/ProductListPage/components/FilterSidebar'
 import SortDropdown from '@/pages/ProductListPage/components/SortDropdown'
+import SearchBar from '@/pages/ProductListPage/components/SearchBar'
 import ProductGrid from '@/pages/ProductListPage/components/ProductGrid'
 import Pagination from '@/pages/ProductListPage/components/Pagination'
 import { Filter } from 'lucide-react'
@@ -49,11 +50,17 @@ const ProductListContent = () => {
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Sort Controls */}
-            <div className="flex items-center justify-between mb-6 bg-white rounded-xl p-4 shadow-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Sắp xếp theo:</span>
-                <SortDropdown />
+            {/* Search and Sort Controls */}
+            <div className="flex items-center justify-between mb-6 bg-white rounded-xl p-4 shadow-sm gap-4">
+              <div className="flex items-center gap-4 flex-1">
+                {/* Search Bar */}
+                <SearchBar />
+                
+                {/* Sort Controls */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Sắp xếp theo:</span>
+                  <SortDropdown />
+                </div>
               </div>
             </div>
 
