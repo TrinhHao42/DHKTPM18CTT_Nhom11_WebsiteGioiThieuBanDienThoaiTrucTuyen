@@ -25,7 +25,7 @@ public class OrderDetail {
     ProductPrice odPrice;
     @ManyToOne
     @JoinColumn(name = "product_variant_id", nullable = false)
-    Product odProductVariant;
+    ProductVariant odProductVariant;
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
     Order order;

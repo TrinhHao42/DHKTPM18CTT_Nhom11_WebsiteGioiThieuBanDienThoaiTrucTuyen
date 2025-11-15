@@ -10,18 +10,8 @@ import java.util.TimeZone;
 public class EnternalRuneBackendApplication {
 
     public static void main(String[] args) {
-        // Load biến môi trường từ file .local.env
-        Dotenv dotenv = Dotenv.configure()
-                .filename(".local.env")
-                .ignoreIfMissing()
-                .load();
-        
-        // Đặt biến môi trường vào System để Spring Boot có thể sử dụng
-        dotenv.entries().forEach(entry -> {
-            System.setProperty(entry.getKey(), entry.getValue());
-        });
-        
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+
         SpringApplication.run(EnternalRuneBackendApplication.class, args);
     }
 }

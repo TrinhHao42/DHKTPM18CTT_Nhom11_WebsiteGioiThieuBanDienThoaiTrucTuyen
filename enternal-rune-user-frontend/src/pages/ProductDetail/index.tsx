@@ -64,6 +64,9 @@ export default function ProductDetail() {
     }
   }, [params?.id])
 
+  console.log('📦 [ProductDetail] Render state:', product);
+  
+
 
   if (loading) {
     return (

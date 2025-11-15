@@ -13,10 +13,6 @@ import java.util.List;
 
 public interface SePayService {
     QRCodeResponse getQRCode(BigDecimal amount, String description) throws IOException;
-    PaymentStatus getOrderStatus(int id);
-    TransactionRequest sePayWebHook(TransactionRequest transactionRequest);
-    Order createOrder(Order orderInformation);
-    List<Order> getOrdersByCustomerId(Long customerId);
+    boolean sePayWebHookPayment(TransactionRequest transactionRequest);
     OrderRefundRequest updateRefundRequestPaymentStatus(TransactionRequest transactionRequest);
-    Order updateOrderShippingStatus(int orderId, ShippingStatus shippingStatus);
 }

@@ -1,6 +1,7 @@
 package iuh.fit.se.enternalrunebackend.controller;
 
 import iuh.fit.se.enternalrunebackend.dto.request.AddressRequest;
+import iuh.fit.se.enternalrunebackend.dto.response.AddressResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.UserResponse;
 import iuh.fit.se.enternalrunebackend.entity.User;
 import iuh.fit.se.enternalrunebackend.service.UserService;
@@ -25,20 +26,29 @@ public class UserController {
             @PathVariable Long userId,
             @RequestBody AddressRequest addressRequest) {
         try {
-            User updatedUser = userService.addUserAddress(userId, addressRequest);
+            AddressResponse addressAdded =  userService.addUserAddress(userId, addressRequest);
+
             
-            // Convert to response DTO
-            UserResponse response = new UserResponse(
-                    updatedUser.getUserId(),
-                    updatedUser.getName(),
-                    updatedUser.getEmail(),
-                    updatedUser.getUserAddress()
-            );
-            
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(addressAdded);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(
                     new ErrorResponse("Không thể thêm địa chỉ: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * Lấy thông tin user kèm danh sách địa chỉ
+     * GET /api/users/{userId}
+     */
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> getUserWithAddresses(@PathVariable Long userId) {
+        try {
+            UserResponse response = userService.getUserWithAddresses(userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    new ErrorResponse("Không thể lấy thông tin user: " + e.getMessage())
             );
         }
     }

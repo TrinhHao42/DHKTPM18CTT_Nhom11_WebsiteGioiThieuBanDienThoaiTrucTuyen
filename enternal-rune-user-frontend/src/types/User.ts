@@ -4,5 +4,5 @@ export type User = {
     userId: number
     userName: string
     userEmail: string
-    userAddress: Address
+    userAddress: Address[]
 }

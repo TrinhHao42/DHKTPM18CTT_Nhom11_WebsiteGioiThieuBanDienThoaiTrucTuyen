@@ -45,9 +45,17 @@ public class User {
     @JsonIgnore
     List<Role> roles;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "address_id")
-    Address userAddress;
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {
+            CascadeType.DETACH, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.PERSIST
+    })
+    @JoinTable(
+            name = "user_address",
+            joinColumns = @JoinColumn(name="user_id"),
+            inverseJoinColumns = @JoinColumn(name="address_id")
+    )
+    @JsonIgnore
+    List<Address> addresses;
+
     @OneToMany(mappedBy = "orHandleBy", cascade = CascadeType.ALL)
     List<OrderRefundRequest> orderRefundRequests;
 
@@ -56,10 +64,10 @@ public class User {
 
     @OneToMany(mappedBy = "cmUser", cascade = CascadeType.ALL)
     List<Comment> comments;
-    public User(String name, String email, String password, Address userAddress) {
+
+    public User(String name, String email, String password) {
         this.name = name;
         this.email = email;
         this.password = password;
-        this.userAddress = userAddress;
     }
 }
