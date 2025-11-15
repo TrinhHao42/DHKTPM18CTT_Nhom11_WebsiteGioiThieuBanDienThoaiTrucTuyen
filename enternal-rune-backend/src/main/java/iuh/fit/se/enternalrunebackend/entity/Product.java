@@ -69,6 +69,9 @@ public class Product {
     @JoinColumn(name = "product_id")
     List<ProductPrice> productPrices = new ArrayList<>();
 
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER, optional = true)
+    ProductSpecifications productSpecifications;
+
 //    @OneToMany(mappedBy = "odProduct", cascade = CascadeType.ALL, orphanRemoval = true)
 //    List<OrderDetail> orderDetails = new ArrayList<>();
 }

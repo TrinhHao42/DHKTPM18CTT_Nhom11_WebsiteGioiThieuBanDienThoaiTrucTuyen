@@ -7,9 +7,7 @@ import { formatPrice } from "@/lib/format";
 
 export default function FloatChatButton() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<
-    Array<{ id: string; text: string; isUser: boolean; timestamp: Date }>
-  >([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
@@ -28,12 +26,80 @@ export default function FloatChatButton() {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen || !chatContainerRef.current) return;
+    chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+  }, [messages, isOpen]);
+
+  const refusalMessage =
+    "Xin lỗi, hiện tại tôi chỉ có thể cung cấp thông tin dựa trên dữ liệu sản phẩm có trong cửa hàng. Bạn vui lòng hỏi về sản phẩm cụ thể nhé!";
+
+  const generateMessageId = () =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Date.now().toString();
+
+  const normalizeSources = (payload: unknown): SupportProductInfo[] => {
+    if (!Array.isArray(payload)) return [];
+    return payload.map((item: unknown, index) => {
+      const itemObj = item && typeof item === "object" ? item as Record<string, unknown> : {};
+      
+      const rawPrice =
+        typeof itemObj.price === "number"
+          ? itemObj.price
+          : typeof itemObj.price === "string"
+            ? Number(itemObj.price)
+            : null;
+      const safePrice =
+        typeof rawPrice === "number" && Number.isFinite(rawPrice) ? rawPrice : null;
+      const safeId =
+        Number.isFinite(Number(itemObj.id)) && itemObj.id !== undefined
+          ? Number(itemObj.id)
+          : index;
+
+      return {
+        id: safeId,
+        name: (typeof itemObj.name === "string" ? itemObj.name : null) ?? "Sản phẩm chưa xác định",
+        brand: (typeof itemObj.brand === "string" ? itemObj.brand : null) ?? "Không rõ thương hiệu",
+        price: safePrice,
+        description: (typeof itemObj.description === "string" ? itemObj.description : null) ?? null,
+      };
+    });
+  };
+
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined || Number.isNaN(value)) {
+      return "Đang cập nhật";
+    }
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const buildSuggestionFromSources = (sources: SupportProductInfo[], keyword: string) => {
+    if (!sources.length) {
+      return refusalMessage;
+    }
+    const highlights = sources.slice(0, 3).map((item) => {
+      return `• ${item.name} (${item.brand}) - ${formatCurrency(item.price)}`;
+    });
+    return [
+      `Tôi đã tìm được sản phẩm "${keyword}" phù hợp với nhu cầu của bạn:`,
+      ...highlights,
+      sources.length > 3 ? `... và ${sources.length - 3} sản phẩm khác` : "",
+      "Bạn muốn xem chi tiết mẫu nào hoặc cần tư vấn thêm thông tin gì?",
+    ].filter(Boolean).join("\n");
+  };
+
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return;
 
-    const userMessage = {
-      id: Date.now().toString(),
-      text: inputValue,
+    const userText = inputValue.trim();
+    const userMessage: Message = {
+      id: generateMessageId(),
+      text: userText,
       isUser: true,
       timestamp: new Date(),
     };
@@ -65,7 +131,9 @@ export default function FloatChatButton() {
         text: response.data || "Xin lỗi, tôi không thể xử lý yêu cầu này.",
         isUser: false,
         timestamp: new Date(),
+        sources: normalizedSources,
       };
+
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error calling AI API:", error);
@@ -96,7 +164,7 @@ export default function FloatChatButton() {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !isThinking) {
       e.preventDefault();
       handleSend();
     }
@@ -330,7 +398,9 @@ export default function FloatChatButton() {
                     d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                   />
                 </svg>
-                <p className="text-sm">Chào mừng! Hãy bắt đầu cuộc trò chuyện</p>
+                <p className="text-sm">
+                  Chào mừng! Hãy đặt câu hỏi về sản phẩm hoặc chính sách cửa hàng.
+                </p>
               </div>
             ) : (
               <>
@@ -402,8 +472,16 @@ export default function FloatChatButton() {
                 disabled={!inputValue.trim() || isLoading}
                 className="w-10 h-10 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 style={{ backgroundColor: '#1447E6' }}
-                onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = '#0d3bb8' }}
-                onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = '#1447E6' }}
+                onMouseEnter={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = '#0d3bb8';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.backgroundColor = '#1447E6';
+                  }
+                }}
                 aria-label="Gửi tin nhắn"
               >
                 {isLoading ? (

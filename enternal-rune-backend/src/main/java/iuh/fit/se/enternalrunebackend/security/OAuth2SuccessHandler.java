@@ -49,7 +49,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Email not found in Google account");
             return;
         }
-        
+
         User user = userRepository.findByEmail(email);
         if (user == null) {
             user = new User();

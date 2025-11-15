@@ -21,6 +21,7 @@ public interface ProductService {
             List<String> priceRanges,
             List<String> colors,
             List<String> memory,
+            String search,
             int page,
             int size
     );

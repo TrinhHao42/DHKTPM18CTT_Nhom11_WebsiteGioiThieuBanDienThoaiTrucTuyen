@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.List;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductSpecificationsResponse;
 
 @Data
 @AllArgsConstructor
@@ -20,4 +21,5 @@ public class ProductResponse {
     private BrandResponse prodBrand;
     private List<ImageResponse> images;
     private List<ProductPriceResponse> productPrices;
+    private ProductSpecificationsResponse prodSpecs;
 }

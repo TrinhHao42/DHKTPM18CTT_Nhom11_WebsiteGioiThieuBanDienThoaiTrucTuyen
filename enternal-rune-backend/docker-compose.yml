@@ -7,12 +7,14 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgrespassword
       POSTGRES_DB: PhoneDB
+      PGTZ: Asia/Ho_Chi_Minh
     ports:
       - "5432:5432"
-    networks:
-      - app_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+   
     command: >
       postgres
       -c shared_preload_libraries=vector

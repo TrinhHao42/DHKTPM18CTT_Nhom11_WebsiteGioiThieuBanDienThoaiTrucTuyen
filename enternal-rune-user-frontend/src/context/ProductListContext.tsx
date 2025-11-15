@@ -39,6 +39,9 @@ interface ProductListContextType {
   error: string | null
   applyFilters: (filterState: FilterState) => Promise<void>
   resetFilters: () => void
+  searchProducts: (searchTerm: string) => Promise<void>
+  clearSearch: () => Promise<void>
+  searchTerm: string
 }
 
 const ProductListContext = createContext<ProductListContextType | undefined>(undefined)
@@ -62,6 +65,7 @@ export const ProductListProvider = ({ children }: ProductListProviderProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [apiProducts, setApiProducts] = useState<Product[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
   const itemsPerPage = 6
 
   // Apply filters via API
@@ -118,6 +122,7 @@ export const ProductListProvider = ({ children }: ProductListProviderProps) => {
     }
 
     setFilters(resetState)
+    setSearchTerm('')
     // Reset triggers refetch of default API list
     ProductService.getFilteredProducts({ page: 1, size: 100 })
       .then(setApiProducts)
@@ -125,6 +130,47 @@ export const ProductListProvider = ({ children }: ProductListProviderProps) => {
     setCurrentPage(1)
     setError(null)
   }, [])
+
+  // Search products
+  const searchProducts = useCallback(async (search: string) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const filterParams: FilterParams = {
+        search: search,
+        brands: filters.brands.length > 0 ? filters.brands : undefined,
+        priceRange: filters.priceRanges.length > 0 ? filters.priceRanges : undefined,
+        colors: filters.colors.length > 0 ? filters.colors : undefined,
+        memory: filters.memory.length > 0 ? filters.memory : undefined,
+        page: 0,
+        size: 100
+      }
+
+      const result = await ProductService.getFilteredProducts(filterParams)
+      setApiProducts(result)
+      setSearchTerm(search)
+      setCurrentPage(1)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi tìm kiếm sản phẩm')
+      console.error('Error searching products:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [filters])
+
+  // Clear search
+  const clearSearch = useCallback(async () => {
+    setSearchTerm('')
+    
+    try {
+      // Apply existing filters without search
+      await applyFilters(filters)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi')
+      console.error('Error clearing search:', err)
+    }
+  }, [filters, applyFilters])
 
   // Chọn products để sử dụng (API hoặc local)
   const activeProducts = apiProducts
@@ -204,7 +250,10 @@ export const ProductListProvider = ({ children }: ProductListProviderProps) => {
     isLoading,
     error,
     applyFilters,
-    resetFilters
+    resetFilters,
+    searchProducts,
+    clearSearch,
+    searchTerm
   }
 
   return (

@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import Image from 'next/image'
 import { Minus, Plus, Trash2, Loader2 } from 'lucide-react'
 import { CartItem } from '@/types/CartItem'
-import { useCart } from '@/context/CartContext'
+import { useCartActions } from '@/context/CartContext'
 import { useToast } from '@/hooks/useToast'
 
 interface CartItemListProps {
@@ -11,37 +11,40 @@ interface CartItemListProps {
     onToggle: (item: CartItem) => void;
 }
 
-const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
-    const { removeCartItem, updateCartItemQuantity } = useCart();
+const CartItemList = React.memo(({ item, isSelected, onToggle }: CartItemListProps) => {
+    // Chỉ lấy actions - KHÔNG rerender khi cartItems thay đổi
+    const { removeCartItem, updateCartItemQuantity } = useCartActions();
     const toast = useToast();
-    const [isUpdating, setIsUpdating] = useState(false);
     const [isRemoving, setIsRemoving] = useState(false);
 
-    const handleIncrease = async () => {
-        setIsUpdating(true);
+    const handleIncrease = useCallback(async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         try {
             await updateCartItemQuantity(item.cartItemId, item.quantity + 1);
         } catch (error) {
             toast.error('Không thể cập nhật số lượng');
-        } finally {
-            setIsUpdating(false);
         }
-    };
+    }, [item.cartItemId, item.quantity, updateCartItemQuantity, toast]);
 
-    const handleDecrease = async () => {
+    const handleDecrease = useCallback(async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         if (item.quantity > 1) {
-            setIsUpdating(true);
             try {
                 await updateCartItemQuantity(item.cartItemId, item.quantity - 1);
             } catch (error) {
                 toast.error('Không thể cập nhật số lượng');
-            } finally {
-                setIsUpdating(false);
             }
         }
-    };
+    }, [item.cartItemId, item.quantity, updateCartItemQuantity, toast]);
 
-    const handleRemove = async () => {
+    const handleRemove = useCallback(async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         setIsRemoving(true);
         try {
             await removeCartItem(item.cartItemId);
@@ -50,7 +53,7 @@ const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
             toast.error('Không thể xóa sản phẩm');
             setIsRemoving(false);
         }
-    };
+    }, [item.cartItemId, removeCartItem, toast]);
 
     return (
         <div
@@ -58,12 +61,10 @@ const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
                 isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
             } ${isRemoving ? 'opacity-50 pointer-events-none' : ''}`}
         >
-            {/* Blue left border when selected */}
             {isSelected && (
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600"></div>
             )}
 
-            {/* Image */}
             <Image
                 alt={item.productVariant.variantName}
                 src={item.productVariant.imageUrl || '/placeholder.png'}
@@ -113,19 +114,20 @@ const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
                 {/* Quantity Controls */}
                 <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-2.5 py-1.5 self-end">
                     <button 
+                        type="button"
                         className="p-0.5 hover:text-blue-500 rounded transition cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleDecrease}
-                        disabled={isUpdating || item.quantity <= 1}
+                        disabled={item.quantity <= 1}
                     >
-                        {isUpdating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Minus className="w-3.5 h-3.5 text-gray-600" />}
+                        <Minus className="w-3.5 h-3.5 text-gray-600" />
                     </button>
                     <span className="text-xs sm:text-sm font-medium text-gray-900 min-w-[20px] text-center">
                         {item.quantity}
                     </span>
                     <button
-                        className="p-0.5 hover:text-blue-500 rounded transition cursor-pointer active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        type="button"
+                        className="p-0.5 hover:text-blue-500 rounded transition cursor-pointer active:scale-95"
                         onClick={handleIncrease}
-                        disabled={isUpdating}
                     >
                         <Plus className="w-3.5 h-3.5 text-gray-600" />
                     </button>
@@ -140,6 +142,7 @@ const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
                         })}
                     </p>
                     <button
+                        type="button"
                         className="text-gray-400 hover:text-red-500 cursor-pointer transition-colors duration-150 active:scale-95 p-1 disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleRemove}
                         disabled={isRemoving}
@@ -154,6 +157,8 @@ const CartItemList = ({ item, isSelected, onToggle }: CartItemListProps) => {
             </div>
         </div>
     )
-}
+});
+
+CartItemList.displayName = 'CartItemList';
 
 export default CartItemList
