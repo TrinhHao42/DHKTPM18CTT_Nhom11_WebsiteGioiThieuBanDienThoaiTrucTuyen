@@ -101,7 +101,8 @@ public class AuthController {
         loginUser.setUserId(user.getUserId());
         loginUser.setUserEmail(user.getEmail());
         loginUser.setUserName(user.getName());
-        loginUser.setUserAddress(user.getUserAddress());
+        // Safely get addresses, return empty list if null
+        loginUser.setUserAddress(user.getAddresses() != null ? user.getAddresses() : new java.util.ArrayList<>());
 
         response.put("user", loginUser);
         return response;

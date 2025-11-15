@@ -5,11 +5,12 @@ import { PaymentStatus } from "@/types/enums/PaymentStatus"
 import { ShippingStatus } from "@/types/enums/ShippingStatus"
 
 export type Order = {
+    orderId: number
     orderUser: User
     orderDate: Date
-    orderTotalPrice: number
+    orderTotalAmount: number  // Backend trả về orderTotalAmount
     orderShippingAddress: Address
     orderPaymentStatus: PaymentStatus
     orderShippingStatus: ShippingStatus
-    orderListDetails: OrderDetail[]
+    orderDetails: OrderDetail[]  // Backend trả về orderDetails
 }

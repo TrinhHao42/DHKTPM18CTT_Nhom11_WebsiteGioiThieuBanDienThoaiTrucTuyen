@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:latest
+    image: ankane/pgvector
     container_name: postgres_container
     environment:
       POSTGRES_USER: postgres

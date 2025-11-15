@@ -4,7 +4,7 @@ const BACK_END_URL = process.env.BACK_END_URL || 'http://localhost:8080'
 
 const AxiosInstance = axios.create({
   baseURL: BACK_END_URL,
-  timeout: 5000,
+  timeout: 30000, // 30s cho các thao tác phức tạp
   headers: {
     'Content-Type': 'application/json',
   },

@@ -1,6 +1,8 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
 
 import iuh.fit.se.enternalrunebackend.dto.request.AddressRequest;
+import iuh.fit.se.enternalrunebackend.dto.response.AddressResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.UserResponse;
 import iuh.fit.se.enternalrunebackend.entity.Address;
 import iuh.fit.se.enternalrunebackend.entity.Role;
 import iuh.fit.se.enternalrunebackend.entity.User;
@@ -15,7 +17,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -42,87 +46,73 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User addUserAddress(Long userId, AddressRequest addressRequest) {
+    @Transactional
+    public AddressResponse addUserAddress(Long userId, AddressRequest addressRequest) {
+
         // Tìm user
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + userId));
-        
-        // Tìm xem address này đã tồn tại trong DB chưa
+
+        // Kiểm tra nếu address đã tồn tại
         Optional<Address> existingAddress = addressRepository.findByExactMatch(
                 addressRequest.getStreetName(),
                 addressRequest.getWardName(),
                 addressRequest.getCityName(),
                 addressRequest.getCountryName()
         );
-        
+
         Address address;
+
         if (existingAddress.isPresent()) {
-            // Dùng address đã có
+            // Address đã tồn tại
             address = existingAddress.get();
-            System.out.println("Sử dụng address có sẵn: " + address.getAddressId());
         } else {
-            // Tạo mới với retry logic để handle duplicate
-            address = createAddressWithRetry(addressRequest, 3);
-            System.out.println("Đã tạo address mới: " + address.getAddressId());
+            // Tạo mới address
+            Address newAddress = new Address();
+            newAddress.setStreetName(addressRequest.getStreetName());
+            newAddress.setWardName(addressRequest.getWardName());
+            newAddress.setCityName(addressRequest.getCityName());
+            newAddress.setCountryName(addressRequest.getCountryName());
+            address = addressRepository.save(newAddress);
         }
-        
-        // Cập nhật user address
-        user.setUserAddress(address);
-        
-        // Lưu user
-        return userRepository.save(user);
+
+        // Gán vào user nếu chưa tồn tại
+        if (user.getAddresses() == null) {
+            user.setAddresses(new ArrayList<>());
+        }
+
+        boolean alreadyHasAddress = user.getAddresses().stream()
+                .anyMatch(a -> a.getAddressId() == address.getAddressId());
+
+        if (!alreadyHasAddress) {
+            user.getAddresses().add(address);
+            userRepository.save(user);
+        }
+
+        // 🔥 Trả về AddressResponse đúng format
+        AddressResponse response = new AddressResponse();
+        response.setAddressId(address.getAddressId());
+        response.setStreetName(address.getStreetName());
+        response.setWardName(address.getWardName());
+        response.setCityName(address.getCityName());
+        response.setCountryName(address.getCountryName());
+
+        return response;
     }
-    
-    /**
-     * Tạo address mới với retry logic
-     * Nếu bị duplicate thì tìm lại address đã tồn tại
-     */
-    private Address createAddressWithRetry(AddressRequest request, int maxRetries) {
-        for (int attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                Address address = new Address();
-                address.setStreetName(request.getStreetName());
-                address.setWardName(request.getWardName());
-                address.setCityName(request.getCityName());
-                address.setCountryName(request.getCountryName());
-                
-                return addressRepository.save(address);
-            } catch (Exception e) {
-                // Nếu bị duplicate key, tìm lại address
-                if (e.getMessage().contains("duplicate key") || 
-                    e.getMessage().contains("unique constraint")) {
-                    
-                    System.out.println("Retry #" + attempt + ": Phát hiện duplicate, tìm address có sẵn...");
-                    
-                    // Tìm lại address vừa bị duplicate
-                    Optional<Address> existing = addressRepository.findByExactMatch(
-                        request.getStreetName(),
-                        request.getWardName(),
-                        request.getCityName(),
-                        request.getCountryName()
-                    );
-                    
-                    if (existing.isPresent()) {
-                        return existing.get();
-                    }
-                    
-                    // Nếu vẫn không tìm thấy và còn retry, thử lại
-                    if (attempt < maxRetries) {
-                        try {
-                            Thread.sleep(100); // Đợi 100ms trước khi retry
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                        }
-                        continue;
-                    }
-                }
-                
-                // Nếu không phải duplicate error hoặc hết retry
-                throw new RuntimeException("Không thể tạo address sau " + attempt + " lần thử: " + e.getMessage(), e);
-            }
-        }
-        
-        throw new RuntimeException("Không thể tạo address sau " + maxRetries + " lần thử");
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getUserWithAddresses(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + userId));
+
+        UserResponse response = new UserResponse();
+        response.setUserId(user.getUserId());
+        response.setUserName(user.getName());
+        response.setUserEmail(user.getEmail());
+        response.setUserAddress(user.getAddresses());
+
+        return response;
     }
 
     @Override
@@ -134,6 +124,7 @@ public class UserServiceImpl implements UserService {
         org.springframework.security.core.userdetails.User user = new org.springframework.security.core.userdetails.User(userE.getEmail(),userE.getPassword(),roleToAuthorities(userE.getRoles()));
         return user;
     }
+
     private Collection<? extends GrantedAuthority> roleToAuthorities(Collection<Role> roles){
         return roles.stream().map(role -> new SimpleGrantedAuthority(role.getRoleName())).collect(Collectors.toList());
     }
