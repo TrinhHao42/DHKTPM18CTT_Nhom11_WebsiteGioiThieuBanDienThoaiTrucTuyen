@@ -5,6 +5,7 @@ import { Product } from '@/types/Product'
 import { formatPrice } from '@/lib/format'
 import { colors } from '@/lib/color'
 import { useCart } from '@/context/CartContext'
+import { useToast } from '@/hooks/useToast'
 
 interface ProductInfoPanelProps {
     product: Product
@@ -12,8 +13,10 @@ interface ProductInfoPanelProps {
 
 export default function ProductInfoPanel({ product }: ProductInfoPanelProps) {
     const { addCartItem } = useCart()
+    const toast = useToast()
     const [selectedColor, setSelectedColor] = useState(product.prodColor[0] || 'Black')
     const [quantity, setQuantity] = useState(1)
+    const [isAdding, setIsAdding] = useState(false)
     const storageOptions = ['256GB', '512GB', '1TB']
     const [selectedStorage, setSelectedStorage] = useState(storageOptions[1])
     const protectionPlans = [
@@ -33,6 +36,28 @@ export default function ProductInfoPanel({ product }: ProductInfoPanelProps) {
 
     const handleQuantityChange = (change: number) => {
         setQuantity(prev => Math.max(1, Math.min(10, prev + change)))
+    }
+
+    const handleAddToCart = async () => {
+        setIsAdding(true)
+        try {
+            // Truyền product + quantity + options (color, storage)
+            await addCartItem(
+                product, 
+                quantity,
+                {
+                    color: selectedColor,
+                    storage: selectedStorage,
+                    version: undefined
+                }
+            )
+            toast.success(`✅ Đã thêm "${product.prodName}" vào giỏ hàng!`)
+        } catch (error) {
+            console.error('Failed to add to cart:', error)
+            toast.error('❌ Không thể thêm vào giỏ hàng. Vui lòng thử lại.')
+        } finally {
+            setIsAdding(false)
+        }
     }
 
     const features = [
@@ -237,11 +262,12 @@ export default function ProductInfoPanel({ product }: ProductInfoPanelProps) {
                     Mua ngay - {formatPrice(totalPrice)}
                 </button>
                 <button
-                    className="cursor-pointer bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-2xl font-semibold text-md shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-3 group hover:scale-102"
-                    onClick={() => addCartItem(product)}
+                    className="cursor-pointer bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-2xl font-semibold text-md shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-3 group hover:scale-102 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleAddToCart}
+                    disabled={isAdding}
                 >
                     <ShoppingCart className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                    <span>Thêm vào giỏ hàng</span>
+                    <span>{isAdding ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}</span>
                 </button>
             </div>
             {/* Features */}

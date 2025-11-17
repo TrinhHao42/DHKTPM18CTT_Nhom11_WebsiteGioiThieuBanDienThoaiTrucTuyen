@@ -1,18 +1,24 @@
 import { CartItem } from '@/types/CartItem'
-import React from 'react'
+import React, { useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCheckout } from '@/context/CheckoutContext'
 
-const CartSummary = ({ choosedItems }: { choosedItems: CartItem[] }) => {
+const CartSummary = React.memo(({ choosedItems }: { choosedItems: CartItem[] }) => {
     const router = useRouter();
     const { setCheckoutItems } = useCheckout();
 
-    const handleCheckout = () => {
+    const handleCheckout = useCallback(() => {
         if (choosedItems.length > 0) {
             setCheckoutItems(choosedItems);
             router.push('/PaymentScreen');
         }
-    };
+    }, [choosedItems, setCheckoutItems, router]);
+
+    const totalPrice = useMemo(() => 
+        choosedItems.reduce((total, item) =>
+            total + (item.productVariant.price * item.quantity), 0
+        ), [choosedItems]
+    );
 
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 lg:sticky lg:top-6">
@@ -51,9 +57,7 @@ const CartSummary = ({ choosedItems }: { choosedItems: CartItem[] }) => {
             <div className="flex items-center justify-between py-2 text-xs">
                 <span className="text-gray-600">Sản phẩm ({choosedItems.length})</span>
                 <span className="font-semibold text-gray-900">
-                    {choosedItems.reduce((total, item) =>
-                        total + (item.ciProductVariant.prodvPrice.ppPrice * item.ciQuantity), 0
-                    ).toLocaleString("vi-VN", {
+                    {totalPrice.toLocaleString("vi-VN", {
                         style: "currency",
                         currency: "VND",
                     })}
@@ -75,9 +79,7 @@ const CartSummary = ({ choosedItems }: { choosedItems: CartItem[] }) => {
             <div className="flex items-center justify-between mb-4">
                 <span className="text-base font-bold text-gray-900">Tổng cộng :</span>
                 <span className="text-lg font-bold text-gray-900">
-                    {(choosedItems.reduce((total, item) =>
-                        total + (item.ciProductVariant.prodvPrice.ppPrice * item.ciQuantity), 0
-                    )).toLocaleString("vi-VN", {
+                    {totalPrice.toLocaleString("vi-VN", {
                         style: "currency",
                         currency: "VND",
                     })}
@@ -94,6 +96,8 @@ const CartSummary = ({ choosedItems }: { choosedItems: CartItem[] }) => {
             </button>
         </div>
     )
-}
+});
+
+CartSummary.displayName = 'CartSummary';
 
 export default CartSummary

@@ -3,6 +3,7 @@ package iuh.fit.se.enternalrunebackend.entity;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
 import jakarta.persistence.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -21,7 +22,7 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "prod_id")
-    int prodId;
+    Integer prodId;
 
     @Column(name = "product_name", nullable = false, length = 255)
     String prodName;
@@ -68,6 +69,9 @@ public class Product {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "product_id")
     List<ProductPrice> productPrices = new ArrayList<>();
+
+    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.EAGER, optional = true)
+    ProductSpecifications productSpecifications;
 
 //    @OneToMany(mappedBy = "odProduct", cascade = CascadeType.ALL, orphanRemoval = true)
 //    List<OrderDetail> orderDetails = new ArrayList<>();

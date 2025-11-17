@@ -1,11 +1,15 @@
 package iuh.fit.se.enternalrunebackend.service;
 
+import iuh.fit.se.enternalrunebackend.dto.request.ProductRequest;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductDashboardListResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.ProductDashboardResponse;
 
 
 
 import iuh.fit.se.enternalrunebackend.entity.Product;
+import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -21,8 +25,18 @@ public interface ProductService {
             List<String> priceRanges,
             List<String> colors,
             List<String> memory,
+            String search,
             int page,
             int size
     );
     public ProductDashboardResponse getProductDashboard();
+//    public Page<ProductDashboardListResponse> getProductDashboardList(Pageable pageable);
+    public Page<ProductDashboardListResponse> getProductDashboardList(
+            String keyword, String brand, ProductStatus status, Pageable pageable
+    );
+
+    public void  addProduct(ProductRequest productRequest);
+    public void deleteProduct(Integer id);
+    public Product updateProduct(Integer productId, ProductRequest request);
+
 }

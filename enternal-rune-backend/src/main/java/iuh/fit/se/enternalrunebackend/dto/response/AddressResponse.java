@@ -9,9 +9,10 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class AddressResponseDTO {
-    private String street;
-    private String ward;
-    private String city;
-    private String country;
+public class AddressResponse {
+    private int addressId;
+    private String streetName;
+    private String wardName;
+    private String cityName;
+    private String countryName;
 }

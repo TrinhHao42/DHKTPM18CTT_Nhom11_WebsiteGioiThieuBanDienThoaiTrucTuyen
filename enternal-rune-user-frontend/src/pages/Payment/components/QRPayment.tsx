@@ -3,41 +3,43 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { PaymentStatus } from "@/types/enums/PaymentStatus";
-import AxiosInstance from "@/configs/AxiosInstance";
+import { CreateOrderResponse, getOrderPaymentStatus, getQrCodeSepay } from "@/services/checkoutService";
 
 interface QRPaymentProps {
-    totalAmount: number;
-    orderDescription: string;
+    order: CreateOrderResponse
     onPaymentSuccess: () => void;
 }
 
-const QRPayment = ({ totalAmount, orderDescription, onPaymentSuccess }: QRPaymentProps) => {
+const QRPayment = ({ order, onPaymentSuccess }: QRPaymentProps) => {
     const [qrCode, setQrCode] = useState("")
     const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PENDING)
 
     useEffect(() => {
         const getQrCode = async (amount: number, description: string) => {
             try {
-                const res = await AxiosInstance.post("/payment/getQRcode", {
-                    amount,
-                    description
-                }, { responseType: "blob" })
+                const res = await getQrCodeSepay(amount, description)
 
-                setQrCode(URL.createObjectURL(res.data))
+                setQrCode(URL.createObjectURL(res))
             } catch (error) {
                 console.error("Error fetching QR code:", error)
             }
         }
 
-        getQrCode(totalAmount, orderDescription)
+        getQrCode(order.totalAmount, `Thanh toan ORD${order.orderId}`)
 
         const intervalId = setInterval(async () => {
             try {
-                const statusRes = await AxiosInstance.get("/payment/checkPaymentStatus", {
-                    params: { description: orderDescription }
-                })
+                const statusRes = await getOrderPaymentStatus(order.orderId)
                 
-                setPaymentStatus(statusRes.data.status)
+                setPaymentStatus(statusRes)
+                
+                // Nếu thanh toán thành công, gọi callback
+                if (statusRes === PaymentStatus.PAID) {
+                    clearInterval(intervalId)
+                    setTimeout(() => {
+                        onPaymentSuccess()
+                    }, 2000) // Đợi 2s để user thấy thông báo thành công
+                }
             } catch (error) {
                 console.error("Error checking payment status:", error)
             }
@@ -46,7 +48,7 @@ const QRPayment = ({ totalAmount, orderDescription, onPaymentSuccess }: QRPaymen
         return () => {
             if (intervalId) clearInterval(intervalId)
         }
-    }, [totalAmount, orderDescription, onPaymentSuccess])
+    }, [order, onPaymentSuccess])
 
     return (
         <div className="w-full max-w-md mx-auto flex flex-col items-center">
@@ -86,7 +88,7 @@ const QRPayment = ({ totalAmount, orderDescription, onPaymentSuccess }: QRPaymen
                     <div className="flex gap-2 items-center justify-center mb-2">
                         <span className="font-medium text-gray-700">Số tiền cần thanh toán:</span>
                         <span className="font-bold text-blue-600">
-                            {totalAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                            {order.totalAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
                         </span>
                     </div>
 

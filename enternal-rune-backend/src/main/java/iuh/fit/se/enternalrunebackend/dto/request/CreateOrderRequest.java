@@ -5,13 +5,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-public class AddressRequestDTO {
-    private String street;
-    private String ward;
-    private String city;
-    private String country;
+public class CreateOrderRequest {
+    private Long userId;
+    private Integer addressId;
+    private List<OrderItemRequest> orderItems;
+    private Integer discountId;
 }
+

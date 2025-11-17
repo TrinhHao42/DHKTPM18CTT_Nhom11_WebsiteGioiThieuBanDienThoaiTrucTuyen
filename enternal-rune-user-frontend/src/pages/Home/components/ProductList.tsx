@@ -1,4 +1,5 @@
 "use client"
+import React, { useEffect } from "react"
 import ProductCard from "../../../components/ProductCard"
 import { FaArrowRight } from "react-icons/fa6";
 import { useProducts } from "@/context/ProductsContext";
@@ -38,16 +39,37 @@ export const renderBestSellers = (products: Product[], hideButton = false) => {
 export default function ProductList() {
     const { products, productLatest, loading, error } = useProducts();
 
+    // Debug logging
+    useEffect(() => {
+        console.log('📦 [ProductList] Render state:', {
+            productsCount: products.length,
+            productLatestCount: productLatest.length,
+            loading,
+            error,
+            productsSample: products.slice(0, 2)
+        });
+    }, [products, productLatest, loading, error]);
+
     if (loading) {
         return <div className="text-center py-8">Đang tải sản phẩm...</div>;
     }
 
     if (error) {
-        return <div className="text-center py-8 text-red-500">Lỗi: {error}</div>;
+        return (
+            <div className="text-center py-8 text-red-500">
+                <p>Lỗi: {error}</p>
+                <p className="text-sm text-gray-500 mt-2">Kiểm tra console để xem chi tiết</p>
+            </div>
+        );
     }
 
     if (products.length === 0) {
-        return <div className="text-center py-8">Không có sản phẩm</div>;
+        return (
+            <div className="text-center py-8">
+                <p>Không có sản phẩm</p>
+                <p className="text-sm text-gray-500 mt-2">Kiểm tra console để xem response từ backend</p>
+            </div>
+        );
     }
 
     return (

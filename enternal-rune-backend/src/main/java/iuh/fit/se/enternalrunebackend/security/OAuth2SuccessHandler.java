@@ -1,6 +1,7 @@
 package iuh.fit.se.enternalrunebackend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import iuh.fit.se.enternalrunebackend.dto.response.UserResponse;
 import iuh.fit.se.enternalrunebackend.entity.Role;
 import iuh.fit.se.enternalrunebackend.entity.User;
 import iuh.fit.se.enternalrunebackend.repository.RoleRepository;
@@ -56,32 +57,46 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             user.setName(name);
             user.setAuthProvider(User.AuthProvider.GOOGLE);
             user.setPassword(UUID.randomUUID().toString());
+
             Role defaultRole = roleRepository.findByRoleName("USER");
             if (defaultRole == null) {
                 defaultRole = new Role();
                 defaultRole.setRoleName("USER");
                 roleRepository.save(defaultRole);
             }
+
             user.setRoles(Collections.singletonList(defaultRole));
             userRepository.save(user);
         }
+
         String token = jwtUtil.generateToken(user.getEmail());
-        String username = user.getName() != null ? user.getName() : user.getEmail();
+
         String role = user.getRoles().stream()
                 .findFirst()
                 .map(r -> "ROLE_" + r.getRoleName().toUpperCase())
                 .orElse("ROLE_USER");
-        String encodedUsername = URLEncoder.encode(username, StandardCharsets.UTF_8);
+
+        UserResponse loginUser = new UserResponse();
+        loginUser.setUserId(user.getUserId());
+        loginUser.setUserEmail(user.getEmail());
+        loginUser.setUserName(user.getName());
+        // Safely get addresses, return empty list if null
+        loginUser.setUserAddress(user.getAddresses() != null ? user.getAddresses() : new ArrayList<>());
+
+        ObjectMapper mapper = new ObjectMapper();
+        String userJson = mapper.writeValueAsString(loginUser);
+
+        String encodedUser = URLEncoder.encode(userJson, StandardCharsets.UTF_8);
         String encodedRole = URLEncoder.encode(role, StandardCharsets.UTF_8);
+        String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
 
         String redirectUrl = String.format(
-                "http://localhost:3000/oauth-success?token=%s&username=%s&role=%s",
-                token,
-                encodedUsername,
+                "http://localhost:3000/oauth-success?token=%s&user=%s&role=%s",
+                encodedToken,
+                encodedUser,
                 encodedRole
         );
 
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }
-
 }

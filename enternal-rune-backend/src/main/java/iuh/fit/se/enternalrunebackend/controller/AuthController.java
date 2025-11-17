@@ -1,11 +1,12 @@
 package iuh.fit.se.enternalrunebackend.controller;
 
 
-import iuh.fit.se.enternalrunebackend.dto.request.UserRequestDTO;
-import iuh.fit.se.enternalrunebackend.entity.ErrorMessage;
+import iuh.fit.se.enternalrunebackend.dto.request.UserRequest;
+import iuh.fit.se.enternalrunebackend.dto.response.UserResponse;
 import iuh.fit.se.enternalrunebackend.service.AccountService;
 import iuh.fit.se.enternalrunebackend.service.UserService;
 import iuh.fit.se.enternalrunebackend.util.JwtUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("account")
 @CrossOrigin(origins = "http://localhost:3000")
@@ -41,8 +43,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody UserRequestDTO userRequestDTO) {
-        return accountService.userRegister(userRequestDTO);
+    public ResponseEntity<?> register(@RequestBody UserRequest userRequest) {
+        return accountService.userRegister(userRequest);
     }
 
     @GetMapping("/activate")
@@ -79,26 +81,30 @@ public class AuthController {
 
         var user = userService.findByEmail(userDetails.getUsername());
 
-        String fullAddress = null;
-        if (user.getUserAddress() != null) {
-            var addr = user.getUserAddress();
-            fullAddress = String.join(", ",
-                    addr.getStreetName(),
-                    addr.getWardName(),
-                    addr.getCityName(),
-                    addr.getCountryName()
-            );
-        }
+//        String fullAddress = null;
+//        if (user.getUserAddress() != null) {
+//            var addr = user.getUserAddress();
+//            fullAddress = String.join(", ",
+//                    addr.getStreetName(),
+//                    addr.getWardName(),
+//                    addr.getCityName(),
+//                    addr.getCountryName()
+//            );
+//        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
-        response.put("username", userDetails.getUsername());
+//        response.put("username", userDetails.getUsername());
         response.put("roles", roles);
-        response.put("userId", user.getUserId());
-        response.put("name", user.getName());
-        response.put("email", user.getEmail());
-        response.put("address", fullAddress);
 
+        UserResponse loginUser = new UserResponse();
+        loginUser.setUserId(user.getUserId());
+        loginUser.setUserEmail(user.getEmail());
+        loginUser.setUserName(user.getName());
+        // Safely get addresses, return empty list if null
+        loginUser.setUserAddress(user.getAddresses() != null ? user.getAddresses() : new java.util.ArrayList<>());
+
+        response.put("user", loginUser);
         return response;
     }
 

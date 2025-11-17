@@ -6,13 +6,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-public class UserResponseDTO {
-    private Long id;
-    private String name;
-    private String email;
-
+public class UserResponse {
+    private Long userId;
+    private String userName;
+    private String userEmail;
+    private List<Address> userAddress;
 }

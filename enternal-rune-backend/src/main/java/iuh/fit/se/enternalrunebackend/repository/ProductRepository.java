@@ -1,6 +1,8 @@
 package iuh.fit.se.enternalrunebackend.repository;
 
 import iuh.fit.se.enternalrunebackend.entity.Product;
+import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -69,5 +71,35 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
           AND EXTRACT(MONTH FROM p.createdAt) = :month
     """)
     long countProductsByMonth(@Param("year") int year, @Param("month") int month);
+
+
+  @Query("""
+      SELECT DISTINCT p
+      FROM Product p
+      LEFT JOIN p.prodBrand b
+      WHERE LOWER(p.prodName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+         OR LOWER(COALESCE(p.prodDescription, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+         OR LOWER(COALESCE(b.brandName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+      """)
+  List<Product> searchProductsForAssistant(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("""
+        SELECT p FROM Product p
+        JOIN p.prodBrand b
+        WHERE (:keyword IS NULL OR p.prodName LIKE %:keyword% OR p.prodModel LIKE %:keyword%)
+          AND (:brand IS NULL OR b.brandName = :brand)
+          AND (:status IS NULL OR p.productStatus = :status)
+        """)
+    Page<Product> searchProducts(
+            @Param("keyword") String keyword,
+            @Param("brand") String brand,
+            @Param("status") ProductStatus status,
+            Pageable pageable
+    );
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.prodBrand.brandId = :brandId")
+    Long countByBrandId(@Param("brandId") int brandId);
+
+
+
 
 }

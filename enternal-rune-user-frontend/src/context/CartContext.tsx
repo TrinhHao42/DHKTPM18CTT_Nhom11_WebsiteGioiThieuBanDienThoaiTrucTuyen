@@ -1,164 +1,224 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from "react";
-import { CartItem } from "@/types/CartItem";
-import { createContext, useContextSelector } from "use-context-selector";
+import React, { useState, useEffect, useMemo, useCallback, useContext, createContext } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import AxiosInstance from "@/configs/AxiosInstance";
+import { CartItem } from "@/types/CartItem";
 import { Product } from "@/types/Product";
-import { ProductVariant } from "@/types/ProductVariant";
+import { useAuth } from "./AuthContext";
+import { CartService } from "@/services/cartService";
 
-type CartContextProps = {
+// 🎯 Context types
+type CartStateType = {
   cartItems: CartItem[];
   cartQuantity: number;
   loading: boolean;
   error: string | null;
-  addCartItem: (product: Product) => void;
-  removeCartItem: (itemId: number) => void;
-  updateCartItemQuantity: (itemId: number, quantity: number) => void;
-  clearCart: () => void;
-  // refreshCart: () => void;
 };
 
-const CartContext = createContext<CartContextProps | null>(null);
+type CartActionsType = {
+  addCartItem: (
+    product: Product,
+    quantity?: number,
+    options?: { color?: string; storage?: string; version?: string }
+  ) => Promise<void>;
+  removeCartItem: (itemId: number) => Promise<void>;
+  updateCartItemQuantity: (itemId: number, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  refreshCart: (userId: number) => void;
+};
+
+const CartStateContext = createContext<CartStateType | null>(null);
+const CartActionsContext = createContext<CartActionsType | null>(null);
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
+  const { user } = useAuth();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [syncing, setSyncing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false);
 
-  // Tổng số lượng sản phẩm trong giỏ
+  // Tổng số lượng
   const cartQuantity = useMemo(
-    () => cartItems.reduce((acc, item) => acc + item.ciQuantity, 0),
+    () => cartItems.reduce((acc, item) => acc + item.quantity, 0),
     [cartItems]
   );
 
-  // // 🔹 Lấy giỏ hàng từ backend
-  // const fetchCart = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const res = await AxiosInstance.get(`/cart`);
-  //     setCartItems(res.data);
-  //     localStorage.setItem("cart", JSON.stringify(res.data));
-  //   } catch {
-  //     setError("Không thể tải giỏ hàng");
-  //   } finally {
-  //     setLoading(false);
-  //     setInitialized(true);
-  //   }
-  // };
+  // 🔹 Fetch cart
+  const fetchCart = useCallback(async (userId: number) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  // // 🔹 Hàm cập nhật giỏ hàng (debounce để tránh spam request)
-  // const debouncedUpdate = useDebouncedCallback(async (updatedItems: CartItem[]) => {
-  //   try {
-  //     setSyncing(true);
-  //     await AxiosInstance.put(`${process.env.BACK_END_URL}/cart`, updatedItems);
-  //     localStorage.setItem("cart", JSON.stringify(updatedItems));
-  //   } catch {
-  //     setError("Không thể cập nhật giỏ hàng");
-  //   } finally {
-  //     setSyncing(false);
-  //   }
-  // }, 500);
+      const response = await CartService.getCart(userId);
+      setCartItems(response.cartItems || []);
+    } catch (err: any) {
+      console.error("❌ Failed to fetch cart:", err);
+      setError(err.response?.data?.message || err.message || "Không thể tải giỏ hàng");
+      setCartItems([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // useEffect(() => {
-  //   fetchCart();
-  // }, []);
+  // Load cart khi user login
+  useEffect(() => {
+    if (user?.userId) {
+      fetchCart(user.userId);
+    } else {
+      setCartItems([]);
+      setError(null);
+    }
+  }, [user?.userId, fetchCart]);
 
-  // // 🔹 Khi cartItems thay đổi, tự động lưu local và gọi API (sau khi init xong)
-  // useEffect(() => {
-  //   if (!initialized) return;
-  //   localStorage.setItem("cart", JSON.stringify(cartItems));
-  //   if (cartItems.length > 0) debouncedUpdate(cartItems);
-  // }, [cartItems]);
+  // 🔹 Thêm vào giỏ
+  const addCartItem = async (
+    product: Product,
+    quantity: number = 1,
+    options?: { color?: string; storage?: string; version?: string }
+  ) => {
+    if (!user?.userId) {
+      const msg = "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng";
+      setError(msg);
+      throw new Error(msg);
+    }
 
-  // 🔹 Thêm sản phẩm vào giỏ
-  const addCartItem = (product: Product) => {
-    if (!product) return;
+    if (!product?.prodId) {
+      const msg = "Sản phẩm không hợp lệ";
+      setError(msg);
+      throw new Error(msg);
+    }
 
-    // Giả sử chọn variant đầu tiên
-    const variant: ProductVariant = {
-      prodvId: Number(product.prodId),
-      prodvProduct: Number(product.prodId),
-      prodvName: product.prodName,
-      prodvImage: product.images?.[0],
-      prodvModel: product.prodModel || "",
-      prodvVersion: product.prodVersion?.[0] || "",
-      prodvColor: product.prodColor?.[0] || "",
-      prodvPrice: product.productPrices?.[0]!,
-    };
-
-    setCartItems((prev) => {
-      const existingItem = prev.find(
-        (item) => item.ciProductVariant.prodvId === variant.prodvId
+    try {
+      setError(null);
+      const response = await CartService.addToCart(
+        user.userId,
+        Number(product.prodId),
+        quantity,
+        options
       );
 
-      if (existingItem) {
-        // Nếu đã có → tăng số lượng
-        return prev.map((item) =>
-          item.ciProductVariant.prodvId === variant.prodvId
-            ? { ...item, ciQuantity: item.ciQuantity + 1 }
-            : item
-        );
-      } else {
-        // Nếu chưa có → thêm mới
-        const newItem: CartItem = {
-          ciId: Date.now(),
-          ciProductVariant: variant,
-          ciQuantity: 1,
-        };
-        return [...prev, newItem];
+      setCartItems(response.cartItems || []);
+    } catch (err: any) {
+      console.error("❌ Failed to add to cart:", err);
+      const msg = err.message || "Không thể thêm sản phẩm vào giỏ hàng";
+      setError(msg);
+      throw err;
+    }
+  };
+
+  // 🔹 Xóa item (Optimistic)
+  const removeCartItem = async (itemId: number) => {
+    if (!user?.userId) return;
+
+    let previous = [...cartItems];
+    setCartItems(prev => prev.filter(c => c.cartItemId !== itemId));
+
+    try {
+      await CartService.removeCartItem(user.userId, itemId);
+      setError(null);
+    } catch (err) {
+      console.error("❌ Failed to remove:", err);
+      setCartItems(previous);
+      setError("Không thể xóa sản phẩm");
+      throw err;
+    }
+  };
+
+  // Hàm thực thi API thật
+  const updateQuantityAPI = useCallback(async (userId: number, itemId: number, quantity: number) => {
+    return await CartService.updateCartItem(userId, itemId, quantity);
+  }, []);
+
+  // Hàm debounce 300ms
+  const debouncedUpdateQuantity = useDebouncedCallback(
+    async (userId: number, itemId: number, quantity: number) => {
+      try {
+        await updateQuantityAPI(userId, itemId, quantity);
+        setError(null);
+      } catch (err) {
+        console.error("❌ Debounced update failed:", err);
+        setError("Không thể cập nhật số lượng");
       }
-    });
-  };
+    }, 500);
 
-  // 🔹 Xóa 1 sản phẩm khỏi giỏ
-  const removeCartItem = (itemId: number) => {
-    setCartItems((prev) => prev.filter((item) => item.ciId !== itemId));
-  };
+  // 🔹 Update số lượng với optimistic update + debounce API
+  const updateCartItemQuantity = async (itemId: number, newQuantity: number) => {
+    if (!user?.userId || newQuantity < 1) return;
 
-  // 🔹 Cập nhật số lượng
-  const updateCartItemQuantity = (itemId: number, delta: number) => {
-    setCartItems((prev) =>
-      prev.map((item) =>
-        item.ciId === itemId
-          ? { ...item, ciQuantity: Math.max(1, item.ciQuantity + delta) }
-          : item
+    let previous = [...cartItems];
+
+    // 🔥 Optimistic update UI ngay lập tức
+    setCartItems(prev =>
+      prev.map(item =>
+        item.cartItemId === itemId ? { ...item, quantity: newQuantity } : item
       )
     );
+
+    // ⏳ Chỉ gọi API khi user ngừng thao tác 300ms
+    debouncedUpdateQuantity(user.userId, itemId, newQuantity);
   };
 
   // 🔹 Xóa toàn bộ giỏ hàng
-  const clearCart = () => {
-    setCartItems([]);
-    localStorage.removeItem("cart");
+  const clearCart = async () => {
+    if (!user?.userId) {
+      setCartItems([]);
+      return;
+    }
+
+    try {
+      const response = await CartService.clearCart(user.userId);
+      setCartItems(response.cartItems || []);
+    } catch (err) {
+      setError("Không thể xóa giỏ hàng");
+      throw err;
+    }
   };
 
-  // 🔹 Làm mới giỏ hàng từ backend
-  // const refreshCart = () => fetchCart();
+  // 🔹 Refresh từ backend
+  const refreshCart = (userId: number) => {
+    fetchCart(userId);
+  };
 
-  const value: CartContextProps = {
+  // Value cho state
+  const stateValue: CartStateType = {
     cartItems,
     cartQuantity,
-    loading: loading || syncing,
+    loading,
     error,
+  };
+
+  // Value cho actions
+  const actionsValue: CartActionsType = {
     addCartItem,
     removeCartItem,
     updateCartItemQuantity,
     clearCart,
-    // refreshCart,
+    refreshCart,
   };
 
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartStateContext.Provider value={stateValue}>
+      <CartActionsContext.Provider value={actionsValue}>
+        {children}
+      </CartActionsContext.Provider>
+    </CartStateContext.Provider>
+  );
 };
 
-// Hook tiện lợi
+// Hooks
+export const useCartState = () => {
+  const ctx = useContext(CartStateContext);
+  if (!ctx) throw new Error("useCartState must be used within CartProvider");
+  return ctx;
+};
+
+export const useCartActions = () => {
+  const ctx = useContext(CartActionsContext);
+  if (!ctx) throw new Error("useCartActions must be used within CartProvider");
+  return ctx;
+};
+
 export const useCart = () => {
-  const context = useContextSelector(CartContext, (ctx) => ctx);
-  if (!context) throw new Error("useCart must be used within a CartProvider");
-  return context;
+  return { ...useCartState(), ...useCartActions() };
 };
 
-export default CartContext;
+export default CartStateContext;

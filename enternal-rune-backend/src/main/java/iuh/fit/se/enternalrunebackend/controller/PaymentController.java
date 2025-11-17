@@ -28,11 +28,6 @@ public class PaymentController {
     @Autowired
     private SePayServiceImpl sePayService;
 
-    @PostMapping("/order")
-    public Order order(@RequestBody Order order){
-        return sePayService.createOrder(order);
-    }
-
     @PostMapping("/getQRcode")
     public ResponseEntity<byte[]> getQRCode(@RequestBody QRCodeRequest request){
         try {
@@ -52,20 +47,9 @@ public class PaymentController {
         return null;
     };
 
-    @GetMapping("/checkOrderStatus/id={id}")
-    public PaymentStatus checkOrderStatus(@PathVariable int id) {
-        return sePayService.getOrderStatus(id);
-    }
-
-    @PostMapping("/webhook")
-    public TransactionRequest Payment(@RequestBody TransactionRequest transactionRequest) {
-        return sePayService.sePayWebHook(transactionRequest);
-    }
-
-    @GetMapping("/orders/customer/{customerId}")
-    public ResponseEntity<List<Order>> getOrdersByCustomerId(@PathVariable Long customerId) {
-        List<Order> orders = sePayService.getOrdersByCustomerId(customerId);
-        return ResponseEntity.ok(orders);
+    @PostMapping("/webhookPayment")
+    public boolean Payment(@RequestBody TransactionRequest transactionRequest) {
+        return sePayService.sePayWebHookPayment(transactionRequest);
     }
 
     @PostMapping("/webhook/refund")
@@ -73,18 +57,6 @@ public class PaymentController {
         try {
             OrderRefundRequest updatedRefundRequest = sePayService.updateRefundRequestPaymentStatus(transactionRequest);
             return ResponseEntity.ok(updatedRefundRequest);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PutMapping("/order/{orderId}/shipping-status")
-    public ResponseEntity<Order> updateOrderShippingStatus(
-            @PathVariable int orderId,
-            @RequestParam ShippingStatus shippingStatus) {
-        try {
-            Order updatedOrder = sePayService.updateOrderShippingStatus(orderId, shippingStatus);
-            return ResponseEntity.ok(updatedOrder);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
