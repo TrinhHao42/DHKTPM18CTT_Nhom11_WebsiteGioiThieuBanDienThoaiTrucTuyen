@@ -25,19 +25,19 @@ const Complete = ({ orderNumber, estimatedDelivery }: CompleteProps) => {
                                         <stop offset="100%" stopColor="#C7D2FE" />
                                     </linearGradient>
                                 </defs>
-                                
+
                                 {/* Shopping bag */}
                                 <rect x="50" y="70" width="100" height="100" rx="8" fill="url(#bagGradient)" />
                                 <path d="M60 70 L140 70 L135 80 L65 80 Z" fill="#A5B4FC" />
-                                
+
                                 {/* Products in bag */}
                                 <rect x="70" y="50" width="30" height="35" rx="4" fill="#FFB84D" />
                                 <rect x="110" y="40" width="25" height="40" rx="4" fill="#6366F1" />
-                                
+
                                 {/* Checkmark circle */}
                                 <circle cx="160" cy="150" r="25" fill="#10B981" />
                                 <path d="M150 150 L157 157 L170 144" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                                
+
                                 {/* Decorative elements */}
                                 <circle cx="40" cy="60" r="4" fill="#FCD34D" opacity="0.6" />
                                 <circle cx="165" cy="50" r="3" fill="#F87171" opacity="0.6" />
@@ -52,7 +52,7 @@ const Complete = ({ orderNumber, estimatedDelivery }: CompleteProps) => {
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
                     Đặt hàng thành công
                 </h2>
-                
+
                 <p className="text-sm text-gray-600 mb-2">
                     Chúng tôi đã nhận được đơn hàng của bạn. Bạn sẽ nhận được
                 </p>
@@ -61,7 +61,10 @@ const Complete = ({ orderNumber, estimatedDelivery }: CompleteProps) => {
                 </p>
 
                 {/* Order Details Link */}
-                <button className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-8 transition-colors">
+                <button
+                    onClick={() => router.push("/OrderManagementScreen")}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-8 transition-colors cursor-pointer"
+                >
                     Xem chi tiết đơn hàng
                 </button>
 

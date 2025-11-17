@@ -48,7 +48,7 @@ export default function ProductInfoPanel({ product }: ProductInfoPanelProps) {
                 {
                     color: selectedColor,
                     storage: selectedStorage,
-                    version: undefined // hoặc thêm state selectedVersion nếu cần
+                    version: undefined
                 }
             )
             toast.success(`✅ Đã thêm "${product.prodName}" vào giỏ hàng!`)

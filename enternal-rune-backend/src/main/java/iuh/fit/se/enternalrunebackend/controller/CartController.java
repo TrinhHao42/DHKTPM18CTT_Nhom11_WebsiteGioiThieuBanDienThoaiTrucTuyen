@@ -2,18 +2,14 @@ package iuh.fit.se.enternalrunebackend.controller;
 
 import iuh.fit.se.enternalrunebackend.dto.request.AddToCartRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.UpdateCartItemRequest;
-import iuh.fit.se.enternalrunebackend.dto.response.CartItemDTO;
 import iuh.fit.se.enternalrunebackend.dto.response.CartResponse;
 import iuh.fit.se.enternalrunebackend.entity.Cart;
-import iuh.fit.se.enternalrunebackend.entity.CartItem;
 import iuh.fit.se.enternalrunebackend.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/cart")

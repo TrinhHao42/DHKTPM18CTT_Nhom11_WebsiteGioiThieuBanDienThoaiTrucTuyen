@@ -1,111 +1,43 @@
 'use client'
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/AuthContext'
+import { getUserOrders } from '@/services/checkoutService'
 import { Order } from '@/types/Order'
 import { PaymentStatus } from '@/types/enums/PaymentStatus'
-import { ShippingStatus } from '@/types/enums/ShippingStatus'
 import OrderCard from './components/OrderCard'
 import { Package, Loader2, AlertCircle } from 'lucide-react'
 
 const OrderManagement = () => {
+    const router = useRouter();
+    const { user } = useAuth();
     const [orders, setOrders] = useState<Order[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [filterStatus, setFilterStatus] = useState<'all' | PaymentStatus>('all')
+    const [currentPage, setCurrentPage] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
+    const [totalItems, setTotalItems] = useState(0)
+    const pageSize = 5
 
-    // Mock data - Replace with actual API call
+    // Fetch real orders from backend
     useEffect(() => {
         const fetchOrders = async () => {
+            if (!user?.userId) {
+                setError('Vui lòng đăng nhập để xem đơn hàng');
+                setLoading(false);
+                return;
+            }
+
             try {
                 setLoading(true)
-                // TODO: Replace with actual API call
-                // const response = await axios.get('/api/orders')
-                
-                // Mock data for demonstration
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                
-                const mockOrders: Order[] = [
-                    {
-                        orderUser: {
-                            userId: 1,
-                            userName: 'Nguyễn Văn A',
-                            userEmail: 'user@example.com',
-                        } as any,
-                        orderDate: new Date('2025-11-01'),
-                        orderTotalPrice: 25000000,
-                        orderShippingAddress: {
-                            addressId: '1',
-                            streetName: '123 Nguyễn Huệ',
-                            wardName: 'Phường Bến Nghé',
-                            cityName: 'Quận 1, TP. Hồ Chí Minh',
-                            countryName: 'Việt Nam',
-                        },
-                        orderPaymentStatus: PaymentStatus.PENDING,
-                        orderShippingStatus: ShippingStatus.PENDING,
-                        orderListDetails: []
-                    },
-                    {
-                        orderUser: {
-                            userId: 1,
-                            userName: 'Nguyễn Văn A',
-                            userEmail: 'user@example.com',
-                        } as any,
-                        orderDate: new Date('2025-10-28'),
-                        orderTotalPrice: 15000000,
-                        orderShippingAddress: {
-                            addressId: '1',
-                            streetName: '123 Nguyễn Huệ',
-                            wardName: 'Phường Bến Nghé',
-                            cityName: 'Quận 1, TP. Hồ Chí Minh',
-                            countryName: 'Việt Nam',
-                        },
-                        orderPaymentStatus: PaymentStatus.PAID,
-                        orderShippingStatus: ShippingStatus.SHIPPED,
-                        orderListDetails: []
-                    },
-                    {
-                        orderUser: {
-                            userId: 1,
-                            userName: 'Nguyễn Văn A',
-                            userEmail: 'user@example.com',
-                        } as any,
-                        orderDate: new Date('2025-10-25'),
-                        orderTotalPrice: 8000000,
-                        orderShippingAddress: {
-                            addressId: '1',
-                            streetName: '123 Nguyễn Huệ',
-                            wardName: 'Phường Bến Nghé',
-                            cityName: 'Quận 1, TP. Hồ Chí Minh',
-                            countryName: 'Việt Nam',
-                        },
-                        orderPaymentStatus: PaymentStatus.FAILED,
-                        orderShippingStatus: ShippingStatus.CANCELLED,
-                        orderListDetails: []
-                    },
-                    {
-                        orderUser: {
-                            userId: 1,
-                            userName: 'Nguyễn Văn A',
-                            userEmail: 'user@example.com',
-                        } as any,
-                        orderDate: new Date('2025-10-20'),
-                        orderTotalPrice: 12000000,
-                        orderShippingAddress: {
-                            addressId: '1',
-                            streetName: '123 Nguyễn Huệ',
-                            wardName: 'Phường Bến Nghé',
-                            cityName: 'Quận 1, TP. Hồ Chí Minh',
-                            countryName: 'Việt Nam',
-                        },
-                        orderPaymentStatus: PaymentStatus.REFUNDED,
-                        orderShippingStatus: ShippingStatus.RETURNED,
-                        orderListDetails: []
-                    }
-                ]
-                
-                setOrders(mockOrders)
+                const data = await getUserOrders(user.userId, currentPage, pageSize);
+                setOrders(data.content || []);
+                setTotalPages(data.totalPages || 0);
+                setTotalItems(data.totalItems || 0);
                 setError(null)
-            } catch (err) {
-                setError('Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.')
+            } catch (err: any) {
+                setError(err.message || 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.')
                 console.error('Error fetching orders:', err)
             } finally {
                 setLoading(false)
@@ -113,7 +45,7 @@ const OrderManagement = () => {
         }
 
         fetchOrders()
-    }, [])
+    }, [user, currentPage])
 
     const filteredOrders = filterStatus === 'all' 
         ? orders 
@@ -237,11 +169,54 @@ const OrderManagement = () => {
                         </button>
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        {filteredOrders.map((order, index) => (
-                            <OrderCard key={index} order={order} />
-                        ))}
-                    </div>
+                    <>
+                        <div className="space-y-4">
+                            {filteredOrders.map((order, index) => (
+                                <OrderCard key={index} order={order} router={router} />
+                            ))}
+                        </div>
+                        
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="mt-6 flex items-center justify-center gap-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
+                                    disabled={currentPage === 0}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Trước
+                                </button>
+                                
+                                <div className="flex items-center gap-1">
+                                    {Array.from({ length: totalPages }, (_, i) => i).map(page => (
+                                        <button
+                                            key={page}
+                                            onClick={() => setCurrentPage(page)}
+                                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                currentPage === page
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'text-gray-700 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {page + 1}
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
+                                    disabled={currentPage === totalPages - 1}
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                >
+                                    Tiếp
+                                </button>
+                            </div>
+                        )}
+                        
+                        <p className="text-center text-sm text-gray-500 mt-4">
+                            Hiển thị {orders.length} / {totalItems} đơn hàng
+                        </p>
+                    </>
                 )}
             </div>
         </div>

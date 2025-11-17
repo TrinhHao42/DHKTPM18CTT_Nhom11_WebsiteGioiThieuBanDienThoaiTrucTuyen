@@ -48,7 +48,7 @@ export default function ShippingMetrics() {
       <MetricCard
         icon={
           <svg
-            className="w-6 h-6 text-brand"
+            className="w-6 h-6 text-brand dark:text-white/90"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -70,7 +70,7 @@ export default function ShippingMetrics() {
       <MetricCard
         icon={
           <svg
-            className="w-6 h-6 text-brand"
+            className="w-6 h-6 text-brand dark:text-white/90"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -92,7 +92,7 @@ export default function ShippingMetrics() {
       <MetricCard
         icon={
           <svg
-            className="w-6 h-6 text-brand"
+            className="w-6 h-6 text-brand dark:text-white/90"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -114,7 +114,7 @@ export default function ShippingMetrics() {
       <MetricCard
         icon={
           <svg
-            className="w-6 h-6 text-brand"
+            className="w-6 h-6 text-brand dark:text-white/90"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

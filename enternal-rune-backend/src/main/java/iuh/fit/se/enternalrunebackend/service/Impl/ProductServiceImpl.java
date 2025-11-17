@@ -1,15 +1,21 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
 
+import iuh.fit.se.enternalrunebackend.dto.request.ImageRequest;
+import iuh.fit.se.enternalrunebackend.dto.request.ProductPriceRequest;
+import iuh.fit.se.enternalrunebackend.dto.request.ProductRequest;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductDashboardListResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.ProductDashboardResponse;
-import iuh.fit.se.enternalrunebackend.repository.BrandRepository;
-import iuh.fit.se.enternalrunebackend.repository.ProductRepository;
+import iuh.fit.se.enternalrunebackend.entity.*;
+import iuh.fit.se.enternalrunebackend.entity.enums.PriceStatus;
+import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
+import iuh.fit.se.enternalrunebackend.repository.*;
 import iuh.fit.se.enternalrunebackend.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import iuh.fit.se.enternalrunebackend.entity.Product;
-import iuh.fit.se.enternalrunebackend.entity.ProductPrice;
+
 import jakarta.persistence.criteria.Join;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,6 +35,12 @@ public class ProductServiceImpl implements ProductService {
     private ProductRepository productRepository;
     @Autowired
     private BrandRepository brandRepository;
+    @Autowired
+    private ImageRepository imageRepository;
+    @Autowired
+    private ProductPriceRepository productPriceRepository;
+    @Autowired
+    private DiscountRepository discountRepository;
     @Override
     public List<Product> getAllProductsWithActivePrice() {
         return productRepository.findAllWithActivePrice();
@@ -127,25 +139,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDashboardResponse getProductDashboard() {
-//        LocalDate now = LocalDate.now();
-//        int year = now.getYear();
-//        int month = now.getMonthValue();
-//
-//        // Tháng trước
-//        int prevMonth = (month == 1) ? 12 : month - 1;
-//        int prevYear = (month == 1) ? year - 1 : year;
-
         //Tổng sản phẩm
         long totalProducts = productRepository.countTotalProducts();
-//        long totalThisMonth = productRepository.countProductsByMonth(year, month);
-//        long totalPrevMonth = productRepository.countProductsByMonth(prevYear, prevMonth);
-
         // Tổng danh mục
         long totalBrand = brandRepository.countTotalBrands();
 
         //Còn hàng
         long available = productRepository.countAvailableProducts();
-
         //Hết hàng
         long outOfStock = productRepository.countOutOfStockProducts();
         return new ProductDashboardResponse(
@@ -154,7 +154,154 @@ public class ProductServiceImpl implements ProductService {
                 available,
                 outOfStock
         );
+
     }
 
+//    @Override
+//    public Page<ProductDashboardListResponse> getProductDashboardList(Pageable pageable) {
+//        // Lấy sản phẩm phân trang
+//        Page<Product> products = productRepository.findAll(pageable);
+//
+//        // Map từng Product sang DTO
+//        return products.map(product -> {
+//            ProductDashboardListResponse dto = new ProductDashboardListResponse();
+//
+//            // Xử lý images an toàn
+//            List<Image> images = product.getImages();
+//            if (!images.isEmpty()) {
+//                dto.setImageUrl(images.get(0).getImageData());
+//            } else {
+//                dto.setImageUrl(null); // hoặc ảnh mặc định
+//            }
+//
+//            dto.setProductName(product.getProdName());
+//            dto.setModel(product.getProdModel());
+//            dto.setCategory(product.getProdBrand() != null ? product.getProdBrand().getBrandName() : "Unknown");
+//
+//            // Xử lý productPrices an toàn
+//            List<ProductPrice> prices = product.getProductPrices();
+//            if (!prices.isEmpty()) {
+//                dto.setPrice(prices.get(0).getPpPrice());
+//            } else {
+//                dto.setPrice(0.0); // hoặc giá mặc định
+//            }
+//
+//            dto.setStatus(product.getProductStatus() != null ? product.getProductStatus().name() : "UNKNOWN");
+//
+//            return dto;
+//        });
+//    }
+    @Override
+    public Page<ProductDashboardListResponse> getProductDashboardList(
+            String keyword, String brand, ProductStatus status, Pageable pageable
+    ) {
+        Page<Product> productsPage = productRepository.searchProducts(keyword, brand, status, pageable);
+
+        List<ProductDashboardListResponse> dtoList = productsPage.getContent().stream().map(product -> {
+            ProductDashboardListResponse dto = new ProductDashboardListResponse();
+
+            List<Image> images = product.getImages();
+            dto.setImageUrl(!images.isEmpty() ? images.get(0).getImageData() : null);
+
+            dto.setProductName(product.getProdName());
+            dto.setModel(product.getProdModel());
+            dto.setCategory(product.getProdBrand() != null ? product.getProdBrand().getBrandName() : "Unknown");
+
+            List<ProductPrice> prices = product.getProductPrices();
+            dto.setPrice(!prices.isEmpty() ? prices.get(0).getPpPrice() : 0.0);
+
+            dto.setStatus(product.getProductStatus() != null ? product.getProductStatus().name() : "UNKNOWN");
+
+            return dto;
+        }).toList();
+
+        return new PageImpl<>(dtoList, pageable, productsPage.getTotalElements());
+    }
+
+    @Override
+    public void addProduct(ProductRequest productRequest) {
+        Product product = new Product();
+        product.setProdName(productRequest.getProductName());
+        product.setProdModel(productRequest.getProductModel());
+        product.setProductStatus(ProductStatus.valueOf(productRequest.getProductStatus()));
+        product.setProdDescription(productRequest.getProductDescription());
+        product.setProdVersion(productRequest.getProductVersion());
+        product.setProdColor(productRequest.getProductColor());
+        Brand brand = brandRepository.findById(productRequest.getBrandId())
+                .orElseThrow(() -> new RuntimeException("Thương hiệu không tồn tại"));
+        product.setProdBrand(brand);
+
+        List<Image> images = productRequest.getImages().stream().map(ir -> {
+            Image img = new Image();
+            img.setImageName(ir.getImageName());
+            img.setImageData(ir.getImageData());
+            return img;
+        }).toList();
+        product.setImages(images);
+        List<ProductPrice> prices = productRequest.getProductPrices().stream().map(pr -> {
+            ProductPrice pp = new ProductPrice();
+            pp.setPpPrice(pr.getPpPrice());
+            return pp;
+        }).toList();
+        product.setProductPrices(prices);
+        productRepository.save(product);
+    }
+    @Override
+    public void deleteProduct(Integer productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product không tồn tại"));
+        productRepository.delete(product);
+    }
+    @Override
+    public Product updateProduct(Integer productId, ProductRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product không tồn tại"));
+
+        // Cập nhật những field cần thiết
+        if (request.getProductName() != null) product.setProdName(request.getProductName());
+        if (request.getProductModel() != null) product.setProdModel(request.getProductModel());
+        if (request.getProductStatus() != null)
+            product.setProductStatus(ProductStatus.valueOf(request.getProductStatus()));
+        if (request.getProductDescription() != null) product.setProdDescription(request.getProductDescription());
+        if (request.getProductVersion() != null) product.setProdVersion(request.getProductVersion());
+        if (request.getProductColor() != null) product.setProdColor(request.getProductColor());
+
+        // Cập nhật Brand nếu có
+        if (request.getBrandId() != null) {
+            Brand brand = brandRepository.findById(request.getBrandId())
+                    .orElseThrow(() -> new RuntimeException("Brand không tồn tại"));
+            product.setProdBrand(brand);
+        }
+        // Images: xóa cũ + thêm mới nếu có
+        if (request.getImages() != null) {
+            imageRepository.deleteAll(product.getImages());
+            List<Image> images = new ArrayList<>();
+            for (ImageRequest ir : request.getImages()) {
+                Image img = new Image();
+                img.setImageName(ir.getImageName());
+                img.setImageData(ir.getImageData());
+//                img.setProduct(product);
+                images.add(imageRepository.save(img));
+            }
+            product.setImages(images);
+        }
+
+        // ProductPrice: xóa cũ + thêm mới nếu có
+        if (request.getProductPrices() != null) {
+            productPriceRepository.deleteAll(product.getProductPrices());
+            List<ProductPrice> prices = new ArrayList<>();
+            for (ProductPriceRequest pr : request.getProductPrices()) {
+                ProductPrice price = new ProductPrice();
+                price.setPpPrice(pr.getPpPrice());
+//                price.setPpPriceStatus(pr.getPpPriceStatus());
+//                price.setPpStartDate(pr.getPpStartDate());
+//                price.setPpEndDate(pr.getPpEndDate());
+//                price.setProduct(product);
+                prices.add(productPriceRepository.save(price));
+            }
+            product.setProductPrices(prices);
+        }
+        return productRepository.save(product);
+    }
 
 }
