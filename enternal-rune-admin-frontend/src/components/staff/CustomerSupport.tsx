@@ -286,7 +286,7 @@ export default function CustomerSupport() {
   };
 
   return (
-    <div className="-mt-3 flex min-h-0 w-full flex-1 flex-col bg-gray-50 lg:mx-0 lg:mt-0 lg:flex-row">
+    <div className="-mt-3 flex min-h-0 w-full flex-1 flex-col bg-gray-50 dark:bg-gray-900 lg:mx-0 lg:mt-0 lg:flex-row">
       {" "}
       {/* flex-1 để fill parent, -mx/-mt cancel padding của AdminLayout trên mobile, min-h-0 cho flex shrink */}
       {/* Mobile Overlay - Chỉ overlay khi sidebar open và chưa vào chat view */}
@@ -298,12 +298,12 @@ export default function CustomerSupport() {
       )}
       {/* Sidebar - Danh sách chat */}
       <aside
-        className={`fixed inset-y-0 overflow-y-auto left-0 z-50 flex h-full min-h-0 w-full transform flex-col rounded-r-lg border-r border-gray-200 bg-white shadow-lg transition-all duration-300 ease-out will-change-transform lg:static lg:left-auto lg:z-auto lg:w-80 lg:rounded-none lg:shadow-none ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${showChatView ? "hidden lg:block" : "block lg:block"} `}
+        className={`fixed inset-y-0 overflow-y-auto left-0 z-50 flex h-full min-h-0 w-full transform flex-col rounded-r-lg border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg transition-all duration-300 ease-out will-change-transform lg:static lg:left-auto lg:z-auto lg:w-80 lg:rounded-none lg:shadow-none ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${showChatView ? "hidden lg:block" : "block lg:block"} `}
       >
         {/* Search */}
-        <div className="sticky top-3 z-10 flex-shrink-0 border-b border-gray-100 bg-white p-3 lg:p-4">
-          <div className="relative">
-            <div className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400">
+        <div className="sticky top-0 z-10 flex-shrink-0 border-b border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 h-16 lg:h-[4.5rem] flex items-center px-3 lg:px-4">
+          <div className="relative w-full">
+            <div className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400 dark:text-gray-500">
               <SearchIcon />
             </div>
             <input
@@ -311,7 +311,7 @@ export default function CustomerSupport() {
               placeholder="Search chats..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-md border border-gray-200 py-2 pr-3 pl-10 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 py-2 pr-3 pl-10 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
           </div>
         </div>
@@ -323,9 +323,9 @@ export default function CustomerSupport() {
               <div
                 key={chat.id}
                 onClick={() => handleChatClick(chat)}
-                className={`cursor-pointer border-b border-gray-100 p-3 transition-colors duration-150 last:border-b-0 hover:bg-gray-50 active:bg-gray-100 ${
+                className={`cursor-pointer border-b border-gray-100 dark:border-gray-700 p-3 transition-colors duration-150 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 ${
                   selectedChat.id === chat.id
-                    ? "border-r-4 border-r-blue-500 bg-blue-50 lg:border-r-0 lg:border-l-4 lg:border-l-blue-500"
+                    ? "border-r-4 border-r-blue-500 bg-blue-50 dark:bg-blue-900/30 lg:border-r-0 lg:border-l-4 lg:border-l-blue-500"
                     : ""
                 }`}
               >
@@ -339,19 +339,19 @@ export default function CustomerSupport() {
                       className="rounded-full"
                     />
                     {chat.isOnline && (
-                      <div className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white bg-green-500"></div>
+                      <div className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-green-500"></div>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center justify-between">
-                      <h3 className="truncate text-sm font-medium text-gray-900">
+                      <h3 className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                         {chat.name}
                       </h3>
-                      <span className="ml-2 flex-shrink-0 text-xs text-gray-500">
+                      <span className="ml-2 flex-shrink-0 text-xs text-gray-500 dark:text-gray-400">
                         {chat.time}
                       </span>
                     </div>
-                    <p className="truncate text-xs leading-tight text-gray-500">
+                    <p className="truncate text-xs leading-tight text-gray-500 dark:text-gray-400">
                       {chat.lastMessage}
                     </p>
                   </div>
@@ -364,7 +364,7 @@ export default function CustomerSupport() {
               </div>
             ))
           ) : (
-            <div className="p-4 text-center text-sm text-gray-500">
+            <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
               No chats found
             </div>
           )}
@@ -374,19 +374,19 @@ export default function CustomerSupport() {
       <main className="relative flex flex-col w-full h-full overflow-hidden">
 
         {/* Chat Header */}
-        <header className="sticky top-0 z-10 w-full flex-shrink-0 border-b border-gray-200 bg-white p-3 lg:p-4">
-        <div className="flex items-center justify-between">
+        <header className="sticky top-0 z-10 w-full flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 h-16 lg:h-[4.5rem] flex items-center px-3 lg:px-4">
+        <div className="flex items-center justify-between w-full">
             <div className="flex flex-1 items-center space-x-3">
               {/* Mobile Back Button */}
               <button
-                className="-ml-1 rounded-md p-2 transition-colors duration-150 hover:bg-gray-100 active:bg-gray-200 lg:hidden"
+                className="-ml-1 rounded-md p-2 transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 lg:hidden"
                 onClick={handleBackToList}
               >
                 <svg
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  className="h-5 w-5 text-gray-500"
+                  className="h-5 w-5 text-gray-500 dark:text-gray-400"
                 >
                   <path
                     strokeLinecap="round"
@@ -405,14 +405,14 @@ export default function CustomerSupport() {
                   className="rounded-full"
                 />
                 {selectedChat.isOnline && (
-                  <div className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white bg-green-500"></div>
+                  <div className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-green-500"></div>
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-base font-semibold text-gray-900">
+                <h3 className="truncate text-base font-semibold text-gray-900 dark:text-gray-100">
                   {selectedChat.name}
                 </h3>
-                <p className="truncate text-xs text-gray-500">
+                <p className="truncate text-xs text-gray-500 dark:text-gray-400">
                   {selectedChat.role}
                 </p>
               </div>
@@ -421,7 +421,7 @@ export default function CustomerSupport() {
         </header>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto bg-gray-50 px-3 py-4 ">
+        <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 px-3 py-4 ">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -446,7 +446,7 @@ export default function CustomerSupport() {
                     className={`max-w-full rounded-2xl px-3 py-2 ${
                       message.isOwn
                         ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-900 shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm"
                     }`}
                   >
                     <p className="text-sm break-words whitespace-pre-wrap">
@@ -454,7 +454,7 @@ export default function CustomerSupport() {
                     </p>
                   </div>
                   <div
-                    className={`mt-1 text-xs text-gray-400 ${message.isOwn ? "text-right" : "text-left"}`}
+                    className={`mt-1 text-xs text-gray-400 dark:text-gray-500 ${message.isOwn ? "text-right" : "text-left"}`}
                   >
                     {message.isOwn ? message.time : `${message.time}`}
                   </div>
@@ -467,10 +467,10 @@ export default function CustomerSupport() {
         </div>
 
         {/* Message Input */}
-        <footer className="sticky right-0 bottom-0 left-0 flex-shrink-0 border-t border-gray-200 bg-white/95 p-3 backdrop-blur-sm lg:p-4">
+        <footer className="sticky right-0 bottom-0 left-0 flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm p-3 lg:p-4">
           <div className="flex max-w-full items-end space-x-2">
-            <button className="flex-shrink-0 rounded-full p-2 transition-colors duration-150 hover:bg-gray-100 active:bg-gray-200">
-              <EmojiIcon className="h-5 w-5 text-gray-500" />
+            <button className="flex-shrink-0 rounded-full p-2 transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600">
+              <EmojiIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>
             <div className="relative min-w-0 flex-1">
               <input
@@ -481,19 +481,19 @@ export default function CustomerSupport() {
                 onKeyPress={(e) =>
                   e.key === "Enter" && !e.shiftKey && handleSendMessage()
                 }
-                className="w-full resize-none rounded-full border border-gray-200 px-4 py-3 text-sm transition-shadow duration-150 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                className="w-full resize-none rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 py-3 text-sm transition-shadow duration-150 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
               />
             </div>
-            <button className="flex-shrink-0 rounded-full p-2 transition-colors duration-150 hover:bg-gray-100 active:bg-gray-200 lg:hidden">
-              <PaperClipIcon className="h-5 w-5 text-gray-500" />
+            <button className="flex-shrink-0 rounded-full p-2 transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 lg:hidden">
+              <PaperClipIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>
-            <button className="flex-shrink-0 rounded-full p-2 transition-colors duration-150 hover:bg-gray-100 active:bg-gray-200 lg:hidden">
-              <MicrophoneIcon className="h-5 w-5 text-gray-500" />
+            <button className="flex-shrink-0 rounded-full p-2 transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 lg:hidden">
+              <MicrophoneIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>
             <button
               onClick={handleSendMessage}
               disabled={!messageInput.trim()}
-              className="transform rounded-full bg-blue-500 p-2 text-white transition-all duration-150 hover:bg-blue-600 active:scale-95 active:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              className="transform rounded-full bg-blue-500 p-2 text-white transition-all duration-150 hover:bg-blue-600 active:scale-95 active:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-gray-600"
             >
               <PaperPlaneIcon className="h-5 w-5" />
             </button>
