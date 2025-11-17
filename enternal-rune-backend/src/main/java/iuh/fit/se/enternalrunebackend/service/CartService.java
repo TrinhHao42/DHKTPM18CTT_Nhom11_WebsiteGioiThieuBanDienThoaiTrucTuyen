@@ -2,6 +2,8 @@ package iuh.fit.se.enternalrunebackend.service;
 
 import iuh.fit.se.enternalrunebackend.dto.request.AddToCartRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.UpdateCartItemRequest;
+import iuh.fit.se.enternalrunebackend.dto.response.CartItemResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductVariantResponse;
 import iuh.fit.se.enternalrunebackend.entity.*;
 import iuh.fit.se.enternalrunebackend.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -254,13 +256,13 @@ public class CartService {
     /**
      * Helper: Convert CartItem Entity → CartItemDTO
      */
-    private iuh.fit.se.enternalrunebackend.dto.response.CartItemDTO toCartItemDTO(CartItem item) {
+    private CartItemResponse toCartItemDTO(CartItem item) {
         ProductVariant variant = item.getCiProductVariant();
         Product product = variant.getProdvProduct();
         
         // Build ProductVariantDTO
-        iuh.fit.se.enternalrunebackend.dto.response.ProductVariantDTO variantDTO = 
-            iuh.fit.se.enternalrunebackend.dto.response.ProductVariantDTO.builder()
+        ProductVariantResponse variantDTO =
+            ProductVariantResponse.builder()
                 .variantId(variant.getProdvId())
                 .variantName(variant.getProdvName())
                 .color(variant.getProdvColor())
@@ -274,7 +276,7 @@ public class CartService {
                 .build();
         
         // Build CartItemDTO
-        return iuh.fit.se.enternalrunebackend.dto.response.CartItemDTO.builder()
+        return CartItemResponse.builder()
                 .cartItemId(item.getCiId())
                 .quantity(item.getCiQuantity())
                 .productVariant(variantDTO)
@@ -294,7 +296,7 @@ public class CartService {
             return response;
         }
 
-        List<iuh.fit.se.enternalrunebackend.dto.response.CartItemDTO> cartItemDTOs = 
+        List<CartItemResponse> cartItemResponses =
             cart.getItems().stream()
                 .map(this::toCartItemDTO)
                 .collect(java.util.stream.Collectors.toList());
@@ -312,7 +314,7 @@ public class CartService {
 
         iuh.fit.se.enternalrunebackend.dto.response.CartResponse response = 
             new iuh.fit.se.enternalrunebackend.dto.response.CartResponse();
-        response.setCartItems(cartItemDTOs);
+        response.setCartItems(cartItemResponses);
         response.setTotalItems(totalItems);
         response.setTotalPrice(totalPrice);
 
