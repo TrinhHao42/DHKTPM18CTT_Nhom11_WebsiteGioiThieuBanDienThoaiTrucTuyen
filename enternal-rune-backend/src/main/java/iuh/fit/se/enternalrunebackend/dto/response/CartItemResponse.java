@@ -7,8 +7,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CartItemDTO {
+public class CartItemResponse {
     private Integer cartItemId;
     private Long quantity;
-    private ProductVariantDTO productVariant;
+    private ProductVariantResponse productVariant;
 }

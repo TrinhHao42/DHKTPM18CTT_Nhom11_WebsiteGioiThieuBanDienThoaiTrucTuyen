@@ -8,6 +8,7 @@ import { ProductsProvider } from "@/context/ProductsContext";
 import { CartProvider } from "@/context/CartContext";
 import { CheckoutProvider } from "@/context/CheckoutContext";
 import { AuthProvider } from "@/context/AuthContext";
+import ToasterProvider from "@/components/ToasterProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +45,7 @@ export default function RootLayout({
                   <Footer />
                 </div>
                 <FloatChatButton />
+                <ToasterProvider />
               </ProductsProvider>
             </CartProvider>
           </AuthProvider>

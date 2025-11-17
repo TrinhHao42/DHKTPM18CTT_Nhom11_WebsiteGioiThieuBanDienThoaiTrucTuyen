@@ -63,3 +63,8 @@ body {
   animation: slideOutRight 0.3s ease-in;
 }
 
+/* Toast click to dismiss */
+[data-sonner-toast],
+[data-sonner-toast] > div {
+  cursor: pointer !important;
+}
