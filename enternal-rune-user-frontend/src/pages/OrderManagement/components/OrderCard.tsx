@@ -17,6 +17,7 @@ import {
     ChevronDown,
     ChevronUp
 } from 'lucide-react'
+import { useToast } from '@/hooks/useToast'
 
 interface OrderCardProps {
     order: Order
@@ -164,7 +165,7 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
     }
 
     const handleReturn = () => {
-        alert('Gửi yêu cầu trả hàng')
+        useToast().info('Gửi yêu cầu trả hàng thành công')
     }
 
     const handleRetry = () => {

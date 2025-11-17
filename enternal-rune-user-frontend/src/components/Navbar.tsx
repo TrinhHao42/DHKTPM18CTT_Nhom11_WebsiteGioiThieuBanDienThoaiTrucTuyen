@@ -19,7 +19,7 @@ export const Navbar = () => {
 
 
     if (!mounted) return null;
-    
+
     const isLoggedIn = !!token && !!user; // ✅ Kiểm tra đăng nhập từ context
 
     return (
@@ -75,12 +75,15 @@ export const Navbar = () => {
 
                 {isLoggedIn ? (
                     <>
-                        <span className="text-sm text-gray-700">
+                        <Link
+                            href="/Profile"
+                            className="text-sm text-gray-700"
+                        >
                             Hi,{" "}
                             <strong className="text-blue-600">
                                 {user?.userName}
                             </strong>
-                        </span>
+                        </Link>
                         <button
                             onClick={logout}
                             className="bg-red-500 text-white px-5 py-2 rounded-full text-sm hover:bg-red-600 transition"

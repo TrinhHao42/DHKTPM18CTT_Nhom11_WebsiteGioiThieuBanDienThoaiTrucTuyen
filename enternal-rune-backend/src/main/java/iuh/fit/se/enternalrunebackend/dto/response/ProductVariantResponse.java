@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductVariantDTO {
+public class ProductVariantResponse {
     private Long variantId;
     private String variantName;
     private String color;
