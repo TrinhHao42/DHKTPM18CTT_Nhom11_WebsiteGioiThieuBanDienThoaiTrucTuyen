@@ -73,12 +73,19 @@ public class ProductServiceImpl implements ProductService {
         if (search != null && !search.trim().isEmpty()) {
             spec = spec.and((root, query, cb) -> {
                 String searchPattern = "%" + search.toLowerCase() + "%";
-                return cb.or(
-                    cb.like(cb.lower(root.get("prodName")), searchPattern),
-                    cb.like(cb.lower(root.get("prodModel")), searchPattern),
-                    cb.like(cb.lower(root.get("prodBrand").get("brandName")), searchPattern),
-                    cb.like(cb.lower(root.get("prodDescription")), searchPattern)
-                );
+                List<jakarta.persistence.criteria.Predicate> searchPredicates = new ArrayList<>();
+                
+                // Always search in product name, model, description
+                searchPredicates.add(cb.like(cb.lower(root.get("prodName")), searchPattern));
+                searchPredicates.add(cb.like(cb.lower(root.get("prodModel")), searchPattern));
+                searchPredicates.add(cb.like(cb.lower(root.get("prodDescription")), searchPattern));
+                
+                // Only search in brand name if no brand filter is applied
+                if (brands == null || brands.isEmpty()) {
+                    searchPredicates.add(cb.like(cb.lower(root.get("prodBrand").get("brandName")), searchPattern));
+                }
+                
+                return cb.or(searchPredicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
             });
         }
 

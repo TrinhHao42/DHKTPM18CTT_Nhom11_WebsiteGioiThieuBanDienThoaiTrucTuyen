@@ -37,11 +37,11 @@ export const Navbar = () => {
                 className={`max-md:absolute max-md:top-0 max-md:left-0 max-md:h-full items-center justify-center ${open ? "max-md:w-full" : "max-md:w-0"
                     } transition-[width] max-md:bg-white/50 backdrop-blur flex-col md:flex-row flex gap-8 text-gray-900 text-sm font-semibold`}
             >
-                <Link href="#" className="hover:text-blue-600">
-                    Sản phẩm
+                <Link href="/" className="hover:text-blue-600">
+                    Trang chủ
                 </Link>
-                <Link href="#" className="hover:text-blue-600">
-                    Câu chuyện khách hàng
+                <Link href="/ProductListScreen" className="hover:text-blue-600">
+                    Sản phẩm
                 </Link>
                 <Link href="#" className="hover:text-blue-600">
                     Bảng giá
