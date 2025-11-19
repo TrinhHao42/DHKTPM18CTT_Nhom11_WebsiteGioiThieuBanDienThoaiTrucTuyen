@@ -71,6 +71,9 @@ spring:
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
             jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
             user-name-attribute: sub
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
 
 
 qr:
@@ -85,6 +88,7 @@ sepay:
 frontend:
   user: ${USER_URL}
   admin: ${ADMIN_URL}
+
 
 server:
   port: 8080
