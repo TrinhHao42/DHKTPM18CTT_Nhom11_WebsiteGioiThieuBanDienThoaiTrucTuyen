@@ -9,13 +9,15 @@ interface UseCommentFormProps {
   commentsData: CommentsPageResponse | null
   setCommentsData: (data: CommentsPageResponse | null | ((prev: CommentsPageResponse | null) => CommentsPageResponse | null)) => void
   onSuccess?: () => void
+  onReset?: () => void
 }
 
 export const useCommentForm = ({ 
   productId, 
   commentsData, 
   setCommentsData, 
-  onSuccess 
+  onSuccess,
+  onReset
 }: UseCommentFormProps) => {
   // Form state
   const [rating, setRating] = useState(5)
@@ -65,84 +67,130 @@ export const useCommentForm = ({
     // Don't reset displayName - keep user name or anonymous
     setImages([])
     setHoverRating(0)
+    
+    // Call external reset callback (e.g., to reset react-hook-form)
+    if (onReset) {
+      onReset()
+    }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, formData?: {
+    rating: number
+    comment: string
+    displayName: string
+  }) => {
     e.preventDefault()
-    
-    // Validation - chỉ yêu cầu rating và nội dung, không bắt buộc tên vì đã tự động set
-    if (!comment.trim()) {
-      toast.error('Vui lòng nhập nội dung bình luận')
+
+    // Sử dụng formData nếu được truyền vào (từ CommentForm), nếu không thì dùng internal state
+    const submitRating = formData?.rating ?? rating
+    const submitComment = formData?.comment ?? comment
+    const submitDisplayName = formData?.displayName ?? displayName
+
+    // Validation đầy đủ trước khi submit
+    if (!productId || (typeof productId === 'string' && productId.trim() === '')) {
+      toast.error('ID sản phẩm không hợp lệ')
       return
     }
 
-    if (!rating || rating < 1 || rating > 5) {
+    const validProductId = typeof productId === 'string' ? parseInt(productId, 10) : productId
+    if (isNaN(validProductId) || validProductId <= 0) {
+      toast.error('ID sản phẩm phải là số dương')
+      return
+    }
+    if (!submitRating || submitRating < 1 || submitRating > 5) {
       toast.error('Vui lòng chọn số sao đánh giá từ 1-5')
       return
+    }
+    if (!submitComment || !submitComment.trim()) {
+      toast.error('Vui lòng nhập nội dung bình luận')
+      return
+    }
+    if (submitComment.trim().length < 10) {
+      toast.error('Nội dung đánh giá phải có ít nhất 10 ký tự')
+      return
+    }
+    if (!submitDisplayName || !submitDisplayName.trim()) {
+      toast.error('Vui lòng nhập tên hiển thị')
+      return
+    }
+
+    // Kiểm tra ảnh (nếu có)
+    const imageFiles = images.length > 0 ? images.map(img => img.file) : undefined
+    if (imageFiles) {
+      for (const file of imageFiles) {
+        if (file.size > 5 * 1024 * 1024) { // 5MB
+          toast.error(`Ảnh ${file.name} quá lớn. Vui lòng chọn ảnh nhỏ hơn 5MB.`)
+          return
+        }
+        if (!file.type.startsWith('image/')) {
+          toast.error(`${file.name} không phải là file ảnh hợp lệ.`)
+          return
+        }
+      }
     }
 
     setSubmitting(true)
 
+    // Tạo optimistic comment ID duy nhất
+    const optimisticId = Date.now() + Math.random()
+
     // Create optimistic comment for UI
     const optimisticComment: CommentResponse = {
-      id: Date.now(), // temporary ID
-      productId: Number(productId),
-      displayName: displayName.trim(),
+      id: optimisticId,
+      productId: validProductId,
+      displayName: submitDisplayName.trim(),
       isAnonymous: false,
       status: CommentStatus.PENDING,
-      rating,
-      content: comment.trim(),
+      rating: submitRating,
+      content: submitComment.trim(),
       createdAt: new Date().toISOString(),
-      images: images.map((img, index) => ({
+      images: imageFiles ? imageFiles.map((file, index) => ({
         id: index,
-        fileName: img.file.name,
-        url: img.previewUrl,
-        size: img.file.size,
+        fileName: file.name,
+        url: URL.createObjectURL(file), // Tạo preview URL cho optimistic UI
+        size: file.size,
         displayOrder: index
-      })),
+      })) : [],
     }
 
-    // Add optimistic comment to UI
-    if (commentsData) {
-      setCommentsData(prev => prev ? {
+    // Add optimistic comment to UI (sử dụng callback để tránh race condition)
+    setCommentsData(prev => {
+      if (!prev) return prev
+      return {
         ...prev,
         comments: [optimisticComment, ...prev.comments],
         totalElements: prev.totalElements + 1
-      } : null)
-    }
+      }
+    })
 
     try {
+      // Chuẩn bị dữ liệu gửi
       const requestData: CreateCommentRequest = {
-        rating,
-        content: comment.trim(),
-        displayName: displayName.trim()
+        rating: submitRating,
+        content: submitComment.trim(),
+        displayName: submitDisplayName.trim()
       }
 
-      // Chỉ gửi ảnh nếu có ảnh được chọn
-      const imageFiles = images.length > 0 ? images.map(img => img.file) : undefined
-      const response = await CommentService.postComment(productId, requestData, imageFiles)
-
-      // Replace optimistic comment with real response
-      if (commentsData) {
-        setCommentsData(prev => prev ? {
+      // Gửi comment
+      const response = await CommentService.postComment(validProductId, requestData, imageFiles)
+      setCommentsData(prev => {
+        if (!prev) return prev
+        return {
           ...prev,
-          comments: prev.comments.map(c => 
-            c.id === optimisticComment.id ? response : c
+          comments: prev.comments.map(c =>
+            c.id === optimisticId ? { ...response, images: response.images || [] } : c
           ),
           totalElements: prev.totalElements, // Keep same count
-          totalRatings: prev.totalRatings + 1, // Update rating count
-        } : null)
-      }
-
+          totalRatings: (prev.totalRatings || 0) + 1, // Update rating count
+        }
+      })
       resetForm()
-      
-      // Success message based on whether images were included
       if (imageFiles && imageFiles.length > 0) {
         toast.success(`Đánh giá với ${imageFiles.length} ảnh đã được gửi thành công! 📸`)
       } else {
         toast.success('Đánh giá của bạn đã được gửi thành công! ⭐')
       }
-      
+
       // Call success callback
       if (onSuccess) {
         setTimeout(() => {
@@ -151,17 +199,23 @@ export const useCommentForm = ({
       }
 
     } catch (error) {
-      console.error('Error submitting comment:', error)
-      toast.error(error instanceof Error ? error.message : 'Không thể gửi bình luận')
-      
-      // Remove optimistic comment on error
-      if (commentsData) {
-        setCommentsData(prev => prev ? {
+      console.error('❌ Error submitting comment:', error)
+      setCommentsData(prev => {
+        if (!prev) return prev
+        optimisticComment.images.forEach(img => {
+          if (img.url.startsWith('blob:')) {
+            URL.revokeObjectURL(img.url)
+          }
+        })
+        return {
           ...prev,
-          comments: prev.comments.filter(c => c.id !== optimisticComment.id),
+          comments: prev.comments.filter(c => c.id !== optimisticId),
           totalElements: prev.totalElements - 1
-        } : null)
-      }
+        }
+      })
+      const errorMessage = error instanceof Error ? error.message : 'Không thể gửi bình luận. Vui lòng thử lại.'
+      toast.error(errorMessage)
+
     } finally {
       setSubmitting(false)
     }
@@ -215,11 +269,7 @@ export const useCommentForm = ({
     setDisplayName,
     images,
     submitting,
-    
-    // Refs
     fileInputRef,
-    
-    // Methods
     handleSubmit,
     handleImageUpload,
     removeImage,

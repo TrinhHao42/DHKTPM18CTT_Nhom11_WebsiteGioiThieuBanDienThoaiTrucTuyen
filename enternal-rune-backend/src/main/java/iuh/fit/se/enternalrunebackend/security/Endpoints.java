@@ -7,7 +7,10 @@ public class Endpoints {
             "/account/activate",
             "/account/me",
             "/brands/names",
-            "/notifications"
+            "/notifications",
+            "/api/products/*/comments",
+            "/api/products/*/rating-distribution",
+            "/api/products/*/average-rating"
     };
     public static final String[] PUBLIC_POST_ENDPOINTS = {
             "/account/login",
@@ -17,7 +20,9 @@ public class Endpoints {
             "/addresses/**",
             "/payment/**",
             "/ai/generate",
-            "/notifications"
+            "/notifications",
+            "/api/products/*/comments",
+            "/api/products/*/comments/text"
     };
     public static final String[] ADMIN_GET_ENDPOINTS = {
             "/addresses/**",

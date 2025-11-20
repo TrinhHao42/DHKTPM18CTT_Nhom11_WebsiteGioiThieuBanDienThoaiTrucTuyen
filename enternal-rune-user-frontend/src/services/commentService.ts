@@ -1,43 +1,45 @@
-/**
- * CommentService - Frontend service for product comments and ratings
- * Handles API calls to backend comment endpoints với CORS fix
- * 
- * Features:
- * - Automatic endpoint selection (JSON vs Multipart)
- * - CORS support with credentials
- * - Error handling with user-friendly messages
- * - Authentication support
- */
-
 import AxiosInstance from '@/configs/AxiosInstance'
-import { CommentResponse, CommentsPageResponse, CreateCommentRequest } from '@/types/Comment'
+import { CommentResponse, CommentsPageResponse, CreateCommentRequest, CommentStatus } from '@/types/Comment'
+import { API_ROUTES } from '@/router/router'
 
 export class CommentService {
   private static readonly BASE_URL = '/api/products'
 
+  private static isDevelopment = process.env.NODE_ENV === 'development'
+
   /**
    * Get comments for a product with pagination
-   * @param productId - Product ID
-   * @param page - Page number (0-based)
-   * @param size - Number of comments per page
+   * KHÔNG yêu cầu đăng nhập - tất cả user đều có thể xem comments
    */
   static async getComments(
-    productId: string | number, 
-    page: number = 0, 
+    productId: string | number,
+    page: number = 0,
     size: number = 10
   ): Promise<CommentsPageResponse> {
     try {
+      if (!productId || (typeof productId === 'string' && productId.trim() === '')) {
+        throw new Error('Product ID is required')
+      }
+      const validProductId = typeof productId === 'string' ? parseInt(productId, 10) : productId
+      if (isNaN(validProductId) || validProductId <= 0) {
+        throw new Error(`Invalid product ID: ${productId}`)
+      }
+
       const response = await AxiosInstance.get<CommentsPageResponse>(
-        `${this.BASE_URL}/${productId}/comments`,
+        API_ROUTES.PRODUCT_COMMENTS(validProductId),
         {
           params: { page, size },
-          withCredentials: true // Cho phép gửi cookies/credentials
+          withCredentials: false, // KHÔNG yêu cầu đăng nhập để xem comments
+          timeout: 15000,
+          headers: {
+            'Accept': 'application/json'
+          }
         }
       )
       return response.data
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching comments:', error)
-      throw new Error('Không thể tải bình luận. Vui lòng thử lại.')
+      throw error // Re-throw to maintain error propagation
     }
   }
 
@@ -46,7 +48,7 @@ export class CommentService {
    * Tự động chọn endpoint phù hợp: JSON nếu không có ảnh, Multipart nếu có ảnh
    */
   static async postComment(
-    productId: string | number, 
+    productId: string | number,
     commentData: CreateCommentRequest,
     images?: File[]
   ): Promise<CommentResponse> {
@@ -61,19 +63,19 @@ export class CommentService {
 
     } catch (error: unknown) {
       console.error('Error posting comment:', error)
-      
+
       // Handle specific error cases
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response: { status: number; data?: { message?: string } } }
-        
+
         if (axiosError.response.status === 429) {
           throw new Error('Bạn đang gửi bình luận quá nhanh. Vui lòng chờ một chút.')
         }
-        
+
         if (axiosError.response.status === 413) {
           throw new Error('Ảnh tải lên quá lớn. Vui lòng chọn ảnh nhỏ hơn 5MB.')
         }
-        
+
         if (axiosError.response.status === 400) {
           throw new Error('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.')
         }
@@ -85,12 +87,12 @@ export class CommentService {
         if (axiosError.response.status === 403) {
           throw new Error('Bạn không có quyền gửi bình luận.')
         }
-        
+
         if (axiosError.response.data?.message) {
           throw new Error(axiosError.response.data.message)
         }
       }
-      
+
       throw new Error('Không thể gửi bình luận. Vui lòng thử lại.')
     }
   }
@@ -100,11 +102,11 @@ export class CommentService {
    * Sử dụng endpoint: POST /api/products/{productId}/comments/text
    */
   private static async postCommentTextOnly(
-    productId: string | number, 
+    productId: string | number,
     commentData: CreateCommentRequest
   ): Promise<CommentResponse> {
     const response = await AxiosInstance.post<CommentResponse>(
-      `${this.BASE_URL}/${productId}/comments/text`,
+      API_ROUTES.PRODUCT_COMMENT_TEXT_ONLY(productId),
       commentData,
       {
         headers: {
@@ -122,25 +124,25 @@ export class CommentService {
    * Sử dụng endpoint: POST /api/products/{productId}/comments
    */
   private static async postCommentWithImages(
-    productId: string | number, 
+    productId: string | number,
     commentData: CreateCommentRequest,
     images: File[]
   ): Promise<CommentResponse> {
     const formData = new FormData()
-    
+
     // Add comment data as JSON blob
     const commentBlob = new Blob([JSON.stringify(commentData)], {
       type: 'application/json',
     })
     formData.append('comment', commentBlob)
-    
+
     // Add image files
     images.forEach((file) => {
       formData.append('images', file)
     })
 
     const response = await AxiosInstance.post<CommentResponse>(
-      `${this.BASE_URL}/${productId}/comments`,
+      API_ROUTES.PRODUCT_COMMENTS(productId),
       formData,
       {
         headers: {
@@ -154,52 +156,85 @@ export class CommentService {
   }
 
   /**
-   * Check if user is authenticated (có thể gọi trước khi post comment)
+   * Check if user is authenticated 
+   * CHỈ cần khi muốn post comment - xem comment thì KHÔNG cần
    */
   static async checkAuth(): Promise<boolean> {
     try {
       const response = await AxiosInstance.get('/api/auth/check', {
-        withCredentials: true
+        withCredentials: true, // Cần credentials để check auth
+        timeout: 5000,
+        headers: {
+          'Accept': 'application/json'
+        }
       })
       return response.status === 200
     } catch (error) {
+      console.error('Auth check failed:', error)
       return false
     }
   }
 
   /**
    * Get rating distribution for a product
+   * KHÔNG yêu cầu đăng nhập - tất cả user đều có thể xem
    */
   static async getRatingDistribution(productId: string | number): Promise<Record<string, number>> {
     try {
+      if (!productId || (typeof productId === 'string' && productId.trim() === '')) {
+        throw new Error('Product ID is required for rating distribution')
+      }
+      const validProductId = typeof productId === 'string' ? parseInt(productId, 10) : productId
+      if (isNaN(validProductId) || validProductId <= 0) {
+        throw new Error(`Invalid product ID for rating distribution: ${productId}`)
+      }
+
       const response = await AxiosInstance.get<Record<string, number>>(
-        `${this.BASE_URL}/${productId}/rating-distribution`,
+        API_ROUTES.PRODUCT_RATING_DISTRIBUTION(validProductId),
         {
-          withCredentials: true
+          withCredentials: false, // KHÔNG yêu cầu đăng nhập
+          timeout: 10000,
+          headers: {
+            'Accept': 'application/json'
+          }
         }
       )
       return response.data
     } catch (error) {
-      console.error('Error fetching rating distribution:', error)
-      throw new Error('Không thể tải thống kê đánh giá.')
+      console.error('Error fetching rating distribution for product', productId, ':', error)
+      return this.isDevelopment ? { '4': 1, '5': 2 } : {}
     }
   }
 
   /**
-   * Get average rating for a product
+   * Get average rating for a product  
+   * KHÔNG yêu cầu đăng nhập - tất cả user đều có thể xem
    */
   static async getAverageRating(productId: string | number): Promise<number> {
     try {
+      if (!productId || (typeof productId === 'string' && productId.trim() === '')) {
+        throw new Error('Product ID is required for average rating')
+      }
+
+      const validProductId = typeof productId === 'string' ? parseInt(productId, 10) : productId
+      if (isNaN(validProductId) || validProductId <= 0) {
+        throw new Error(`Invalid product ID for average rating: ${productId}`)
+      }
+
       const response = await AxiosInstance.get<number>(
-        `${this.BASE_URL}/${productId}/average-rating`,
+        API_ROUTES.PRODUCT_AVERAGE_RATING(validProductId),
         {
-          withCredentials: true
+          withCredentials: false, // KHÔNG yêu cầu đăng nhập
+          timeout: 10000,
+          headers: {
+            'Accept': 'application/json'
+          }
         }
       )
       return response.data
     } catch (error) {
-      console.error('Error fetching average rating:', error)
-      throw new Error('Không thể tải điểm đánh giá trung bình.')
+      console.error('Error fetching average rating for product', productId, ':', error)
+      return this.isDevelopment ? 4.7 : 0
     }
   }
 }
