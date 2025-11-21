@@ -24,13 +24,13 @@ public class WebsocketConfig implements WebSocketConfigurer, WebSocketMessageBro
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Endpoint WebSocket cho frontend (với SockJS fallback)
-        registry.addEndpoint("/ws")
+        // 1. SockJS endpoint cho frontend web (fallback support)
+        registry.addEndpoint("/ws/sockjs")
                 .setAllowedOriginPatterns("*")
                 .withSockJS()
                 .setSuppressCors(true);
         
-        // Native WebSocket endpoint cho Postman và các WS client thuần
+        // 2. Native WebSocket endpoint cho Postman, mobile, hoặc WS client thuần
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*");
     }

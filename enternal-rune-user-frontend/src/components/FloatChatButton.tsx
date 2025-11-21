@@ -137,10 +137,11 @@ export default function FloatChatButton() {
     const parts: React.ReactNode[] = [];
     let currentIndex = 0;
 
-    // Regex để tìm **bold** và số tiền
+    // Regex để tìm **bold** và số tiền (bao gồm cả scientific notation)
     const boldRegex = /\*\*(.*?)\*\*/g;
-    const priceRegex = /(\d{1,3}(?:\.\d{3})*(?:\.\d+)?)\s*đ/g;
-    const matches: Array<{ type: 'bold' | 'price'; start: number; end: number; content: string }> = [];
+    // Tìm số tiền: dạng thường (123.456) hoặc scientific (1.23E7, 3.099E7)
+    const priceRegex = /(\d+(?:\.\d+)?(?:E[+-]?\d+)?|\d{1,3}(?:\.\d{3})*(?:\.\d+)?)\s*đ/gi;
+    const matches: Array<{ type: 'bold' | 'price'; start: number; end: number; content: string; originalNumber?: string }> = [];
 
     // Tìm tất cả bold
     let match;
@@ -155,11 +156,17 @@ export default function FloatChatButton() {
 
     // Tìm tất cả số tiền
     while ((match = priceRegex.exec(text)) !== null) {
+      const numberStr = match[1];
+      // Convert scientific notation to number and format
+      const number = parseFloat(numberStr);
+      const formattedPrice = number.toLocaleString('vi-VN') + ' đ';
+      
       matches.push({
         type: 'price',
         start: match.index,
         end: match.index + match[0].length,
-        content: match[0],
+        content: formattedPrice,
+        originalNumber: numberStr,
       });
     }
 

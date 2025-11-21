@@ -49,6 +49,9 @@ export const Navbar = () => {
                 <Link href="#" className="hover:text-blue-600">
                     Tài liệu
                 </Link>
+                <Link href="/AssistanceChatScreen" className="hover:text-blue-600">
+                    Hỗ trợ
+                </Link>
                 <button
                     id="closeMenu"
                     className="md:hidden text-gray-600"
