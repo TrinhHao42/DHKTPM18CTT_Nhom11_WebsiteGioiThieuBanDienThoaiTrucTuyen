@@ -30,7 +30,7 @@ public class ProductVectorService {
                     .map(p -> Document.builder()
                             .id(UUID.randomUUID().toString())  // id duy nhất
                             .text(p.getProdName() + " - " + p.getProdDescription() +
-                                    ". Giá: " + p.getProductPrices().getFirst().getPpPrice() + " VNĐ")
+                                    ". Giá: " + p.getProductPrices().getFirst().getPpPrice())
                             .metadata(Map.of(
                                     "entity", "product",
                                     "productId", p.getProdId(),
