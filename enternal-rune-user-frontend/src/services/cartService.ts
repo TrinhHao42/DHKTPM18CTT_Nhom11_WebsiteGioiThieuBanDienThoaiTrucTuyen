@@ -56,13 +56,6 @@ export class CartService {
     options?: { color?: string; storage?: string; version?: string }
   ): Promise<CartResponse> {
     try {
-      console.log('➕ CartService: Adding to cart', { 
-        userId, 
-        productId, 
-        quantity,
-        options 
-      })
-      
       const request: AddToCartDTO = { 
         productId,
         quantity,
@@ -71,12 +64,8 @@ export class CartService {
         version: options?.version,
       }
       
-      console.log('📤 Request body:', request)
-      console.log('📍 Endpoint:', `/cart/add/${userId}`)
-      
       const response = await AxiosInstance.post<CartResponse>(`/cart/add/${userId}`, request)
       
-      console.log('✅ CartService: Item added to cart', response.data)
       return response.data
     } catch (error: any) {
       console.error('❌ CartService: Failed to add item to cart', {
@@ -102,17 +91,12 @@ export class CartService {
     quantity: number
   ): Promise<CartResponse> {
     try {
-      console.log('🔄 CartService: Updating cart item', { userId, cartItemId, quantity })
-      
       const request: UpdateCartItemDTO = { 
         cartItemId, 
         quantity 
       }
       
-      console.log('📤 Request body:', request)
-      
       const response = await AxiosInstance.put<CartResponse>(`/cart/update/${userId}`, request)
-      console.log('✅ CartService: Cart item updated', response.data)
       return response.data
     } catch (error: any) {
       console.error('❌ CartService: Failed to update cart item', {
@@ -132,13 +116,10 @@ export class CartService {
    */
   static async removeCartItem(userId: number, cartItemId: number): Promise<CartResponse> {
     try {
-      console.log('🗑️ CartService: Removing cart item', { userId, cartItemId })
-      
       const response = await AxiosInstance.delete<CartResponse>(
         `/cart/remove/${userId}/${cartItemId}`
       )
       
-      console.log('✅ CartService: Cart item removed', response.data)
       return response.data
     } catch (error: any) {
       console.error('❌ CartService: Failed to remove cart item', {
@@ -158,11 +139,8 @@ export class CartService {
    */
   static async clearCart(userId: number): Promise<CartResponse> {
     try {
-      console.log('🧹 CartService: Clearing cart', { userId })
-      
       const response = await AxiosInstance.delete<CartResponse>(`/cart/clear/${userId}`)
       
-      console.log('✅ CartService: Cart cleared', response.data)
       return response.data
     } catch (error: any) {
       console.error('❌ CartService: Failed to clear cart', {

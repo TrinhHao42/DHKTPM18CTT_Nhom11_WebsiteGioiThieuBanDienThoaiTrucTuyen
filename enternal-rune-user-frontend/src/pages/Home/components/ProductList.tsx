@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect } from "react"
+import React from "react"
 import ProductCard from "../../../components/ProductCard"
 import { FaArrowRight } from "react-icons/fa6";
 import { useProducts } from "@/context/ProductsContext";
@@ -39,16 +39,7 @@ export const renderBestSellers = (products: Product[], hideButton = false) => {
 export default function ProductList() {
     const { products, productLatest, loading, error } = useProducts();
 
-    // Debug logging
-    useEffect(() => {
-        console.log('📦 [ProductList] Render state:', {
-            productsCount: products.length,
-            productLatestCount: productLatest.length,
-            loading,
-            error,
-            productsSample: products.slice(0, 2)
-        });
-    }, [products, productLatest, loading, error]);
+    // Debug logging - removed for production
 
     if (loading) {
         return <div className="text-center py-8">Đang tải sản phẩm...</div>;

@@ -154,7 +154,6 @@ const Payment = () => {
                     for (const item of checkoutItems) {
                         await removeCartItem(item.cartItemId);
                     }
-                    console.log('✅ Đã xóa các items đã đặt hàng khỏi giỏ hàng');
                 } catch (cartError) {
                     console.error('❌ Lỗi khi xóa giỏ hàng:', cartError);
                 }
