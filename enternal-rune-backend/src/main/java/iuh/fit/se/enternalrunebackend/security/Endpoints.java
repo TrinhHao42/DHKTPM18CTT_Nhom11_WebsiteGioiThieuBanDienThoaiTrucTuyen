@@ -9,6 +9,7 @@ public class Endpoints {
             "/brands/names",
             "/notifications",
             "/api/products/*/comments",
+            "/api/products/*/comments/*/replies",
             "/api/products/*/rating-distribution",
             "/api/products/*/average-rating"
     };
@@ -22,7 +23,8 @@ public class Endpoints {
             "/ai/generate",
             "/notifications",
             "/api/products/*/comments",
-            "/api/products/*/comments/text"
+            "/api/products/*/comments/text",
+            "/api/products/*/comments/*/replies"
     };
     public static final String[] ADMIN_GET_ENDPOINTS = {
             "/addresses/**",

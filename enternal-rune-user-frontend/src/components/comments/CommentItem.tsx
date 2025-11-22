@@ -1,8 +1,11 @@
-import React from 'react'
-import { FaUser, FaCalendarAlt } from 'react-icons/fa'
+import React, { useState, useEffect } from 'react'
+import { FaUser, FaCalendarAlt, FaReply } from 'react-icons/fa'
 import Image from 'next/image'
 import { StarRating } from '@/components/ui/StarRating'
-import { CommentResponse } from '@/types/Comment'
+import { CommentResponse, CommentStatus } from '@/types/Comment'
+import { ReplyForm } from './ReplyForm'
+import { ReplyService } from '@/services/replyService'
+import { toast } from 'react-hot-toast'
 
 interface CommentItemProps {
   comment: CommentResponse
@@ -10,7 +13,104 @@ interface CommentItemProps {
 }
 
 export const CommentItem: React.FC<CommentItemProps> = ({ comment, onImageClick }) => {
+  const [showReplyForm, setShowReplyForm] = useState(false)
+  const [localReplies, setLocalReplies] = useState<CommentResponse[]>(comment.replies || [])
+  const [repliesLoaded, setRepliesLoaded] = useState(false)
   const displayName = comment.displayName || comment.username || 'Ẩn danh'
+
+  // ✅ FIX: Load replies from server on component mount if there should be replies
+  useEffect(() => {
+    const loadReplies = async () => {
+      if (comment.id && comment.replyCount && comment.replyCount > 0 && !repliesLoaded) {
+        try {
+          const repliesResponse = await ReplyService.getReplies(comment.productId, comment.id, 0, 50)
+          setLocalReplies(repliesResponse.comments)
+          setRepliesLoaded(true)
+        } catch {
+          // Keep existing replies from props as fallback
+        }
+      }
+    }
+
+    loadReplies()
+  }, [comment.id, comment.replyCount, comment.productId, repliesLoaded])
+
+  const handleReplySubmit = async (replyData: {
+    commentId?: number
+    content: string
+    displayName: string
+  }) => {
+    if (!comment.id) {
+      toast.error('Không thể phản hồi: ID bình luận không hợp lệ')
+      return
+    }
+
+    // Generate unique temporary ID for optimistic update
+    const optimisticId = -Date.now() // Use negative number for temporary IDs
+    
+    try {
+      // Tạo reply optimistic (hiển thị ngay trên UI)
+      const optimisticReply: CommentResponse = {
+        id: optimisticId, // Temporary unique ID (negative number)
+        content: replyData.content,
+        rating: 0, // Replies không có rating
+        displayName: replyData.displayName,
+        isAnonymous: false,
+        status: CommentStatus.APPROVED,
+        createdAt: new Date().toISOString(),
+        productId: comment.productId,
+        parentCommentId: comment.id,
+        images: []
+      }
+
+      // Thêm optimistic reply vào UI ngay lập tức
+      setLocalReplies(prev => [...prev, optimisticReply])
+      setShowReplyForm(false)
+
+      // Gọi API thực tế
+      const actualReply = await ReplyService.postReply(
+        comment.productId,
+        comment.id,
+        {
+          content: replyData.content,
+          displayName: replyData.displayName
+        }
+      )
+
+      // ✅ FIX: Replace optimistic reply with actual reply and ensure no duplicates
+      setLocalReplies(prev => {
+        // Check if actual reply already exists (to prevent duplicates)
+        const hasActualReply = prev.some(reply => reply.id === actualReply.id)
+        if (hasActualReply) {
+          return prev.filter(reply => reply.id !== optimisticId)
+        }
+        
+        return prev.map(reply => 
+          reply.id === optimisticId ? {
+            ...actualReply,
+            // Ensure proper display  
+            id: actualReply.id,
+            content: actualReply.content,
+            displayName: actualReply.displayName,
+            createdAt: actualReply.createdAt,
+            parentCommentId: actualReply.parentCommentId
+          } : reply
+        )
+      })
+
+      toast.success('Phản hồi đã được gửi thành công!')
+
+    } catch (error) {
+      // Remove the specific optimistic reply that failed
+      setLocalReplies(prev => 
+        prev.filter(reply => reply.id !== optimisticId)
+      )
+
+      const errorMessage = error instanceof Error ? error.message : 'Không thể gửi phản hồi. Vui lòng thử lại.'
+      toast.error(errorMessage)
+      setShowReplyForm(true) // Re-open form on error
+    }
+  }
   
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200">
@@ -79,6 +179,15 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onImageClick 
               </svg>
               Hữu ích
             </button>
+            
+            <button 
+              onClick={() => setShowReplyForm(!showReplyForm)}
+              className="flex items-center gap-2 text-sm text-gray-600 hover:text-green-600 transition-colors"
+            >
+              <FaReply className="w-3 h-3" />
+              Phản hồi
+            </button>
+
             <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-500 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -86,6 +195,53 @@ export const CommentItem: React.FC<CommentItemProps> = ({ comment, onImageClick 
               Báo cáo
             </button>
           </div>
+
+          {/* Replies Section */}
+          {localReplies.length > 0 && (
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <FaReply className="w-3 h-3" />
+                <span>{localReplies.length} phản hồi</span>
+              </div>
+              
+              {localReplies.map((reply, index) => (
+                <div key={`reply-${reply.id || `temp-${index}`}`} className="bg-gray-50 rounded-xl p-4 border-l-4 border-green-400">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center shadow-sm">
+                      <FaUser className="text-white text-sm" />
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-gray-900 text-sm">
+                          {reply.displayName || 'Ẩn danh'}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(reply.createdAt).toLocaleString('vi-VN')}
+                        </span>
+                      </div>
+                      
+                      {reply.content && (
+                        <p className="text-gray-700 text-sm leading-relaxed">
+                          {reply.content}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Reply Form */}
+          {showReplyForm && (
+            <ReplyForm
+              commentId={comment.id}
+              parentDisplayName={displayName}
+              onCancel={() => setShowReplyForm(false)}
+              onReplySubmit={handleReplySubmit}
+            />
+          )}
         </div>
       </div>
     </div>

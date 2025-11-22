@@ -80,9 +80,12 @@ public class CommentServiceImpl implements CommentService {
     }
     
     @Override
+    @Transactional
     public CommentResponse createComment(Integer productId, CreateCommentRequest request, 
                                        MultipartFile[] images, Optional<User> currentUser, String ipAddress) {
-        log.info("Creating comment for product {} from IP {}", productId, ipAddress);
+        String commentType = request.getParentCommentId() != null ? "REPLY" : "ROOT_COMMENT";
+        log.info("Creating {} for product {} from IP {}, parentId: {}", 
+                commentType, productId, ipAddress, request.getParentCommentId());
         
         // Validate request
         validateCommentRequest(request, images);
@@ -127,11 +130,15 @@ public class CommentServiceImpl implements CommentService {
             Comment parentComment = commentRepository.findById(request.getParentCommentId())
                     .orElseThrow(() -> new IllegalArgumentException("Parent comment not found: " + request.getParentCommentId()));
             comment.setComment(parentComment);
+            log.info("Creating reply to comment ID: {} for product: {}", request.getParentCommentId(), productId);
         }
         
         // Save comment
         Comment savedComment = commentRepository.save(comment);
-        log.info("Comment saved with ID: {}", savedComment.getCmId());
+        log.info("Comment saved with ID: {}, isReply: {}, parentId: {}", 
+                savedComment.getCmId(), 
+                savedComment.getComment() != null,
+                savedComment.getComment() != null ? savedComment.getComment().getCmId() : null);
         
         // Handle image uploads
         List<CommentImage> commentImages = new ArrayList<>();
@@ -141,8 +148,12 @@ public class CommentServiceImpl implements CommentService {
         
         // Set images and save again to trigger cascade
         savedComment.setImages(commentImages);
+        commentRepository.saveAndFlush(savedComment);
         
-        return mapToCommentResponse(savedComment, productId);
+        CommentResponse response = mapToCommentResponse(savedComment, productId);
+        log.info("Reply creation completed. Response ID: {}, ParentID: {}", response.getId(), response.getParentCommentId());
+        
+        return response;
     }
     
     @Override
@@ -192,8 +203,17 @@ public class CommentServiceImpl implements CommentService {
      * Validate comment request
      */
     private void validateCommentRequest(CreateCommentRequest request, MultipartFile[] images) {
-        if (request.getRating() < 1 || request.getRating() > 5) {
-            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        // Allow rating 0 for replies, but require 1-5 for regular comments
+        if (request.getParentCommentId() == null) {
+            // Regular comment - require rating between 1 and 5
+            if (request.getRating() < 1 || request.getRating() > 5) {
+                throw new IllegalArgumentException("Rating must be between 1 and 5 for comments");
+            }
+        } else {
+            // Reply - allow rating 0, but still check upper bound
+            if (request.getRating() < 0 || request.getRating() > 5) {
+                throw new IllegalArgumentException("Rating must be between 0 and 5 for replies");
+            }
         }
         
         if (request.getContent() != null && request.getContent().length() > MAX_CONTENT_LENGTH) {

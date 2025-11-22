@@ -1,10 +1,8 @@
 import AxiosInstance from '@/configs/AxiosInstance'
-import { CommentResponse, CommentsPageResponse, CreateCommentRequest, CommentStatus } from '@/types/Comment'
+import { CommentResponse, CommentsPageResponse, CreateCommentRequest } from '@/types/Comment'
 import { API_ROUTES } from '@/router/router'
 
 export class CommentService {
-  private static readonly BASE_URL = '/api/products'
-
   private static isDevelopment = process.env.NODE_ENV === 'development'
 
   /**
@@ -38,7 +36,6 @@ export class CommentService {
       )
       return response.data
     } catch (error: unknown) {
-      console.error('Error fetching comments:', error)
       throw error // Re-throw to maintain error propagation
     }
   }
@@ -62,8 +59,6 @@ export class CommentService {
       return await this.postCommentWithImages(productId, commentData, images)
 
     } catch (error: unknown) {
-      console.error('Error posting comment:', error)
-
       // Handle specific error cases
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response: { status: number; data?: { message?: string } } }
@@ -169,8 +164,7 @@ export class CommentService {
         }
       })
       return response.status === 200
-    } catch (error) {
-      console.error('Auth check failed:', error)
+    } catch {
       return false
     }
   }
@@ -200,8 +194,7 @@ export class CommentService {
         }
       )
       return response.data
-    } catch (error) {
-      console.error('Error fetching rating distribution for product', productId, ':', error)
+    } catch {
       return this.isDevelopment ? { '4': 1, '5': 2 } : {}
     }
   }
@@ -232,9 +225,9 @@ export class CommentService {
         }
       )
       return response.data
-    } catch (error) {
-      console.error('Error fetching average rating for product', productId, ':', error)
+    } catch {
       return this.isDevelopment ? 4.7 : 0
     }
   }
+
 }

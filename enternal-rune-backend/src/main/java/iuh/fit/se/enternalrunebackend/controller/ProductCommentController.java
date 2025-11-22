@@ -144,6 +144,89 @@ public class ProductCommentController {
         }
     }
     
+    /**
+     * Create a reply to an existing comment
+     * POST /api/products/{productId}/comments/{commentId}/replies
+     */
+    @PostMapping("/{productId}/comments/{commentId}/replies")
+    public ResponseEntity<CommentResponse> createReply(
+            @PathVariable Integer productId,
+            @PathVariable Integer commentId,
+            @RequestBody @Valid CreateCommentRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        try {
+            String ipAddress = getClientIpAddress(httpRequest);
+            Optional<User> currentUser = getCurrentUser();
+            
+            // Set parentCommentId for reply
+            request.setParentCommentId(commentId);
+            
+            CommentResponse response = commentService.createComment(
+                productId, request, null, currentUser, ipAddress
+            );
+            
+            log.info("Reply created successfully: ID={}, ParentID={}, ProductID={}, IP={}", 
+                response.getId(), commentId, productId, ipAddress);
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid reply request for comment {} on product {}: {}", commentId, productId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("Rate limit")) {
+                log.warn("Rate limit exceeded for reply to comment {} on product {}: {}", commentId, productId, e.getMessage());
+                return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+            }
+            log.error("Error creating reply for comment {} on product {}: {}", commentId, productId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * Get replies for a specific comment
+     * GET /api/products/{productId}/comments/{commentId}/replies
+     */
+    @GetMapping("/{productId}/comments/{commentId}/replies")
+    public ResponseEntity<CommentPageResponse> getReplies(
+            @PathVariable Integer productId,
+            @PathVariable Integer commentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try {
+            // Validate parameters
+            if (page < 0) page = 0;
+            if (size < 1 || size > 50) size = 10;
+            
+            var replies = commentService.getReplyComments(commentId, page, size);
+            
+            // Convert Page to CommentPageResponse
+            CommentPageResponse response = CommentPageResponse.builder()
+                .comments(replies.getContent())
+                .currentPage(replies.getNumber())
+                .pageSize(replies.getSize())
+                .totalElements((long) replies.getTotalElements())
+                .totalPages(replies.getTotalPages())
+                .hasNext(replies.hasNext())
+                .hasPrevious(replies.hasPrevious())
+                .averageRating(0.0) // Replies don't have ratings
+                .totalRatings(0L)
+                .ratingDistribution(Map.of())
+                .build();
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid request for replies to comment {} on product {}: {}", commentId, productId, e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("Error getting replies for comment {} on product {}: {}", commentId, productId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
     private String getClientIpAddress(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {

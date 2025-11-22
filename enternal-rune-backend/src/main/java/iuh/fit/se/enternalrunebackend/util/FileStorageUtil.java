@@ -63,7 +63,7 @@ public class FileStorageUtil {
         // Generate URL
         String url = String.format("/uploads/comments/%d/%s", productId, uniqueFilename);
         
-        log.info("File saved successfully: {} -> {}", originalFilename, filePath);
+
         
         return FileUploadResult.builder()
             .originalFilename(originalFilename)
@@ -116,7 +116,7 @@ public class FileStorageUtil {
         
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
-            log.info("Created upload directory: {}", uploadPath);
+
         }
         
         return uploadPath;
@@ -153,11 +153,11 @@ public class FileStorageUtil {
             Path path = Paths.get(filePath);
             boolean deleted = Files.deleteIfExists(path);
             if (deleted) {
-                log.info("File deleted: {}", filePath);
+
             }
             return deleted;
         } catch (IOException e) {
-            log.error("Failed to delete file: {}", filePath, e);
+
             return false;
         }
     }

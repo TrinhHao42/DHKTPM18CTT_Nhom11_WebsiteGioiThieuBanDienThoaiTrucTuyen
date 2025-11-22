@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { FaChevronDown } from 'react-icons/fa'
 import { CommentItem } from './CommentItem'
 import { CommentsPageResponse } from '@/types/Comment'
@@ -18,6 +18,7 @@ export const CommentList: React.FC<CommentListProps> = ({
   onLoadMore,
   onImageClick
 }) => {
+  const [visibleCommentsCount, setVisibleCommentsCount] = useState(3)
   if (loading) {
     return (
       <div className="animate-pulse space-y-6">
@@ -64,7 +65,7 @@ export const CommentList: React.FC<CommentListProps> = ({
 
       <div className="space-y-6">
         {/* Comments */}
-        {commentsData.comments.map((comment, index) => (
+        {commentsData.comments.slice(0, visibleCommentsCount).map((comment, index) => (
           <CommentItem 
             key={comment.id || index} 
             comment={comment}
@@ -72,22 +73,38 @@ export const CommentList: React.FC<CommentListProps> = ({
           />
         ))}
 
-        {/* Load More Button */}
-        {commentsData.hasNext && (
+        {/* Local Load More Button (first 5 comments) */}
+        {visibleCommentsCount < commentsData.comments.length && (
           <div className="text-center pt-6">
             <button
-              onClick={onLoadMore}
+              onClick={() => setVisibleCommentsCount(prev => Math.min(prev + 3, commentsData.comments.length))}
+              className="bg-gradient-to-r from-blue-100 to-purple-100 hover:from-blue-200 hover:to-purple-200 text-blue-700 font-medium px-8 py-4 rounded-xl transition-all duration-200 flex items-center gap-3 mx-auto border border-blue-200 hover:border-blue-300 shadow-sm hover:shadow-md"
+            >
+              <span>Xem thêm {Math.min(5, commentsData.comments.length - visibleCommentsCount)} đánh giá</span>
+              <FaChevronDown />
+            </button>
+          </div>
+        )}
+
+        {/* API Load More Button (when all current comments are shown) */}
+        {visibleCommentsCount >= commentsData.comments.length && commentsData.hasNext && (
+          <div className="text-center pt-6">
+            <button
+              onClick={() => {
+                onLoadMore()
+                setVisibleCommentsCount(prev => prev + 5) // Prepare for new comments
+              }}
               disabled={loadingMore}
               className="bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 font-medium px-8 py-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-3 mx-auto border border-gray-300 hover:border-gray-400 shadow-sm hover:shadow-md"
             >
               {loadingMore ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-600 border-t-transparent"></div>
-                  Đang tải thêm...
+                  Đang tải thêm từ server...
                 </>
               ) : (
                 <>
-                  <span>Xem thêm {Math.min(10, commentsData.totalElements - commentsData.comments.length)} đánh giá</span>
+                  <span>Tải thêm đánh giá từ server</span>
                   <FaChevronDown />
                 </>
               )}
