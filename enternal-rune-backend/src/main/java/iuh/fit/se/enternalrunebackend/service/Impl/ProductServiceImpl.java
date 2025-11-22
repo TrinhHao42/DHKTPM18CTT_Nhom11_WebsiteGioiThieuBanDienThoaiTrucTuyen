@@ -23,7 +23,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +40,7 @@ public class ProductServiceImpl implements ProductService {
     private ProductPriceRepository productPriceRepository;
     @Autowired
     private DiscountRepository discountRepository;
+
     @Override
     public List<Product> getAllProductsWithActivePrice() {
         return productRepository.findAllWithActivePrice();
@@ -65,8 +65,7 @@ public class ProductServiceImpl implements ProductService {
             List<String> memory,
             String search,
             int page,
-            int size
-    ) {
+            int size) {
         Specification<Product> spec = Specification.allOf();
 
         // 🔹 Filter theo search keyword (product name, model, brand name)
@@ -74,26 +73,24 @@ public class ProductServiceImpl implements ProductService {
             spec = spec.and((root, query, cb) -> {
                 String searchPattern = "%" + search.toLowerCase() + "%";
                 List<jakarta.persistence.criteria.Predicate> searchPredicates = new ArrayList<>();
-                
+
                 // Always search in product name, model, description
                 searchPredicates.add(cb.like(cb.lower(root.get("prodName")), searchPattern));
                 searchPredicates.add(cb.like(cb.lower(root.get("prodModel")), searchPattern));
                 searchPredicates.add(cb.like(cb.lower(root.get("prodDescription")), searchPattern));
-                
+
                 // Only search in brand name if no brand filter is applied
                 if (brands == null || brands.isEmpty()) {
                     searchPredicates.add(cb.like(cb.lower(root.get("prodBrand").get("brandName")), searchPattern));
                 }
-                
+
                 return cb.or(searchPredicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
             });
         }
 
         // 🔹 Filter theo brand ID (ManyToOne)
         if (brands != null && !brands.isEmpty()) {
-            spec = spec.and((root, query, cb) ->
-                    root.get("prodBrand").get("brandId").in(brands)
-            );
+            spec = spec.and((root, query, cb) -> root.get("prodBrand").get("brandId").in(brands));
         }
 
         // 🔹 Filter theo màu sắc (ElementCollection)
@@ -132,7 +129,6 @@ public class ProductServiceImpl implements ProductService {
             });
         }
 
-
         // 🔹 Loại bỏ trùng sản phẩm nếu có join
         Specification<Product> finalSpec = spec;
         Specification<Product> distinctSpec = (root, query, cb) -> {
@@ -146,62 +142,63 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDashboardResponse getProductDashboard() {
-        //Tổng sản phẩm
+        // Tổng sản phẩm
         long totalProducts = productRepository.countTotalProducts();
         // Tổng danh mục
         long totalBrand = brandRepository.countTotalBrands();
 
-        //Còn hàng
+        // Còn hàng
         long available = productRepository.countAvailableProducts();
-        //Hết hàng
+        // Hết hàng
         long outOfStock = productRepository.countOutOfStockProducts();
         return new ProductDashboardResponse(
                 totalProducts,
                 totalBrand,
                 available,
-                outOfStock
-        );
+                outOfStock);
 
     }
 
-//    @Override
-//    public Page<ProductDashboardListResponse> getProductDashboardList(Pageable pageable) {
-//        // Lấy sản phẩm phân trang
-//        Page<Product> products = productRepository.findAll(pageable);
-//
-//        // Map từng Product sang DTO
-//        return products.map(product -> {
-//            ProductDashboardListResponse dto = new ProductDashboardListResponse();
-//
-//            // Xử lý images an toàn
-//            List<Image> images = product.getImages();
-//            if (!images.isEmpty()) {
-//                dto.setImageUrl(images.get(0).getImageData());
-//            } else {
-//                dto.setImageUrl(null); // hoặc ảnh mặc định
-//            }
-//
-//            dto.setProductName(product.getProdName());
-//            dto.setModel(product.getProdModel());
-//            dto.setCategory(product.getProdBrand() != null ? product.getProdBrand().getBrandName() : "Unknown");
-//
-//            // Xử lý productPrices an toàn
-//            List<ProductPrice> prices = product.getProductPrices();
-//            if (!prices.isEmpty()) {
-//                dto.setPrice(prices.get(0).getPpPrice());
-//            } else {
-//                dto.setPrice(0.0); // hoặc giá mặc định
-//            }
-//
-//            dto.setStatus(product.getProductStatus() != null ? product.getProductStatus().name() : "UNKNOWN");
-//
-//            return dto;
-//        });
-//    }
+    // @Override
+    // public Page<ProductDashboardListResponse> getProductDashboardList(Pageable
+    // pageable) {
+    // // Lấy sản phẩm phân trang
+    // Page<Product> products = productRepository.findAll(pageable);
+    //
+    // // Map từng Product sang DTO
+    // return products.map(product -> {
+    // ProductDashboardListResponse dto = new ProductDashboardListResponse();
+    //
+    // // Xử lý images an toàn
+    // List<Image> images = product.getImages();
+    // if (!images.isEmpty()) {
+    // dto.setImageUrl(images.get(0).getImageData());
+    // } else {
+    // dto.setImageUrl(null); // hoặc ảnh mặc định
+    // }
+    //
+    // dto.setProductName(product.getProdName());
+    // dto.setModel(product.getProdModel());
+    // dto.setCategory(product.getProdBrand() != null ?
+    // product.getProdBrand().getBrandName() : "Unknown");
+    //
+    // // Xử lý productPrices an toàn
+    // List<ProductPrice> prices = product.getProductPrices();
+    // if (!prices.isEmpty()) {
+    // dto.setPrice(prices.get(0).getPpPrice());
+    // } else {
+    // dto.setPrice(0.0); // hoặc giá mặc định
+    // }
+    //
+    // dto.setStatus(product.getProductStatus() != null ?
+    // product.getProductStatus().name() : "UNKNOWN");
+    //
+    // return dto;
+    // });
+    // }
     @Override
     public Page<ProductDashboardListResponse> getProductDashboardList(
-            String keyword, String brand, ProductStatus status, Pageable pageable
-    ) {
+            String keyword, String brand, ProductStatus status, Pageable pageable) {
         Page<Product> productsPage = productRepository.searchProducts(keyword, brand, status, pageable);
 
         List<ProductDashboardListResponse> dtoList = productsPage.getContent().stream().map(product -> {
@@ -253,25 +250,32 @@ public class ProductServiceImpl implements ProductService {
         product.setProductPrices(prices);
         productRepository.save(product);
     }
+
     @Override
     public void deleteProduct(Integer productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product không tồn tại"));
         productRepository.delete(product);
     }
+
     @Override
     public Product updateProduct(Integer productId, ProductRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product không tồn tại"));
 
         // Cập nhật những field cần thiết
-        if (request.getProductName() != null) product.setProdName(request.getProductName());
-        if (request.getProductModel() != null) product.setProdModel(request.getProductModel());
+        if (request.getProductName() != null)
+            product.setProdName(request.getProductName());
+        if (request.getProductModel() != null)
+            product.setProdModel(request.getProductModel());
         if (request.getProductStatus() != null)
             product.setProductStatus(ProductStatus.valueOf(request.getProductStatus()));
-        if (request.getProductDescription() != null) product.setProdDescription(request.getProductDescription());
-        if (request.getProductVersion() != null) product.setProdVersion(request.getProductVersion());
-        if (request.getProductColor() != null) product.setProdColor(request.getProductColor());
+        if (request.getProductDescription() != null)
+            product.setProdDescription(request.getProductDescription());
+        if (request.getProductVersion() != null)
+            product.setProdVersion(request.getProductVersion());
+        if (request.getProductColor() != null)
+            product.setProdColor(request.getProductColor());
 
         // Cập nhật Brand nếu có
         if (request.getBrandId() != null) {
@@ -287,7 +291,7 @@ public class ProductServiceImpl implements ProductService {
                 Image img = new Image();
                 img.setImageName(ir.getImageName());
                 img.setImageData(ir.getImageData());
-//                img.setProduct(product);
+                // img.setProduct(product);
                 images.add(imageRepository.save(img));
             }
             product.setImages(images);
@@ -300,10 +304,10 @@ public class ProductServiceImpl implements ProductService {
             for (ProductPriceRequest pr : request.getProductPrices()) {
                 ProductPrice price = new ProductPrice();
                 price.setPpPrice(pr.getPpPrice());
-//                price.setPpPriceStatus(pr.getPpPriceStatus());
-//                price.setPpStartDate(pr.getPpStartDate());
-//                price.setPpEndDate(pr.getPpEndDate());
-//                price.setProduct(product);
+                // price.setPpPriceStatus(pr.getPpPriceStatus());
+                // price.setPpStartDate(pr.getPpStartDate());
+                // price.setPpEndDate(pr.getPpEndDate());
+                // price.setProduct(product);
                 prices.add(productPriceRepository.save(price));
             }
             product.setProductPrices(prices);

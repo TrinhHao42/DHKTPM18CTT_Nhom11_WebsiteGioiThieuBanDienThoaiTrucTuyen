@@ -54,7 +54,6 @@ public class CartService {
         // 5. Tìm hoặc tạo ProductVariant dựa trên options
         ProductVariant productVariant = findOrCreateProductVariant(product, dto);
 
-
         // 6. Kiểm tra CartItem đã tồn tại chưa
         CartItem existingItem = cartItemRepository
                 .findByCiCartAndCiProductVariant(cart, productVariant)
@@ -87,12 +86,10 @@ public class CartService {
         String storage = dto.getStorage();
         String version = dto.getVersion();
 
-
-
         // Tìm tất cả variants của product này
         List<ProductVariant> variants = productVariantRepository.findAll().stream()
-                .filter(v -> v.getProdvProduct() != null && 
-                             v.getProdvProduct().getProdId() == product.getProdId())
+                .filter(v -> v.getProdvProduct() != null &&
+                        v.getProdvProduct().getProdId() == product.getProdId())
                 .toList();
 
         // Tìm variant khớp với options
@@ -130,12 +127,15 @@ public class CartService {
         newVariant.setProdvColor(dto.getColor());
         newVariant.setProdvModel(dto.getStorage()); // storage lưu trong model field
         newVariant.setProdvVersion(dto.getVersion());
-        
+
         // Tạo tên variant
         String variantName = product.getProdName();
-        if (dto.getStorage() != null) variantName += " " + dto.getStorage();
-        if (dto.getColor() != null) variantName += " " + dto.getColor();
-        if (dto.getVersion() != null) variantName += " " + dto.getVersion();
+        if (dto.getStorage() != null)
+            variantName += " " + dto.getStorage();
+        if (dto.getColor() != null)
+            variantName += " " + dto.getColor();
+        if (dto.getVersion() != null)
+            variantName += " " + dto.getVersion();
         newVariant.setProdvName(variantName);
 
         // Lấy giá từ ProductPrice đầu tiên của product (có thể customize sau)
@@ -172,7 +172,6 @@ public class CartService {
     @Transactional
     public Cart updateCartItem(Long userId, UpdateCartItemRequest dto) {
 
-
         if (dto.getCartItemId() == null || dto.getQuantity() == null || dto.getQuantity() <= 0) {
             throw new RuntimeException("Cart item ID and valid quantity are required");
         }
@@ -203,7 +202,6 @@ public class CartService {
     @Transactional
     public Cart removeCartItem(Long userId, int cartItemId) {
 
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -230,7 +228,6 @@ public class CartService {
     @Transactional
     public Cart clearCart(Long userId) {
 
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -250,10 +247,9 @@ public class CartService {
     private CartItemResponse toCartItemDTO(CartItem item) {
         ProductVariant variant = item.getCiProductVariant();
         Product product = variant.getProdvProduct();
-        
+
         // Build ProductVariantDTO
-        ProductVariantResponse variantDTO =
-            ProductVariantResponse.builder()
+        ProductVariantResponse variantDTO = ProductVariantResponse.builder()
                 .variantId(variant.getProdvId())
                 .variantName(variant.getProdvName())
                 .color(variant.getProdvColor())
@@ -263,9 +259,10 @@ public class CartService {
                 .imageUrl(variant.getProdvImg() != null ? variant.getProdvImg().getImageData() : null)
                 .productId(product != null ? product.getProdId() : null)
                 .productName(product != null ? product.getProdName() : null)
-                .brandName(product != null && product.getProdBrand() != null ? product.getProdBrand().getBrandName() : null)
+                .brandName(product != null && product.getProdBrand() != null ? product.getProdBrand().getBrandName()
+                        : null)
                 .build();
-        
+
         // Build CartItemDTO
         return CartItemResponse.builder()
                 .cartItemId(item.getCiId())
@@ -279,32 +276,29 @@ public class CartService {
      */
     public iuh.fit.se.enternalrunebackend.dto.response.CartResponse toCartResponse(Cart cart) {
         if (cart == null || cart.getItems() == null) {
-            iuh.fit.se.enternalrunebackend.dto.response.CartResponse response = 
-                new iuh.fit.se.enternalrunebackend.dto.response.CartResponse();
+            iuh.fit.se.enternalrunebackend.dto.response.CartResponse response = new iuh.fit.se.enternalrunebackend.dto.response.CartResponse();
             response.setCartItems(new java.util.ArrayList<>());
             response.setTotalItems(0);
             response.setTotalPrice(0.0);
             return response;
         }
 
-        List<CartItemResponse> cartItemResponses =
-            cart.getItems().stream()
+        List<CartItemResponse> cartItemResponses = cart.getItems().stream()
                 .map(this::toCartItemDTO)
                 .collect(java.util.stream.Collectors.toList());
 
         // Calculate totals
         int totalItems = cart.getItems().size();
         double totalPrice = cart.getItems().stream()
-            .mapToDouble(item -> {
-                double price = item.getCiProductVariant().getProdvPrice() != null 
-                    ? item.getCiProductVariant().getProdvPrice().getPpPrice() 
-                    : 0.0;
-                return price * item.getCiQuantity();
-            })
-            .sum();
+                .mapToDouble(item -> {
+                    double price = item.getCiProductVariant().getProdvPrice() != null
+                            ? item.getCiProductVariant().getProdvPrice().getPpPrice()
+                            : 0.0;
+                    return price * item.getCiQuantity();
+                })
+                .sum();
 
-        iuh.fit.se.enternalrunebackend.dto.response.CartResponse response = 
-            new iuh.fit.se.enternalrunebackend.dto.response.CartResponse();
+        iuh.fit.se.enternalrunebackend.dto.response.CartResponse response = new iuh.fit.se.enternalrunebackend.dto.response.CartResponse();
         response.setCartItems(cartItemResponses);
         response.setTotalItems(totalItems);
         response.setTotalPrice(totalPrice);
@@ -312,4 +306,3 @@ public class CartService {
         return response;
     }
 }
-

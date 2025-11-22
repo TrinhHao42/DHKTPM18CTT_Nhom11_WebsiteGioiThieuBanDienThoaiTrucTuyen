@@ -14,34 +14,35 @@ import java.util.List;
 
 @RepositoryRestResource(path = "comments")
 public interface CommentRepository extends JpaRepository<Comment, Integer> {
-    
+
     Page<Comment> findByCmProductOrderByCmDateDesc(Product product, Pageable pageable);
-    
+
     @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.cmUser LEFT JOIN FETCH c.comment WHERE c.cmProduct.prodId = :productId AND c.comment IS NULL ORDER BY c.cmDate DESC")
     Page<Comment> findByProductIdOrderByCmDateDesc(@Param("productId") Integer productId, Pageable pageable);
-    
+
     int countByIpAddressAndCmDateAfter(String ipAddress, LocalDateTime after);
-    
+
     /**
-     * Get rating distribution for a product  
+     * Get rating distribution for a product
+     * 
      * @param productId the product ID
      * @return list of objects with rating and count
      */
     @Query("""
-        SELECT c.cmRating as rating, COUNT(c) as count
-        FROM Comment c
-        WHERE c.cmProduct.prodId = :productId AND c.comment IS NULL
-        GROUP BY c.cmRating
-        """)
+            SELECT c.cmRating as rating, COUNT(c) as count
+            FROM Comment c
+            WHERE c.cmProduct.prodId = :productId AND c.comment IS NULL
+            GROUP BY c.cmRating
+            """)
     List<Object[]> getRatingDistributionList(@Param("productId") Integer productId);
-    
+
     @Query("""
-        SELECT COALESCE(AVG(CAST(c.cmRating AS double)), 0.0)
-        FROM Comment c
-        WHERE c.cmProduct.prodId = :productId AND c.comment IS NULL
-        """)
+            SELECT COALESCE(AVG(CAST(c.cmRating AS double)), 0.0)
+            FROM Comment c
+            WHERE c.cmProduct.prodId = :productId AND c.comment IS NULL
+            """)
     Double getAverageRating(@Param("productId") Integer productId);
-    
+
     @Query("SELECT COUNT(c) FROM Comment c WHERE c.cmProduct.prodId = :productId AND c.comment IS NULL")
     Long countByProductId(@Param("productId") Integer productId);
 
