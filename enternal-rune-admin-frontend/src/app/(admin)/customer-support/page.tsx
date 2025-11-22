@@ -1,6 +1,6 @@
 "use client";
 import React from 'react'
-import CustomerSupport from '@/components/staff/CustomerSupport'
+import CustomerSupport from '@/components/customerSupport/CustomerSupport'
 import { useSidebar } from '@/context/SidebarContext'
 
 export default function CustomerSupportPage() {
