@@ -33,7 +33,7 @@ public class Endpoints {
 
             // ==== TẠO CONVERSATION CHAT, TEST WS ====
             "/api/messages/**",
-            "/api/conversations/**"
+            "/api/conversations/**",
             "/api/products/*/comments",
             "/api/products/*/comments/text",
             "/api/products/*/comments/*/replies"
