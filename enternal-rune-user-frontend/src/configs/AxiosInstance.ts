@@ -10,10 +10,11 @@ const AxiosInstance = axios.create({
   },
 })
 
-// ✅ Thêm interceptor để tự động gửi token
+// ✅ Thêm interceptor để tự động gửi token (chỉ khi cần thiết)
 AxiosInstance.interceptors.request.use(
   (config) => {
-    if (typeof window !== 'undefined') {
+    // Chỉ thêm token khi request yêu cầu authentication (withCredentials: true)
+    if (config.withCredentials && typeof window !== 'undefined') {
       const token = localStorage.getItem('token')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
@@ -30,7 +31,8 @@ AxiosInstance.interceptors.request.use(
 AxiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Chỉ redirect khi request cần authentication và gặp lỗi 401
+    if (error.config?.withCredentials && error.response?.status === 401) {
       // Token expired hoặc invalid
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token')

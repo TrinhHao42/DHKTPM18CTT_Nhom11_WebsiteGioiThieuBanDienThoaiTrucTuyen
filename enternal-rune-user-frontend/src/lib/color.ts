@@ -24,4 +24,12 @@ export const colors = {
     KEM: { name: 'Kem', hex: '#F5F5DC' },
     TRANG_BAC: { name: 'Trắng/bạc', hex: '#F8F8FF' },
     XANH_DUONG_NHAT: { name: 'Xanh dương nhạt', hex: '#ADD8E6' },
+    XANH_LA_NHAT: { name: 'Xanh lá nhạt', hex: '#90EE90' },
+    XANH_VANG: { name: 'Xanh vàng', hex: '#ADFF2F' },
+    XANH_DEN: { name: 'Xanh đen', hex: '#003366' },
+    TITAN_DEN: { name: 'Titan đen', hex: '#2F4F4F' },
+    TITAN_TRANG: { name: 'Titan trắng', hex: '#D3D3D3' },
+    TITAN_TU_NHIEN: { name: 'Titan tự nhiên', hex: '#E0E0E0' },
+    TITAN_XA_MAC: { name: 'Titan xa mạc', hex: '#A9A9A9' }
+
 };

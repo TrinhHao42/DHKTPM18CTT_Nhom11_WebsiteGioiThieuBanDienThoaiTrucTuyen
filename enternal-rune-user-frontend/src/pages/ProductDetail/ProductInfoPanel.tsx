@@ -6,15 +6,18 @@ import { formatPrice } from '@/lib/format'
 import { colors } from '@/lib/color'
 import { useCart } from '@/context/CartContext'
 import { useToast } from '@/hooks/useToast'
+import { CommentsPageResponse } from '@/types/Comment'
 
 interface ProductInfoPanelProps {
     product: Product
+    selectedColor?: string
+    onColorChange?: (color: string) => void
+    commentData?: CommentsPageResponse
 }
 
-export default function ProductInfoPanel({ product }: ProductInfoPanelProps) {
+export default function ProductInfoPanel({ product, selectedColor, onColorChange, commentData }: ProductInfoPanelProps) {
     const { addCartItem } = useCart()
     const toast = useToast()
-    const [selectedColor, setSelectedColor] = useState(product.prodColor[0] || 'Black')
     const [quantity, setQuantity] = useState(1)
     const [isAdding, setIsAdding] = useState(false)
     const storageOptions = ['256GB', '512GB', '1TB']
@@ -80,21 +83,26 @@ export default function ProductInfoPanel({ product }: ProductInfoPanelProps) {
     }
 
     const renderRating = () => {
+        const averageRating = commentData?.averageRating || product.prodRating
+        const totalRatings = commentData?.totalRatings || 0
+
         return (
             <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
                     {[1, 2, 3, 4, 5].map((i) => (
                         <Star
                             key={i}
-                            className={`w-5 h-5 ${i <= Math.floor(product.prodRating)
+                            className={`w-5 h-5 ${i <= Math.floor(averageRating)
                                 ? 'text-yellow-400 fill-yellow-400'
                                 : 'text-gray-200 fill-gray-200'
                                 }`}
                         />
                     ))}
                 </div>
-                <span className="text-md font-semibold text-gray-900">{product.prodRating}</span>
-                <span className="text-gray-500">(2600+ đánh giá)</span>
+                <span className="text-md font-semibold text-gray-900">{averageRating.toFixed(1)}</span>
+                <span className="text-gray-500">
+                    ({totalRatings > 0 ? `${totalRatings.toLocaleString()} đánh giá` : 'Chưa có đánh giá'})
+                </span>
             </div>
         )
     }
@@ -159,7 +167,7 @@ export default function ProductInfoPanel({ product }: ProductInfoPanelProps) {
                         return (
                             <button
                                 key={color}
-                                onClick={() => setSelectedColor(color)}
+                                onClick={() => onColorChange?.(color)}
                                 className={`relative w-16 h-16 rounded-2xl border-4 transition-all duration-300 hover:scale-105 ${selectedColor === color
                                     ? 'border-blue-500 shadow-lg scale-110'
                                     : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
@@ -181,7 +189,7 @@ export default function ProductInfoPanel({ product }: ProductInfoPanelProps) {
                     })}
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                    Đã chọn: {selectedColor}
+                    Đã chọn: {selectedColor || product.prodColor[0]}
                 </p>
             </div>
             {/* Quantity */}

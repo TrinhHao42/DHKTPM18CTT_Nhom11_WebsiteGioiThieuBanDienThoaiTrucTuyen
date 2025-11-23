@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@stomp/stompjs": "^7.2.1",
+    "@hookform/resolvers": "^5.2.2",
     "axios": "^1.12.2",
     "gsap": "^3.13.0",
     "lucide-react": "^0.546.0",
@@ -17,12 +18,14 @@
     "next": "15.5.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-hook-form": "^7.66.1",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
     "sass": "^1.93.2",
     "sockjs-client": "^1.6.1",
     "use-context-selector": "^2.0.0",
-    "use-debounce": "^10.0.6"
+    "use-debounce": "^10.0.6",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

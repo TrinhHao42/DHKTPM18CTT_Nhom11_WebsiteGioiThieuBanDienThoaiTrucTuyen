@@ -1,16 +1,23 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Product } from '@/types/Product'
 
 interface ProductImageGalleryProps {
     images: string[]
     product: Product
+    selectedColorIndex?: number
+    onImageSelect?: (index: number) => void
 }
 
-export default function ProductImageGallery({ images, product }: ProductImageGalleryProps) {
-    const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+export default function ProductImageGallery({ images, product, selectedColorIndex = 0, onImageSelect }: ProductImageGalleryProps) {
+    const [selectedImageIndex, setSelectedImageIndex] = useState(selectedColorIndex)
     const [isZoomed, setIsZoomed] = useState(false)
+
+    // Sync selectedImageIndex with selectedColorIndex
+    useEffect(() => {
+        setSelectedImageIndex(selectedColorIndex)
+    }, [selectedColorIndex])
 
     return (
         <div className="space-y-4">
@@ -61,7 +68,10 @@ export default function ProductImageGallery({ images, product }: ProductImageGal
                     {images.map((image, index) => (
                         <button
                             key={index}
-                            onClick={() => setSelectedImageIndex(index)}
+                            onClick={() => {
+                                setSelectedImageIndex(index)
+                                onImageSelect?.(index)
+                            }}
                             className={`relative aspect-square rounded-xl border-2 overflow-hidden transition-all duration-300 ${selectedImageIndex === index
                                 ? 'border-blue-500 shadow-lg scale-105'
                                 : 'border-gray-200 hover:border-blue-300 hover:shadow-md hover:scale-105'

@@ -8,6 +8,8 @@ import SpecificationsSection from '@/pages/ProductDetail/SpecificationsSection'
 import { Product } from '@/types/Product'
 import { renderBestSellers } from '../Home/components/ProductList'
 import { ProductService } from '@/services/productService'
+import ProductRating from '@/components/ProductRating'
+import { useComments } from '@/hooks/useComments'
 
 const RelatedProducts = () => {
   const [items, setItems] = useState<Product[]>([])
@@ -32,6 +34,13 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<Product | undefined>()
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedColor, setSelectedColor] = useState<string>('')
+
+  // Fetch comment data for the product and share it with ProductRating
+  const { commentsData, setCommentsData, loading: commentsLoading, loadingMore: commentsLoadingMore, loadMoreComments, refreshComments } = useComments({ 
+    productId: params?.id as string,
+    initialData: undefined 
+  })
 
   useEffect(() => {
     const id = params?.id as string | undefined
@@ -48,6 +57,10 @@ export default function ProductDetail() {
         if (!mounted) return
         if (!p) setError('Sản phẩm không tồn tại')
         setProduct(p || undefined)
+        // Set initial selected color
+        if (p?.prodColor && p.prodColor.length > 0) {
+          setSelectedColor(p.prodColor[0])
+        }
       })
       .catch(err => {
         console.error(err)
@@ -63,10 +76,6 @@ export default function ProductDetail() {
       mounted = false
     }
   }, [params?.id])
-
-  console.log('📦 [ProductDetail] Render state:', product);
-  
-
 
   if (loading) {
     return (
@@ -150,9 +159,18 @@ export default function ProductDetail() {
         <ProductImageGallery
           images={images}
           product={product}
+          selectedColorIndex={product.prodColor?.indexOf(selectedColor) ?? 0}
+          onImageSelect={(index) => {
+            if (product.prodColor && product.prodColor[index]) {
+              setSelectedColor(product.prodColor[index])
+            }
+          }}
         />
         <ProductInfoPanel
           product={product}
+          selectedColor={selectedColor}
+          onColorChange={setSelectedColor}
+          commentData={commentsData || undefined}
         />
       </div>
       {/* Hiển thị thông số kỹ thuật */}
@@ -167,6 +185,20 @@ export default function ProductDetail() {
           <p className="text-gray-500 mt-4">Đang tải thông tin sản phẩm...</p>
         </div>
       )}
+      
+      {/* Product Rating & Comments */}
+      <div className="mt-12">
+        <ProductRating
+          productId={product.prodId.toString()}
+          externalCommentsData={commentsData}
+          externalSetCommentsData={setCommentsData}
+          externalLoading={commentsLoading}
+          externalLoadingMore={commentsLoadingMore}
+          externalLoadMoreComments={loadMoreComments}
+          externalRefreshComments={refreshComments}
+        />
+      </div>
+      
       <RelatedProducts />
     </div>
   )
