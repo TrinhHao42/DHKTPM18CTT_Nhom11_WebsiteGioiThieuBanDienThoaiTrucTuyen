@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react'
-import CustomerSupport from '@/components/staff/CustomerSupport'
+import CustomerSupport from '@/components/customerSupport/CustomerSupport'
 import { useSidebar } from '@/context/SidebarContext'
 
 export default function CustomerSupportPage() {
@@ -9,20 +9,27 @@ export default function CustomerSupportPage() {
 
   useEffect(() => {
     const computeLeft = () => {
-      if (isMobileOpen) return 'left-0'
-      if (typeof window === 'undefined') return 'left-0'
-      if (window.innerWidth < 1024) return 'left-0'
-      if (isExpanded || isHovered) return 'left-[290px]'
-      return 'left-[90px]'
-    }
+      if (isMobileOpen) return 'left-0';
+      if (typeof window === 'undefined') return 'left-0';
+      if (window.innerWidth < 1024) return 'left-0';
+      if (isExpanded || isHovered) return 'left-[290px]';
+      return 'left-[90px]';
+    };
 
-    const newValue = computeLeft()
-    setLeftMargin(prev => (prev === newValue ? prev : newValue))
+    const applyLeftMargin = () => {
+      const newValue = computeLeft();
+      setLeftMargin(prev => (prev === newValue ? prev : newValue));
+    };
 
-    const onResize = () => setLeftMargin(computeLeft())
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [isExpanded, isHovered, isMobileOpen])
+    // Update once on mount/effect changes
+    applyLeftMargin();
+
+    // Update when window resizes
+    window.addEventListener('resize', applyLeftMargin);
+
+    return () => window.removeEventListener('resize', applyLeftMargin);
+  }, [isExpanded, isHovered, isMobileOpen]);
+
 
   return (
     <div className={`fixed inset-0 top-16 ${leftMargin} overflow-hidden flex flex-col`}>

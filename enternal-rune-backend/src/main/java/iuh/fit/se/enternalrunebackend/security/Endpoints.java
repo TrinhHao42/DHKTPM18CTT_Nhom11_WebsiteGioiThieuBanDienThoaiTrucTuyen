@@ -10,14 +10,16 @@ public class Endpoints {
                         "/account/me",
                         "/brands/names",
                         "/notifications",
-
+                        "/api/dashboard/**",
                         // ==== CHAT HISTORY (user xem lại) ====
                         "/api/conversations/**",
                         "/api/messages/**",
                         "/api/products/*/comments",
                         "/api/products/*/comments/*/replies",
                         "/api/products/*/rating-distribution",
-                        "/api/products/*/average-rating"
+                        "/api/products/*/average-rating",
+
+
         };
 
         // POST không cần đăng nhập
@@ -42,8 +44,14 @@ public class Endpoints {
     // Admin GET
         public static final String[] ADMIN_GET_ENDPOINTS = {
                         "/addresses/**",
+                        "/api/dashboard-order/**"
         };
-
         public static final String[] ADMIN_POST_ENDPOINTS = {
+        };
+        public static final String[] ADMIN_PUT_ENDPOINTS = {
+                "/api/dashboard-order/**"
+        };
+        public static final String[] ADMIN_DELETE_ENDPOINTS = {
+                "/api/dashboard-order/**"
         };
 }

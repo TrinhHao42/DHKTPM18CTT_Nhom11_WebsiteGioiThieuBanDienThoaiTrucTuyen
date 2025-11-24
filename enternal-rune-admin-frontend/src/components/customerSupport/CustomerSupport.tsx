@@ -301,7 +301,7 @@ export default function CustomerSupport() {
         className={`fixed inset-y-0 overflow-y-auto left-0 z-50 flex h-full min-h-0 w-full transform flex-col rounded-r-lg border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg transition-all duration-300 ease-out will-change-transform lg:static lg:left-auto lg:z-auto lg:w-80 lg:rounded-none lg:shadow-none ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${showChatView ? "hidden lg:block" : "block lg:block"} `}
       >
         {/* Search */}
-        <div className="sticky top-0 z-10 flex-shrink-0 border-b border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 h-16 lg:h-[4.5rem] flex items-center px-3 lg:px-4">
+        <div className="sticky top-3 z-10 flex-shrink-0 border-b border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 h-16 lg:h-[4.5rem] flex items-center px-3 lg:px-4">
           <div className="relative w-full">
             <div className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400 dark:text-gray-500">
               <SearchIcon />
@@ -317,7 +317,7 @@ export default function CustomerSupport() {
         </div>
 
         {/* Chat List */}
-        <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0 flex-1 overflow-y-auto">
+        <div className="scrollbar-thin pt-2 scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0 flex-1 overflow-y-auto">
           {filteredChats.length > 0 ? (
             filteredChats.map((chat) => (
               <div
@@ -374,7 +374,7 @@ export default function CustomerSupport() {
       <main className="relative flex flex-col w-full h-full overflow-hidden">
 
         {/* Chat Header */}
-        <header className="sticky top-0 z-10 w-full flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 h-16 lg:h-[4.5rem] flex items-center px-3 lg:px-4">
+        <header className="sticky top-3 z-10 w-full flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 h-16 lg:h-[4.5rem] flex items-center px-3 lg:px-4">
         <div className="flex items-center justify-between w-full">
             <div className="flex flex-1 items-center space-x-3">
               {/* Mobile Back Button */}
