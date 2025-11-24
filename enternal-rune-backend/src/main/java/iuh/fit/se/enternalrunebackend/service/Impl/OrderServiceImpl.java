@@ -2,19 +2,15 @@ package iuh.fit.se.enternalrunebackend.service.Impl;
 
 import iuh.fit.se.enternalrunebackend.dto.request.CreateOrderRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.OrderItemRequest;
-import iuh.fit.se.enternalrunebackend.dto.response.AddressResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.DashboardSummaryResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.OrderResponse;
+import iuh.fit.se.enternalrunebackend.dto.request.OrderStatusUpdateRequest;
+import iuh.fit.se.enternalrunebackend.dto.response.*;
 import iuh.fit.se.enternalrunebackend.entity.*;
 import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
 import iuh.fit.se.enternalrunebackend.entity.enums.ShippingStatus;
 import iuh.fit.se.enternalrunebackend.repository.*;
 import iuh.fit.se.enternalrunebackend.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +37,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private DiscountRepository discountRepository;
+
 
     @Override
     public DashboardSummaryResponse getSummaryForMonth(int year, int month) {
@@ -291,5 +288,133 @@ public class OrderServiceImpl implements OrderService {
             .orderUser(userInfo)
             .orderDetails(orderDetailInfos)
             .build();
+    }
+
+
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderListResponse> getOrderList(
+            String keyword,
+            PaymentStatus paymentStatus,
+            ShippingStatus shippingStatus,
+            Pageable pageable
+    ) {
+        Page<Order> ordersPage = orderRepository.searchOrders(keyword, paymentStatus, shippingStatus, pageable);
+
+        List<OrderListResponse> dtoList = ordersPage.getContent().stream().map(order -> {
+            int totalProduct = order.getOrderDetails()
+                    .stream()
+                    .mapToInt(OrderDetail::getOdQuantity)
+                    .sum();
+
+            return new OrderListResponse(
+                    order.getOrderId(),
+                    order.getOrderUser().getName(),
+                    order.getOrderUser().getEmail(),
+                    totalProduct,
+                    order.getOrderTotalAmount(),
+                    order.getOrderPaymentStatus(),
+                    order.getOrderShippingStatus(),
+                    order.getOrderDate()
+            );
+        }).toList();
+
+        return new PageImpl<>(dtoList, pageable, ordersPage.getTotalElements());
+    }
+
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderStatisticsResponse getOrderStatistics() {
+
+        long totalOrders = orderRepository.count();
+
+        BigDecimal totalRevenue = orderRepository.getTotalRevenue();
+        if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
+
+        long completedOrders = orderRepository.countByOrderShippingStatus(ShippingStatus.DELIVERED);
+
+        long processingOrders = orderRepository.countByOrderShippingStatus(ShippingStatus.PROCESSING);
+
+        return new OrderStatisticsResponse(
+                totalOrders,
+                totalRevenue,
+                completedOrders,
+                processingOrders
+        );
+    }
+    @Override
+    @Transactional
+    public OrderListResponse updateOrderStatus(int orderId, OrderStatusUpdateRequest request) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        if (request.getPaymentStatus() != null) {
+            order.setOrderPaymentStatus(request.getPaymentStatus());
+        }
+        if (request.getShippingStatus() != null) {
+            order.setOrderShippingStatus(request.getShippingStatus());
+        }
+        orderRepository.save(order);
+        int totalProduct = order.getOrderDetails()
+                .stream()
+                .mapToInt(OrderDetail::getOdQuantity)
+                .sum();
+        return new OrderListResponse(
+                order.getOrderId(),
+                order.getOrderUser().getName(),
+                order.getOrderUser().getEmail(),
+                totalProduct,
+                order.getOrderTotalAmount(),
+                order.getOrderPaymentStatus(),
+                order.getOrderShippingStatus(),
+                order.getOrderDate()
+        );
+    }
+
+    @Override
+    public void deleteById(int id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        if (order.getOrderShippingStatus() == ShippingStatus.DELIVERED ||
+                order.getOrderPaymentStatus() == PaymentStatus.PAID) {
+            throw new RuntimeException("Cannot delete completed or paid order");
+        }
+        orderRepository.delete(order);
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getOrderDetail(int orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        List<OrderDetailResponse.ProductDetail> products = order.getOrderDetails().stream()
+                .map(od -> {
+                    ProductVariant pv = od.getOdProductVariant();
+                    return new OrderDetailResponse.ProductDetail(
+                            pv.getProdvId(),
+                            pv.getProdvName(),
+                            pv.getProdvModel(),
+                            pv.getProdvVersion(),
+                            pv.getProdvColor(),
+                            pv.getProdvPrice() != null ? pv.getProdvPrice().getPpPrice() : 0.0,
+                            pv.getProdvImg() != null ? pv.getProdvImg().getImageData() : null,
+                            od.getOdQuantity()
+                    );
+                }).toList();
+
+        return new OrderDetailResponse(
+                order.getOrderId(),
+                order.getOrderUser().getName(),
+                order.getOrderUser().getEmail(),
+                order.getOrderPaymentStatus(),
+                order.getOrderShippingStatus(),
+                order.getOrderDate(),
+                order.getOrderTotalAmount(),
+                products
+        );
     }
 }
