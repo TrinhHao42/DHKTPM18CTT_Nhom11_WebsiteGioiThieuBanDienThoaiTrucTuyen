@@ -62,7 +62,7 @@ export type HourlyActivity = {
 
 export type SourceStats = {
   source: string;
-  users: number;
+  count: number;
   percentage: number;
 };
 
@@ -99,7 +99,7 @@ export type DemographicsData = {
   }>;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || 'http://localhost:3002/api';
+const API_BASE = process.env.NEXT_PUBLIC_ANALYTICS_API_URL || '/api/analytics';
 
 async function fetchAnalyticsData<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`);
@@ -225,14 +225,10 @@ export function useDeviceStats(websiteId?: string) {
         setLoading(true);
         setError(null);
         const params = websiteId ? `?websiteId=${websiteId}` : '';
-        const deviceData = await fetchAnalyticsData<{
-          deviceTypes: DeviceStats[];
-          browsers: Array<{browser: string; count: number; percentage: number}>;
-          operatingSystems: Array<{os: string; count: number; percentage: number}>;
-        }>(`/device-stats${params}`);
-        
-        // Use deviceTypes from the dedicated device-stats endpoint
-        setData(deviceData.deviceTypes || []);
+        const deviceData = await fetchAnalyticsData<DeviceStats[]>(`/device-stats${params}`);
+
+        // API returns array directly
+        setData(deviceData || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch device stats');
       } finally {
