@@ -2,6 +2,7 @@
 import React from "react";
 import Image from "next/image";
 import CountryMap from "@/components/ecommerce/CountryMap";
+import { useLocationStats } from "@/hooks/useAnalytics";
 
 type CountryData = {
   name: string;
@@ -55,7 +56,44 @@ const countryData: CountryData[] = [
   },
 ];
 
-export default function UserLocationAnalytics() {
+interface UserLocationAnalyticsProps {
+  websiteId?: string;
+}
+
+export default function UserLocationAnalytics({ websiteId }: UserLocationAnalyticsProps) {
+  const { data: locationStats, loading, error } = useLocationStats(websiteId);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+            Phân bố người dùng theo vị trí
+          </h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Số lượng người dùng phân chia theo quốc gia
+          </p>
+        </div>
+        <div className="p-6">
+          <div className="h-[400px] w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-900/20">
+        <p className="text-red-600 dark:text-red-400">Lỗi tải dữ liệu vị trí: {error}</p>
+      </div>
+    );
+  }
+
+  // Use real data if available
+  const countries = locationStats || [];
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
       <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
@@ -77,17 +115,39 @@ export default function UserLocationAnalytics() {
       {/* Country List */}
       <div className="p-6">
         <div className="space-y-4">
-          {countryData.map((country, index) => (
+          {countries.map((country: CountryData | { country: string; countryCode: string; users: number; percentage: number; trend: number }, index: number) => {
+            // Map country names to flag paths
+            const flagMap: { [key: string]: string } = {
+              'Vietnam': '/images/country/vietnam.svg',
+              'Việt Nam': '/images/country/vietnam.svg',
+              'United States': '/images/country/usa.svg',
+              'Japan': '/images/country/japan.svg',
+              'South Korea': '/images/country/south-korea.svg',
+              'United Kingdom': '/images/country/uk.svg',
+              'Germany': '/images/country/germany.svg',
+              'France': '/images/country/france.svg',
+              'Canada': '/images/country/canada.svg'
+            };
+
+            // Type-safe property access
+            const countryName = 'country' in country ? country.country : country.name;
+            const countryCode = 'countryCode' in country ? country.countryCode : country.code;
+            const flagPath = flagMap[countryName] || ('flag' in country ? country.flag : '');
+            const userCount = 'users' in country ? country.users : 0;
+            const displayPercentage = 'percentage' in country ? country.percentage : 0;
+            const trendValue = 'trend' in country ? country.trend : 0;
+            
+            return (
             <div
-              key={country.code}
+              key={`${countryCode}-${index}`}
               className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/50"
             >
               <div className="flex items-center gap-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white dark:bg-gray-900">
-                  {country.flag ? (
+                  {flagPath ? (
                     <Image
-                      src={country.flag}
-                      alt={country.name}
+                      src={flagPath}
+                      alt={countryName}
                       width={24}
                       height={24}
                       className="rounded"
@@ -111,14 +171,14 @@ export default function UserLocationAnalytics() {
                 <div>
                   <div className="flex items-center gap-2">
                     <h4 className="font-semibold text-gray-900 dark:text-white">
-                      {country.name}
+                      {countryName}
                     </h4>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       #{index + 1}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {country.users.toLocaleString()} người dùng
+                    {userCount.toLocaleString()} người dùng
                   </p>
                 </div>
               </div>
@@ -126,10 +186,10 @@ export default function UserLocationAnalytics() {
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="text-lg font-bold text-gray-900 dark:text-white">
-                    {country.percentage}%
+                    {displayPercentage}%
                   </p>
                   <div className="flex items-center gap-1 text-sm">
-                    {country.trend >= 0 ? (
+                    {trendValue >= 0 ? (
                       <>
                         <svg
                           className="h-4 w-4 text-green-500"
@@ -145,7 +205,7 @@ export default function UserLocationAnalytics() {
                           />
                         </svg>
                         <span className="text-green-600 dark:text-green-400">
-                          {country.trend}%
+                          {trendValue.toFixed(1)}%
                         </span>
                       </>
                     ) : (
@@ -164,7 +224,7 @@ export default function UserLocationAnalytics() {
                           />
                         </svg>
                         <span className="text-red-600 dark:text-red-400">
-                          {Math.abs(country.trend)}%
+                          {Math.abs(trendValue).toFixed(1)}%
                         </span>
                       </>
                     )}
@@ -176,13 +236,14 @@ export default function UserLocationAnalytics() {
                   <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                     <div
                       className="h-full rounded-full bg-brand-500 dark:bg-brand-600"
-                      style={{ width: `${country.percentage}%` }}
+                      style={{ width: `${Math.min(displayPercentage, 100)}%` }}
                     />
                   </div>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

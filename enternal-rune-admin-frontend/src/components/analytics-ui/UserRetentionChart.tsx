@@ -78,16 +78,8 @@ export default function UserRetentionChart() {
     },
   };
 
-  const series = [
-    {
-      name: "Tỷ lệ quay lại",
-      data: [65, 68, 72, 70, 75, 78, 76, 80, 82, 79, 85, 88],
-    },
-    {
-      name: "Tỷ lệ giữ chân",
-      data: [85, 87, 88, 86, 89, 91, 90, 92, 93, 91, 94, 95],
-    },
-  ];
+  // Empty series - will be replaced with real API data
+  const series: { name: string; data: number[] }[] = [];
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">

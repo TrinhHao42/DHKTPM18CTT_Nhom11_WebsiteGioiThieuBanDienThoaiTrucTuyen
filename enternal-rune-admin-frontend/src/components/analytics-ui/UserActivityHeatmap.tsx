@@ -2,12 +2,56 @@
 import React from "react";
 import { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
+import { useHourlyActivity } from "@/hooks/useAnalytics";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-export default function UserActivityHeatmap() {
+interface UserActivityHeatmapProps {
+  websiteId?: string;
+}
+
+export default function UserActivityHeatmap({ websiteId }: UserActivityHeatmapProps) {
+  const { data: activityData, loading, error } = useHourlyActivity(websiteId);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
+            Hoạt động theo giờ
+          </h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Mật độ người dùng truy cập theo ngày và giờ trong tuần
+          </p>
+        </div>
+        <div className="h-[350px] w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700"></div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-900/20">
+        <p className="text-red-600 dark:text-red-400">Lỗi tải dữ liệu hoạt động: {error}</p>
+      </div>
+    );
+  }
+
+  // Empty default series when no real data
+  const defaultSeries: { name: string; data: number[] }[] = [];
+
+  // Convert API data to chart format or use default
+  const series = activityData && activityData.length > 0
+    ? activityData.map(day => ({
+      name: (day.name || day.hour)?.toString(),
+      data: Object.keys(day).filter(k => k.includes('h')).map(k => day[k] as number)
+    }))
+    : defaultSeries;
+
   const options: ApexOptions = {
     chart: {
       fontFamily: "Outfit, sans-serif",
@@ -85,36 +129,7 @@ export default function UserActivityHeatmap() {
     },
   };
 
-  const series = [
-    {
-      name: "Thứ 2",
-      data: [450, 380, 320, 580, 1250, 1680, 1890, 2150, 1980, 2340, 2180, 1520],
-    },
-    {
-      name: "Thứ 3",
-      data: [480, 410, 350, 620, 1320, 1740, 1920, 2180, 2050, 2280, 2120, 1480],
-    },
-    {
-      name: "Thứ 4",
-      data: [520, 440, 380, 680, 1380, 1820, 1980, 2240, 2120, 2380, 2240, 1620],
-    },
-    {
-      name: "Thứ 5",
-      data: [510, 430, 370, 650, 1360, 1780, 1950, 2210, 2080, 2340, 2180, 1580],
-    },
-    {
-      name: "Thứ 6",
-      data: [580, 490, 420, 720, 1420, 1880, 2050, 2280, 2180, 2450, 2320, 1720],
-    },
-    {
-      name: "Thứ 7",
-      data: [620, 520, 450, 780, 1180, 1520, 1680, 1890, 1820, 2120, 2280, 1920],
-    },
-    {
-      name: "Chủ nhật",
-      data: [580, 480, 420, 720, 1120, 1480, 1620, 1820, 1750, 2050, 2180, 1850],
-    },
-  ];
+
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -127,12 +142,12 @@ export default function UserActivityHeatmap() {
         </p>
       </div>
       <ReactApexChart
-            options={options}
-            series={series}
-            type="heatmap"
-            height={350}
-          />
-      
+        options={options}
+        series={series}
+        type="heatmap"
+        height={350}
+      />
+
       {/* Peak Hours Info */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
@@ -148,7 +163,7 @@ export default function UserActivityHeatmap() {
             </div>
           </div>
         </div>
-        
+
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 text-brand-600 shadow-sm dark:bg-gray-900 dark:text-brand-400">
@@ -162,7 +177,7 @@ export default function UserActivityHeatmap() {
             </div>
           </div>
         </div>
-        
+
         <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-800/50">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 text-brand-600 shadow-sm dark:bg-gray-900 dark:text-brand-400">
