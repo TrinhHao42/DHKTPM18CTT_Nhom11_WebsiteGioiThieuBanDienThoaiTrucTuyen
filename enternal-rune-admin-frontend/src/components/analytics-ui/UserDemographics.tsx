@@ -8,13 +8,8 @@ type AgeGroup = {
   color: string;
 };
 
-const ageGroups: AgeGroup[] = [
-  { range: "18-24", count: 5678, percentage: 23.1, color: "bg-brand-500" },
-  { range: "25-34", count: 9234, percentage: 37.6, color: "bg-brand-600" },
-  { range: "35-44", count: 6123, percentage: 24.9, color: "bg-brand-400" },
-  { range: "45-54", count: 2456, percentage: 10.0, color: "bg-brand-300" },
-  { range: "55+", count: 1076, percentage: 4.4, color: "bg-brand-200" },
-];
+// Empty age groups - will be replaced with real API data
+const ageGroups: AgeGroup[] = [];
 
 type Gender = {
   label: string;
@@ -24,44 +19,11 @@ type Gender = {
   color: string;
 };
 
-const genderData: Gender[] = [
-  {
-    label: "Nam",
-    count: 13456,
-    percentage: 54.8,
-    color: "bg-brand-500",
-    icon: (
-      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Nữ",
-    count: 10234,
-    percentage: 41.7,
-    color: "bg-brand-400",
-    icon: (
-      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-  },
-  {
-    label: "Khác",
-    count: 877,
-    percentage: 3.5,
-    color: "bg-brand-300",
-    icon: (
-      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-  },
-];
+// Empty gender data - will be replaced with real API data
+const genderData: Gender[] = [];
 
 export default function UserDemographics() {
-  const maxPercentage = Math.max(...ageGroups.map((g) => g.percentage));
+  // const maxPercentage = Math.max(...ageGroups.map((g) => g.percentage));
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">

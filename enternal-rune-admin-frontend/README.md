@@ -1,21 +1,29 @@
-# TailAdmin Next.js - Free Next.js Tailwind Admin Dashboard Template
+# Enternal Rune Admin Frontend
 
-TailAdmin is a free and open-source admin dashboard template built on **Next.js and Tailwind CSS** providing developers with everything they need to create a feature-rich and data-driven: back-end, dashboard, or admin panel solution for any sort of web project.
+Next.js admin dashboard with integrated analytics backend service.
 
-![TailAdmin - Next.js Dashboard Preview](./banner.png)
+![Admin Dashboard Preview](./banner.png)
 
-With TailAdmin Next.js, you get access to all the necessary dashboard UI components, elements, and pages required to build a high-quality and complete dashboard or admin panel. Whether you're building a dashboard or admin panel for a complex web application or a simple website. 
+## Architecture
 
-TailAdmin utilizes the powerful features of **Next.js 15** and common features of Next.js such as server-side rendering (SSR), static site generation (SSG), and seamless API route integration. Combined with the advancements of **React 19** and the robustness of **TypeScript**, TailAdmin is the perfect solution to help get your project up and running quickly.
+This project consists of:
+- **Frontend**: Next.js 16.0.3 with React 19.2.0 admin dashboard
+- **Backend**: Express.js analytics service with Prisma ORM
+- **Database**: PostgreSQL for analytics data
+- **Styling**: Tailwind CSS with modern UI components
+- **Charts**: ApexCharts for analytics visualization
 
 ## Overview
 
-TailAdmin provides essential UI components and layouts for building feature-rich, data-driven admin dashboards and control panels. It's built on:
+Built on the latest web technologies:
 
-- Next.js 15.x
-- React 19
-- TypeScript
+- Next.js 16.0.3
+- React 19.2.0
+- TypeScript ^5
 - Tailwind CSS V4
+- Express.js Backend
+- Prisma ORM
+- PostgreSQL Database
 
 ### Quick Links
 - [✨ Visit Website](https://tailadmin.com)
@@ -63,6 +71,65 @@ git clone https://github.com/TailAdmin/free-nextjs-admin-dashboard.git
     # or
     yarn dev
     ```
+
+### Analytics Backend (Optional)
+
+This project includes an integrated analytics backend service for tracking user activity. To use the analytics features:
+
+#### Analytics Backend Commands
+
+```bash
+# Development mode (watch for changes)
+docker-compose up -d postgres
+
+# Database operations
+npx prisma migrate dev
+#hoac
+npx prisma migrate dev --schema=./analytics-backend/prisma/schema.prisma
+npx prisma generate
+npx prisma db seed
+
+docker exec -it analytics-postgres psql -U analytics_user -d analytics # Xem database
+```
+
+#### Analytics Backend Setup
+
+1. Configure your database environment:
+   ```bash
+   cp .env.analytics.example .env.analytics
+   # Edit .env.analytics with your database URL
+   ```
+
+2. Start PostgreSQL database with Docker (optional):
+   ```bash
+   docker-compose up -d
+   ```
+
+3. Set up the database:
+   ```bash
+   npm run analytics:migrate
+   npm run analytics:generate
+   ```
+
+4. Start the analytics backend:
+   ```bash
+   npm run analytics:dev
+   ```
+
+The analytics backend will run on `http://localhost:3001` by default.
+
+#### Docker Deployment
+
+For production deployment with Docker:
+
+```bash
+# Build and run the analytics backend
+docker-compose up --build
+
+# Or build the image manually
+docker build -t analytics-backend .
+docker run -p 3001:3001 --env-file .env.analytics analytics-backend
+```
 
 ## Components
 

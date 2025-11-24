@@ -1,0 +1,56 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: analytics-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: analytics
+      POSTGRES_USER: analytics_user
+      POSTGRES_PASSWORD: analytics_password
+      POSTGRES_HOST_AUTH_METHOD: md5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./analytics-backend/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - analytics-network
+
+  # Analytics Backend
+  analytics-backend:
+    build: 
+      context: .
+      target: production
+    container_name: analytics-backend
+    restart: unless-stopped
+    env_file:
+      - .env.analytics
+    ports:
+      - "3002:3002"
+    depends_on:
+      - postgres
+    networks:
+      - analytics-network
+    command: ["npm", "run", "start:analytics"]
+
+  # Frontend (Optional - if you want to run NextJS in Docker too)
+  frontend:
+    build: 
+      context: .
+      target: production
+    container_name: nextjs-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    networks:
+      - analytics-network
+    command: ["npm", "run", "docker:frontend"]
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  analytics-network:
+    driver: bridge

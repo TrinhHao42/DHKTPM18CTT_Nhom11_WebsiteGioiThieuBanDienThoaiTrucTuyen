@@ -1,0 +1,74 @@
+# Docker ignore file for NextJS + Analytics Backend
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs (excluded from copy, but built inside Docker)
+analytics-backend/dist/
+.next/
+out/
+build/
+
+# Development environment files
+.env*.local
+.env.analytics
+.env.development
+
+# Database files
+*.sqlite
+*.db
+postgres_data/
+analytics-backend/prisma/migrations/
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.npm/
+.eslintcache
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git and development files
+.git/
+.gitignore
+README.md
+analytics-backend/examples/
+
+# Docker files (we don't need them inside the container)
+.dockerignore
+docker-compose*.yml
+
+# Development configs (already copied selectively)
+.eslintrc.*
+prettier.config.*

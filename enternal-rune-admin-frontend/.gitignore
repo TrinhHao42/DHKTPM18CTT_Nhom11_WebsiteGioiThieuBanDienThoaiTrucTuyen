@@ -28,6 +28,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.analytics
 
 # vercel
 .vercel
@@ -35,3 +36,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Analytics Backend
+analytics-backend/dist/
+analytics-backend/node_modules/
+analytics-backend/prisma/migrations/
+*.db
+*.sqlite
+
+# Database
+postgres_data/
