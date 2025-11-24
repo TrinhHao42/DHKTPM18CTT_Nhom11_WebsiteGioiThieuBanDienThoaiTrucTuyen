@@ -12,7 +12,6 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/conversations")
-@CrossOrigin(origins = "*") // dev, sau cấu hình domain
 public class ConversationController {
 
     private final ConversationRepository conversationRepository;
