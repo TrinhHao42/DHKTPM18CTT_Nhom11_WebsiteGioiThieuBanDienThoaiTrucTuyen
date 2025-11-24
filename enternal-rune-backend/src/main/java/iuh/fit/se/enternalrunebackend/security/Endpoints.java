@@ -18,15 +18,10 @@ public class Endpoints {
                         "/api/products/*/comments/*/replies",
                         "/api/products/*/rating-distribution",
                         "/api/products/*/average-rating",
-                        "/api/dashboard-order/**"
+
 
         };
-    public static final String[] PUBLIC_PUT_ENDPOINTS = {
-            "/api/dashboard-order/**"
-    };
-    public static final String[] PUBLIC_DELETE_ENDPOINTS = {
-            "/api/dashboard-order/**"
-    };
+
         // POST không cần đăng nhập
     public static final String[] PUBLIC_POST_ENDPOINTS = {
             "/account/login",
@@ -49,8 +44,14 @@ public class Endpoints {
     // Admin GET
         public static final String[] ADMIN_GET_ENDPOINTS = {
                         "/addresses/**",
+                        "/api/dashboard-order/**"
         };
-
         public static final String[] ADMIN_POST_ENDPOINTS = {
+        };
+        public static final String[] ADMIN_PUT_ENDPOINTS = {
+                "/api/dashboard-order/**"
+        };
+        public static final String[] ADMIN_DELETE_ENDPOINTS = {
+                "/api/dashboard-order/**"
         };
 }
