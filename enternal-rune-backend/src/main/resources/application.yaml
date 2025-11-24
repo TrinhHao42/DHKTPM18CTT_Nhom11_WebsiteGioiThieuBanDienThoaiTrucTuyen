@@ -15,9 +15,6 @@ spring:
             model: gemini-2.0-flash
         embedding:
           api-key: ${GEMINI_API_KEY}
-
-
-
   #    vectorstore:
   #      pgvector:
   #      index-type: HNSW

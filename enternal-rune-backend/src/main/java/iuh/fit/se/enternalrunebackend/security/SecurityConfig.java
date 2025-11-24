@@ -58,6 +58,7 @@ public class SecurityConfig {
                 // CORS
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
+//                    corsConfig.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000"));
                     corsConfig.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
                     corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     corsConfig.setAllowedHeaders(Arrays.asList("*"));
@@ -77,14 +78,14 @@ public class SecurityConfig {
                         .requestMatchers("/assistance/**").permitAll()
                         // Auth / OAuth public
                         .requestMatchers("/oauth/**","/login/**","/oauth2/**","/api/oauth/**").permitAll()
-
                         // Các endpoint public khác bạn khai báo trong Endpoints
                         .requestMatchers(HttpMethod.GET, Endpoints.PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.POST, Endpoints.PUBLIC_POST_ENDPOINTS).permitAll()
 
                         // Admin
                         .requestMatchers(HttpMethod.GET, Endpoints.ADMIN_GET_ENDPOINTS).hasRole("ADMIN")
-
+                        .requestMatchers(HttpMethod.PUT, Endpoints.ADMIN_PUT_ENDPOINTS).hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, Endpoints.ADMIN_DELETE_ENDPOINTS).hasRole("ADMIN")
                         // Còn lại phải auth (JWT hoặc OAuth2)
                         .anyRequest().authenticated()
                 )
