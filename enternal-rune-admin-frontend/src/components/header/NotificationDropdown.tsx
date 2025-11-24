@@ -41,32 +41,32 @@ export default function NotificationDropdown() {
     }
   ]);
 
-  useEffect(() => {
-    const socket = new WebSocket("ws://localhost:8080/notifications?role=admin");
+  // useEffect(() => {
+  //   const socket = new WebSocket("ws://localhost:8080/notifications?role=admin");
 
-    socket.onopen = () => {
-      console.log("WebSocket connected");
-    };
+  //   socket.onopen = () => {
+  //     console.log("WebSocket connected");
+  //   };
 
-    socket.onerror = (err) => {
-      console.error("WebSocket error:", err);
-    };
+  //   socket.onerror = (err) => {
+  //     console.error("WebSocket error:", err);
+  //   };
 
-    socket.onmessage = (event) => {
-      console.log("WebSocket message received:", event.data);
-      // const newNotification: Notification = JSON.parse(event.data);
-      // setNotifications((prev) => [newNotification, ...prev]);
-      // setNotifying(true);
-    };
+  //   socket.onmessage = (event) => {
+  //     console.log("WebSocket message received:", event.data);
+  //     // const newNotification: Notification = JSON.parse(event.data);
+  //     // setNotifications((prev) => [newNotification, ...prev]);
+  //     // setNotifying(true);
+  //   };
 
-    socket.onclose = () => {
-      console.log("WebSocket disconnected");
-    };
+  //   socket.onclose = () => {
+  //     console.log("WebSocket disconnected");
+  //   };
 
-    return () => {
-      socket.close();
-    };
-  }, []);
+  //   return () => {
+  //     socket.close();
+  //   };
+  // }, []);
 
 
   function toggleDropdown() {
