@@ -1,72 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { AnalyticsService } from '@/lib/analytics';
 
-// Temporary fix: Use direct PrismaClient with correct credentials
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: 'postgresql://analytics_user:analytics_password@localhost:5432/analytics',
-    },
-  },
-});
+const analyticsService = new AnalyticsService();
 
 export async function GET(request: NextRequest) {
   try {
     console.log('[API] Metrics endpoint called');
     
     const { searchParams } = new URL(request.url);
-    const websiteId = searchParams.get('websiteId') || undefined;
+    const websiteId = searchParams.get('websiteId');
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
 
     console.log('[API] Parameters:', { websiteId, startDateParam, endDateParam });
 
-    const startDate = startDateParam ? new Date(startDateParam) : undefined;
-    const endDate = endDateParam ? new Date(endDateParam) : undefined;
+    // Use default date range if not provided (last 30 days)
+    const endDate = endDateParam ? new Date(endDateParam) : new Date();
+    const startDate = startDateParam ? new Date(startDateParam) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    // Simple direct implementation to avoid class instantiation issues
-    const where: Record<string, unknown> = websiteId ? { websiteId } : {};
-    if (startDate && endDate) {
-      where.createdAt = { gte: startDate, lte: endDate };
+    if (!websiteId) {
+      return NextResponse.json(
+        { success: false, error: 'websiteId is required' },
+        { status: 400 }
+      );
     }
 
-    console.log('[API] Where clause:', where);
-
-    // Get basic counts
-    const [totalPageViews, totalUsers] = await Promise.all([
-      prisma.pageView.count({ where }),
-      prisma.userSession.count({ where })
-    ]);
-
-    console.log('[API] Basic counts:', { totalPageViews, totalUsers });
-
-    const uniqueVisitors = totalUsers;
-
-    // Get top pages
-    const topPagesData = await prisma.pageView.groupBy({
-      by: ['urlPath'],
-      where,
-      _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
-      take: 5
-    });
-
-    const topPages = topPagesData.map(page => ({
-      url: page.urlPath,
-      views: page._count.id
-    }));
-
-    console.log('[API] Top pages:', topPages.length);
+    // Get metrics using AnalyticsService
+    const overallMetrics = await analyticsService.getOverallMetrics(websiteId, startDate, endDate);
+    
+    console.log('[API] Overall metrics:', overallMetrics);
 
     const result = {
-      totalPageViews,
-      uniqueVisitors,
-      totalUsers,
-      bounceRate: 0.12, // Simplified for now
-      averageSessionDuration: 665, // Simplified for now
-      topPages,
-      topCountries: [], // Simplified for now
-      deviceTypes: [] // Simplified for now
+      totalPageViews: overallMetrics.totalPageViews,
+      uniqueVisitors: overallMetrics.uniqueVisitors,
+      totalUsers: overallMetrics.totalUsers,
+      bounceRate: overallMetrics.bounceRate,
+      averageSessionDuration: overallMetrics.averageSessionDuration,
+      topPages: overallMetrics.topPages || [],
+      topCountries: [], // TODO: Implement countries data
+      deviceTypes: [] // TODO: Implement device types data
     };
 
     console.log('[API] Returning result');

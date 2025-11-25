@@ -105,7 +105,18 @@ export default function UserAnalyticsMetrics({ websiteId }: UserAnalyticsMetrics
   const formatNumber = (n?: number | null) => Number(n ?? 0).toLocaleString();
   const formatAvgSessionTime = (t?: string | number | null) => {
     if (t === undefined || t === null || t === '') return '0s';
-    return typeof t === 'number' ? `${t}s` : String(t);
+    
+    const seconds = typeof t === 'number' ? t : parseFloat(String(t)) || 0;
+    
+    // Convert to minutes and seconds
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    
+    if (minutes > 0) {
+      return `${minutes}p ${remainingSeconds}s`;
+    } else {
+      return `${remainingSeconds}s`;
+    }
   };
 
   const safeTrend = (t?: { value?: string; isPositive?: boolean }) => ({

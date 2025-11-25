@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import {
   UserAnalyticsMetrics,
@@ -7,6 +9,9 @@ import {
   UserEngagementChart,
   UserSourcesChart,
   UserBehaviorChart,
+  RealtimeAnalytics,
+  OnlineUsersWidget,
+  RecentActivityFeed,
 } from '@/components/analytics-ui';
 import PageBreadCrumb from '@/components/common/PageBreadCrumb';
 
@@ -14,6 +19,17 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <PageBreadCrumb pageTitle="Phân tích dữ liệu người dùng" />
+
+      {/* Realtime Analytics Section */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <RealtimeAnalytics websiteId="cmic2k2820000ml8mu0miqhlm" />
+        </div>
+        <div className="space-y-4">
+          <OnlineUsersWidget websiteId="cmic2k2820000ml8mu0miqhlm" />
+          <RecentActivityFeed websiteId="cmic2k2820000ml8mu0miqhlm" limit={8} />
+        </div>
+      </div>
 
       <UserAnalyticsMetrics websiteId="cmic2k2820000ml8mu0miqhlm" />
 
