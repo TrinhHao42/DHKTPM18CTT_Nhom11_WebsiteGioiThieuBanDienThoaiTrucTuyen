@@ -19,7 +19,6 @@ public class Endpoints {
                         "/api/products/*/rating-distribution",
                         "/api/products/*/average-rating",
 
-
         };
 
         // POST không cần đăng nhập
@@ -44,14 +43,20 @@ public class Endpoints {
     // Admin GET
         public static final String[] ADMIN_GET_ENDPOINTS = {
                         "/addresses/**",
-                        "/api/dashboard-order/**"
+                        "/api/dashboard-order/**",
+                        "/api/dashboard-user/**",
+                        "/products/dashboard/**"
         };
         public static final String[] ADMIN_POST_ENDPOINTS = {
+                "/products/dashboard/**"
         };
         public static final String[] ADMIN_PUT_ENDPOINTS = {
-                "/api/dashboard-order/**"
+                "/api/dashboard-order/**",
+                "/products/dashboard/**"
         };
         public static final String[] ADMIN_DELETE_ENDPOINTS = {
-                "/api/dashboard-order/**"
+                "/api/dashboard-order/**",
+                "/api/dashboard-user/**",
+                "/products/dashboard/**"
         };
 }

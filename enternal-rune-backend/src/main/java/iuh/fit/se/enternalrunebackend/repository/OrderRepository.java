@@ -101,4 +101,5 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
     BigDecimal getTotalRevenue();
     long countByOrderShippingStatus(ShippingStatus status);
 
+    List<Order> findByOrderUser_UserId(Long userId);
 }
