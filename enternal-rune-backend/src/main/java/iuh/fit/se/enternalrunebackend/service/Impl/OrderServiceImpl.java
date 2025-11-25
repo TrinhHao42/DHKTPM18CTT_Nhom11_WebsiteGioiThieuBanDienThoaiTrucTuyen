@@ -243,7 +243,6 @@ public class OrderServiceImpl implements OrderService {
         List<OrderResponse.OrderDetailInfo> orderDetailInfos = order.getOrderDetails().stream()
             .map(detail -> {
                 ProductVariant variant = detail.getOdProductVariant();
-                
                 // Get image URL
                 String imageUrl = null;
                 if (variant.getProdvImg() != null && variant.getProdvImg().getImageData() != null) {
@@ -289,10 +288,6 @@ public class OrderServiceImpl implements OrderService {
             .orderDetails(orderDetailInfos)
             .build();
     }
-
-
-
-
     @Override
     @Transactional(readOnly = true)
     public Page<OrderListResponse> getOrderList(
@@ -302,13 +297,11 @@ public class OrderServiceImpl implements OrderService {
             Pageable pageable
     ) {
         Page<Order> ordersPage = orderRepository.searchOrders(keyword, paymentStatus, shippingStatus, pageable);
-
         List<OrderListResponse> dtoList = ordersPage.getContent().stream().map(order -> {
             int totalProduct = order.getOrderDetails()
                     .stream()
                     .mapToInt(OrderDetail::getOdQuantity)
                     .sum();
-
             return new OrderListResponse(
                     order.getOrderId(),
                     order.getOrderUser().getName(),
@@ -320,12 +313,8 @@ public class OrderServiceImpl implements OrderService {
                     order.getOrderDate()
             );
         }).toList();
-
         return new PageImpl<>(dtoList, pageable, ordersPage.getTotalElements());
     }
-
-
-
     @Override
     @Transactional(readOnly = true)
     public OrderStatisticsResponse getOrderStatistics() {
@@ -374,7 +363,6 @@ public class OrderServiceImpl implements OrderService {
                 order.getOrderDate()
         );
     }
-
     @Override
     public void deleteById(int id) {
         Order order = orderRepository.findById(id)

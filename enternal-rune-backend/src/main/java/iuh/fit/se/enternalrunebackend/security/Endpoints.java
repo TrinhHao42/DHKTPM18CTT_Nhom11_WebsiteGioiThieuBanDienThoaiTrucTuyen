@@ -19,7 +19,7 @@ public class Endpoints {
                         "/api/products/*/rating-distribution",
                         "/api/products/*/average-rating",
 
-
+                        "/api/dashboard-user/**"
         };
 
         // POST không cần đăng nhập
