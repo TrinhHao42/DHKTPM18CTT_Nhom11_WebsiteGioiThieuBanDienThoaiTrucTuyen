@@ -115,7 +115,7 @@ export default function UserSourcesChart({ websiteId }: UserSourcesChartProps) {
 
       {/* Source Stats */}
       <div className="mt-6 space-y-3">
-        {sources.map((sourceData: { source: string; users: number; percentage: number }) => {
+        {sources.map((sourceData: { source: string; count: number; percentage: number }) => {
           const icons: { [key: string]: string } = {
             'organic search': '🔍',
             'direct': '🌐',
@@ -139,7 +139,7 @@ export default function UserSourcesChart({ websiteId }: UserSourcesChartProps) {
                     {sourceData.source}
                   </p>
                   <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {sourceData.users.toLocaleString()} người dùng
+                    {sourceData.count.toLocaleString()} người dùng
                   </p>
                 </div>
               </div>

@@ -1,56 +1,45 @@
+version: '3.8'
+
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: analytics-postgres
+    container_name: enternal-rune-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: analytics
       POSTGRES_USER: analytics_user
       POSTGRES_PASSWORD: analytics_password
-      POSTGRES_HOST_AUTH_METHOD: md5
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./analytics-backend/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
-    networks:
-      - analytics-network
+      - ./prisma/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U analytics_user -d analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
-  # Analytics Backend
-  analytics-backend:
-    build: 
-      context: .
-      target: production
-    container_name: analytics-backend
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: enternal-rune-pgadmin
     restart: unless-stopped
-    env_file:
-      - .env.analytics
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "3002:3002"
+      - "8080:80"
     depends_on:
       - postgres
-    networks:
-      - analytics-network
-    command: ["npm", "run", "start:analytics"]
-
-  # Frontend (Optional - if you want to run NextJS in Docker too)
-  frontend:
-    build: 
-      context: .
-      target: production
-    container_name: nextjs-frontend
-    restart: unless-stopped
-    ports:
-      - "3001:3001"
-    networks:
-      - analytics-network
-    command: ["npm", "run", "docker:frontend"]
+    profiles:
+      - admin
 
 volumes:
   postgres_data:
     driver: local
 
 networks:
-  analytics-network:
-    driver: bridge
+  default:
+    name: enternal-rune-network
