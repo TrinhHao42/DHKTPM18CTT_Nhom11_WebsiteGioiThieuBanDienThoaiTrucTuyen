@@ -16,7 +16,6 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         },
         onMessage: (data) => {
             console.log('📩 User received notification:', data);
-            // Có thể thêm logic để hiển thị notification cho user ở đây
         },
         onError: (error) => {
             console.error('❌ User WebSocket error:', error);

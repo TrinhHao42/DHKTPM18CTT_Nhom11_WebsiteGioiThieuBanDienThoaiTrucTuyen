@@ -34,12 +34,10 @@ export function useWebSocket({
                 socketRef.current = socket;
 
                 socket.onopen = () => {
-                    console.log('✅ WebSocket connected:', url);
                     onOpen?.();
                 };
 
                 socket.onmessage = (event) => {
-                    console.log('📩 WebSocket message:', event.data);
                     if (onMessage) {
                         try {
                             const data = JSON.parse(event.data);
@@ -51,15 +49,12 @@ export function useWebSocket({
                 };
 
                 socket.onerror = (error) => {
-                    console.error('❌ WebSocket error:', error);
                     onError?.(error);
                 };
 
                 socket.onclose = (event) => {
-                    console.log('🔌 WebSocket closed');
                     onClose?.();
 
-                    // Auto reconnect if not clean close and autoReconnect is enabled
                     if (autoReconnect && !event.wasClean && !isUnmountedRef.current) {
                         console.log(`🔄 Reconnecting in ${reconnectInterval / 1000}s...`);
                         reconnectTimeoutRef.current = setTimeout(connect, reconnectInterval);

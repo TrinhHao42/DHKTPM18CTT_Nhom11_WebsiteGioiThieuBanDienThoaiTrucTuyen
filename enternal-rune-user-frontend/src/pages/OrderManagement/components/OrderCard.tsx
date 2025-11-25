@@ -1,3 +1,4 @@
+'use client'
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Order } from '@/types/Order'
@@ -35,56 +36,38 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
     const { user } = useAuth()
     const toast = useToast()
     
-    // Modal states
     const [showCancelModal, setShowCancelModal] = useState(false)
     const [showRefundModal, setShowRefundModal] = useState(false)
     const [showReturnModal, setShowReturnModal] = useState(false)
 
-    // Payment Status Badge
-    const getPaymentStatusBadge = (status: PaymentStatus) => {
-        switch (status) {
-            case PaymentStatus.PENDING:
-                return (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        <Clock className="w-3.5 h-3.5" />
-                        Chờ thanh toán
-                    </span>
-                )
-            case PaymentStatus.PAID:
-                return (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Đã thanh toán
-                    </span>
-                )
-            case PaymentStatus.FAILED:
-                return (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        <XCircle className="w-3.5 h-3.5" />
-                        Thanh toán thất bại
-                    </span>
-                )
-            case PaymentStatus.REFUNDED:
-                return (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        <RotateCcw className="w-3.5 h-3.5" />
-                        Đã hoàn tiền
-                    </span>
-                )
-            case PaymentStatus.EXPIRED:
-                return (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        Đã hết hạn
-                    </span>
-                )
-            default:
-                return null
+    const getPaymentStatusBadge = (status?: PaymentStatus) => {
+        if (!status) {
+            return (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Không xác định
+                </span>
+            )
         }
+
+        const statusMap: Record<PaymentStatus, { label: string; color: string; icon: React.ReactNode }> = {
+            [PaymentStatus.PENDING]: { label: 'Chờ thanh toán', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-3.5 h-3.5" /> },
+            [PaymentStatus.PAID]: { label: 'Đã thanh toán', color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-3.5 h-3.5" /> },
+            [PaymentStatus.FAILED]: { label: 'Thanh toán thất bại', color: 'bg-red-100 text-red-800', icon: <XCircle className="w-3.5 h-3.5" /> },
+            [PaymentStatus.REFUNDED]: { label: 'Đã hoàn tiền', color: 'bg-purple-100 text-purple-800', icon: <RotateCcw className="w-3.5 h-3.5" /> },
+            [PaymentStatus.EXPIRED]: { label: 'Đã hết hạn', color: 'bg-gray-100 text-gray-800', icon: <AlertCircle className="w-3.5 h-3.5" /> }
+        }
+
+        const statusInfo = statusMap[status]
+        return (
+            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
+                {statusInfo.icon}
+                {statusInfo.label}
+            </span>
+        )
     }
 
-    // Shipping Status Badge
-    const getShippingStatusBadge = (status: ShippingStatus) => {
+    const getShippingStatusBadge = (status?: ShippingStatus) => {
         const statusMap: Record<ShippingStatus, { label: string; color: string }> = {
             [ShippingStatus.PENDING]: { label: 'Chờ xử lý', color: 'bg-gray-100 text-gray-800' },
             [ShippingStatus.PROCESSING]: { label: 'Đang xử lý', color: 'bg-blue-100 text-blue-800' },
@@ -96,7 +79,8 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
             [ShippingStatus.RETURNED]: { label: 'Đã trả hàng', color: 'bg-orange-100 text-orange-800' },
         }
 
-        const statusInfo = statusMap[status]
+        const statusInfo = status ? statusMap[status] : { label: 'Không xác định', color: 'bg-gray-200 text-gray-800' }
+
         return (
             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
                 <Truck className="w-3.5 h-3.5" />
@@ -105,10 +89,11 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
         )
     }
 
-    // Action Buttons
-    const getActionButton = (paymentStatus: PaymentStatus) => {
+    const getActionButton = (paymentStatus?: PaymentStatus) => {
         const buttonClass =
             "w-full sm:w-auto px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 active:scale-95"
+
+        if (!paymentStatus) return null
 
         switch (paymentStatus) {
             case PaymentStatus.PENDING:
@@ -182,8 +167,8 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
             orderId: order.orderId,
             orderDate: order.orderDate,
             totalAmount: order.orderTotalAmount,
-            paymentStatus: order.orderPaymentStatus,
-            shippingStatus: order.orderShippingStatus
+            paymentStatus: order.currentPaymentStatus.statusCode,
+            shippingStatus: order.currentShippingStatus.statusCode
         }
         const encodedOrder = encodeURIComponent(JSON.stringify(orderData))
         router.push(`/PaymentScreen?orderId=${order.orderId}&fromOrder=true&orderData=${encodedOrder}`)
@@ -195,13 +180,9 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
             return
         }
 
-        // Xác định loại action dựa vào payment status
-        if (order.orderPaymentStatus === PaymentStatus.PENDING) {
-            // Hủy đơn chưa thanh toán - mở cancel modal
+        if (order.currentPaymentStatus.statusCode === PaymentStatus.PENDING) {
             setShowCancelModal(true)
-        } else if (order.orderPaymentStatus === PaymentStatus.PAID) {
-            // Đơn đã thanh toán - hiển thị tuỳ chọn hoàn tiền hay trả hàng
-            // Tạm thời mở refund modal, có thể thêm logic chọn sau
+        } else if (order.currentPaymentStatus.statusCode === PaymentStatus.PAID) {
             setShowRefundModal(true)
         }
     }
@@ -213,13 +194,9 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
             setIsProcessing(true)
             await cancelOrder(order.orderId, user.userId)
             toast.success('Đã gửi yêu cầu hủy đơn hàng!')
-            
-            setTimeout(() => {
-                window.location.reload()
-            }, 1500)
+            setTimeout(() => window.location.reload(), 1500)
         } catch (error: any) {
             toast.error(error.message || 'Không thể hủy đơn hàng')
-            console.error('Error:', error)
         } finally {
             setIsProcessing(false)
             setShowCancelModal(false)
@@ -233,13 +210,9 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
             setIsProcessing(true)
             await createRefundRequest(order.orderId, user.userId, reason, 'CANCEL')
             toast.success('Đã gửi yêu cầu hoàn tiền!')
-            
-            setTimeout(() => {
-                window.location.reload()
-            }, 1500)
+            setTimeout(() => window.location.reload(), 1500)
         } catch (error: any) {
             toast.error(error.message || 'Không thể tạo yêu cầu hoàn tiền')
-            console.error('Error:', error)
         } finally {
             setIsProcessing(false)
             setShowRefundModal(false)
@@ -251,18 +224,11 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
 
         try {
             setIsProcessing(true)
-            
-            // TODO: Implement upload images first, then create return request
-            // For now, just create return request with reason
             await createRefundRequest(order.orderId, user.userId, reason, 'RETURN')
             toast.success('Đã gửi yêu cầu trả hàng!')
-            
-            setTimeout(() => {
-                window.location.reload()
-            }, 1500)
+            setTimeout(() => window.location.reload(), 1500)
         } catch (error: any) {
             toast.error(error.message || 'Không thể tạo yêu cầu trả hàng')
-            console.error('Error:', error)
         } finally {
             setIsProcessing(false)
             setShowReturnModal(false)
@@ -273,8 +239,9 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
         handlePayment()
     }
 
-    const formatDate = (date: Date) => {
-        return new Date(date).toLocaleDateString('vi-VN', {
+    const formatDate = (date: Date | string) => {
+        const d = new Date(date)
+        return d.toLocaleDateString('vi-VN', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
@@ -300,8 +267,8 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
                                 </div>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                {getPaymentStatusBadge(order.orderPaymentStatus)}
-                                {getShippingStatusBadge(order.orderShippingStatus)}
+                                {getPaymentStatusBadge(order.currentPaymentStatus.statusCode as PaymentStatus)}
+                                {getShippingStatusBadge(order.currentShippingStatus.statusCode as ShippingStatus)}
                             </div>
                         </div>
                     </div>
@@ -324,17 +291,14 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
                                 <div>
                                     <p className="text-xs text-gray-500 mb-0.5">Tổng tiền</p>
                                     <p className="text-sm font-bold text-blue-600">
-                                        {order.orderTotalAmount?.toLocaleString('vi-VN', {
-                                            style: 'currency',
-                                            currency: 'VND'
-                                        })}
+                                        {order.orderTotalAmount?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
                                     </p>
                                 </div>
                             </div>
 
                             {/* Actions */}
                             <div className="flex justify-end">
-                                {getActionButton(order.orderPaymentStatus)}
+                                {getActionButton(order.currentPaymentStatus.statusCode as PaymentStatus)}
                             </div>
                         </div>
 
@@ -374,30 +338,26 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
                             <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-3">
                                 {order.orderDetails.map((detail, index) => (
                                     <div key={index} className="flex items-center gap-3 py-2 border-b last:border-b-0">
-                                        {detail.productVariant?.imageUrl && (
+                                        {detail.productVariantResponse?.imageUrl && (
                                             <img
-                                                src={detail.productVariant.imageUrl}
-                                                alt={detail.productVariant.variantName}
+                                                src={detail.productVariantResponse.imageUrl}
+                                                alt={detail.productVariantResponse.variantName}
                                                 className="w-16 h-16 object-cover rounded-lg"
                                             />
                                         )}
                                         <div className="flex-1">
-                                            <p className="text-sm font-medium text-gray-900">{detail.productVariant?.variantName || detail.productVariant?.productName}</p>
+                                            <p className="text-sm font-medium text-gray-900">{detail.productVariantResponse?.variantName || detail.productVariantResponse?.variantName}</p>
                                             <p className="text-xs text-gray-500">
-                                                {detail.productVariant?.variantColor && `Màu: ${detail.productVariant.variantColor}`}
-                                                {detail.productVariant?.variantModel && ` | ${detail.productVariant.variantModel}`}
+                                                {detail.productVariantResponse?.color && `Màu: ${detail.productVariantResponse.color}`}
                                             </p>
                                             <p className="text-xs text-gray-500">Số lượng: {detail.quantity}</p>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-semibold text-gray-900">
-                                                {detail.totalPrice?.toLocaleString('vi-VN', {
-                                                    style: 'currency',
-                                                    currency: 'VND'
-                                                })}
+                                                {detail.totalPrice?.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
                                             </p>
                                             <p className="text-xs text-gray-500">
-                                                {detail.price?.toLocaleString('vi-VN')} x {detail.quantity}
+                                                {detail.productVariantResponse?.price?.toLocaleString('vi-VN')} x {detail.quantity}
                                             </p>
                                         </div>
                                     </div>
@@ -416,7 +376,6 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
                 order={order}
                 isProcessing={isProcessing}
             />
-
             <RefundRequestModal
                 isOpen={showRefundModal}
                 onClose={() => setShowRefundModal(false)}
@@ -424,7 +383,6 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
                 order={order}
                 isProcessing={isProcessing}
             />
-
             <ReturnRequestModal
                 isOpen={showReturnModal}
                 onClose={() => setShowReturnModal(false)}

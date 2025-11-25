@@ -10,10 +10,12 @@ import QRPayment from './components/QRPayment'
 import Complete from './components/Complete'
 import OrderSummary from './components/OrderSummary'
 import ProgressStepper from './components/ProgressStepper'
+import { useToast } from '@/hooks/useToast'
 
 const Payment = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const toast = useToast();
     const { checkoutItems } = useCheckout();
     const { user } = useAuth();
     const { removeCartItem } = useCartActions();
@@ -85,10 +87,10 @@ const Payment = () => {
     // Convert checkout items to order items format
     const orderItems = checkoutItems.map((item) => ({
         id: item.cartItemId,
-        name: item.productVariant.variantName,
-        image: item.productVariant.imageUrl || '/placeholder.png',
+        name: item.productVariantResponse.variantName,
+        image: item.productVariantResponse.imageUrl || '/placeholder.png',
         quantity: item.quantity,
-        price: item.productVariant.price
+        price: item.productVariantResponse.price
     }));
 
     const steps = [
@@ -114,14 +116,14 @@ const Payment = () => {
 
     const handlePayment = async () => {
         if (!user) {
-            alert('Vui lòng đăng nhập để đặt hàng!');
+            toast.warning('Vui lòng đăng nhập để đặt hàng!');
             router.push('/LoginScreen');
             return;
         }
 
         // Kiểm tra user có địa chỉ không
         if (!user.userAddress || user.userAddress.length === 0) {
-            alert('Vui lòng thêm địa chỉ giao hàng!');
+            toast.warning('Vui lòng thêm địa chỉ giao hàng!');
             return;
         }
 
@@ -136,7 +138,7 @@ const Payment = () => {
                 userId: user.userId,
                 addressId: addressId,
                 orderItems: checkoutItems.map(item => ({
-                    productVariantId: item.productVariant.variantId,
+                    productVariantId: item.productVariantResponse.variantId,
                     quantity: item.quantity
                 })),
                 discountId: null // Có thể thêm logic chọn discount sau
@@ -147,8 +149,7 @@ const Payment = () => {
 
             if (response.success) {
                 setCreatedOrder(response);
-                alert(`Đặt hàng thành công! Mã đơn hàng: ${response.orderId}`);
-                
+                toast.success("Đặt hàng thành công!");
                 // Xóa các items đã đặt hàng khỏi giỏ hàng
                 try {
                     for (const item of checkoutItems) {

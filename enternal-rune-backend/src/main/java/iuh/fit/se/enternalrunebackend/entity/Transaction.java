@@ -58,6 +58,6 @@ public class Transaction {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_refund_request_id")
-    OrderRefundRequest orderRefundRequest;
+    OrderRefund orderRefundRequest;
 }
 

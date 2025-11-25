@@ -1,18 +1,16 @@
-import { ProductVariant } from "@/types/ProductVariant";
+export type ProductVariantResponse = {
+    variantId: number
+    variantName: string
+    version?: string | null
+    color?: string | null
+    storage?: string | null
+    imageUrl?: string | null
+    price?: number
+}
 
 export type OrderDetail = {
-    orderDetailId: number
-    quantity: number
+    orderId: number
+    quantity: number | null
     totalPrice: number
-    productVariant: {
-        variantId: number
-        variantName: string
-        variantModel: string
-        variantVersion: string
-        variantColor: string
-        imageUrl: string
-        productId: number
-        productName: string
-    }
-    price: number
+    productVariantResponse: ProductVariantResponse
 }

@@ -31,14 +31,13 @@ const QRPayment = ({ order, onPaymentSuccess }: QRPaymentProps) => {
             try {
                 const statusRes = await getOrderPaymentStatus(order.orderId)
                 
-                setPaymentStatus(statusRes)
+                setPaymentStatus(statusRes as PaymentStatus)
                 
-                // Nếu thanh toán thành công, gọi callback
                 if (statusRes === PaymentStatus.PAID) {
                     clearInterval(intervalId)
                     setTimeout(() => {
                         onPaymentSuccess()
-                    }, 2000) // Đợi 2s để user thấy thông báo thành công
+                    }, 2000)
                 }
             } catch (error) {
                 console.error("Error checking payment status:", error)

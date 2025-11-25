@@ -3,8 +3,8 @@ package iuh.fit.se.enternalrunebackend.service.Impl;
 import iuh.fit.se.enternalrunebackend.dto.notification.OrderNotification;
 import iuh.fit.se.enternalrunebackend.dto.request.CreateOrderRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.OrderItemRequest;
-import iuh.fit.se.enternalrunebackend.dto.request.OrderStatusUpdateRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.*;
+import iuh.fit.se.enternalrunebackend.dto.response.OrderStatusInfo;
 import iuh.fit.se.enternalrunebackend.entity.*;
 import iuh.fit.se.enternalrunebackend.repository.*;
 import iuh.fit.se.enternalrunebackend.service.NotificationService;
@@ -39,20 +39,17 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private DiscountRepository discountRepository;
 
-<<<<<<< Updated upstream
-=======
     @Autowired
     private NotificationService notificationService;
 
     @Autowired
-    private OrderRefundRequestRepository orderRefundRequestRepository;
+    private OrderRefundRepository orderRefundRequestRepository;
 
     @Autowired
     private PaymentStatusRepository paymentStatusRepository;
 
     @Autowired
     private ShippingStatusRepository shippingStatusRepository;
->>>>>>> Stashed changes
 
     @Override
     public DashboardSummaryResponse getSummaryForMonth(int year, int month) {
@@ -141,9 +138,9 @@ public class OrderServiceImpl implements OrderService {
                 .paymentStatusHistories(new ArrayList<>())
                 .shippingStatusHistories(new ArrayList<>())
                 .build();
-        
+
         // Add initial statuses with note
-        order.addPaymentStatus(pendingPaymentStatus, "Đơn hàng mới tạo");
+        order.addPaymentStatus(pendingPaymentStatus, "Tạo đơn hàng");
         order.addShippingStatus(processingShippingStatus, "Đơn hàng đang được xử lý");
 
         // 7. Tạo OrderDetails và tính tổng tiền
@@ -168,7 +165,6 @@ public class OrderServiceImpl implements OrderService {
             OrderDetail orderDetail = new OrderDetail();
             orderDetail.setOdQuantity(item.getQuantity());
             orderDetail.setOdTotalPrice(itemTotal);
-            orderDetail.setOdPrice(productPrice);
             orderDetail.setOdProductVariant(productVariant);
             orderDetail.setOrder(order);
 
@@ -225,7 +221,7 @@ public class OrderServiceImpl implements OrderService {
                     .message("đã đặt một đơn hàng mới")
                     .timestamp(LocalDateTime.now())
                     .build();
-            
+
             notificationService.sendOrderNotificationToAdmin(notification);
         } catch (Exception e) {
             System.err.println("Failed to send notification: " + e.getMessage());
@@ -239,7 +235,7 @@ public class OrderServiceImpl implements OrderService {
     public Page<OrderResponse> getOrdersByUserIdPaginated(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
         Page<Order> orderPage = orderRepository.findOrdersByCustomerIdWithDetails(userId, pageable);
-        
+
         return orderPage.map(this::convertToOrderResponse);
     }
 
@@ -247,113 +243,110 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(int orderId) {
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
         return convertToOrderResponse(order);
     }
 
     private OrderResponse convertToOrderResponse(Order order) {
         // Map Address
         AddressResponse addressInfo = new AddressResponse(
-            order.getOrderShippingAddress().getAddressId(),
-            order.getOrderShippingAddress().getStreetName(),
-            order.getOrderShippingAddress().getWardName(),
-            order.getOrderShippingAddress().getCityName(),
-            order.getOrderShippingAddress().getCountryName()
+                order.getOrderShippingAddress().getAddressId(),
+                order.getOrderShippingAddress().getStreetName(),
+                order.getOrderShippingAddress().getWardName(),
+                order.getOrderShippingAddress().getCityName(),
+                order.getOrderShippingAddress().getCountryName()
         );
 
         // Map User
-        OrderResponse.UserInfo userInfo = new OrderResponse.UserInfo(
-            order.getOrderUser().getUserId(),
-            order.getOrderUser().getName(),
-            order.getOrderUser().getEmail()
-        );
+        OrderResponse.OrderUserInfo userInfo = OrderResponse.OrderUserInfo.builder()
+                .userName(order.getOrderUser().getName())
+                .userEmail(order.getOrderUser().getEmail())
+                .build();
 
         // Map Payment Status History
-        List<OrderResponse.StatusHistoryInfo> paymentHistory = order.getPaymentStatusHistories().stream()
-            .map(history -> OrderResponse.StatusHistoryInfo.builder()
-                .statusId(history.getPaymentStatus().getStatusId())
-                .statusCode(history.getPaymentStatus().getStatusCode())
-                .statusName(history.getPaymentStatus().getStatusName())
-                .description(history.getPaymentStatus().getDescription())
-                .createdAt(history.getCreatedAt())
-                .build())
-            .collect(Collectors.toList());
+        List<OrderStatusInfo> paymentHistory = order.getPaymentStatusHistories().stream()
+                .map(history -> OrderStatusInfo.builder()
+                        .statusId(history.getPaymentStatus().getStatusId())
+                        .statusCode(history.getPaymentStatus().getStatusCode())
+                        .statusName(history.getPaymentStatus().getStatusName())
+                        .description(history.getPaymentStatus().getDescription())
+                        .createdAt(history.getCreatedAt())
+                        .note(history.getNote())
+                        .build())
+                .collect(Collectors.toList());
 
         // Map Shipping Status History
-        List<OrderResponse.StatusHistoryInfo> shippingHistory = order.getShippingStatusHistories().stream()
-            .map(history -> OrderResponse.StatusHistoryInfo.builder()
-                .statusId(history.getShippingStatus().getStatusId())
-                .statusCode(history.getShippingStatus().getStatusCode())
-                .statusName(history.getShippingStatus().getStatusName())
-                .description(history.getShippingStatus().getDescription())
-                .createdAt(history.getCreatedAt())
-                .build())
-            .collect(Collectors.toList());
+        List<OrderStatusInfo> shippingHistory = order.getShippingStatusHistories().stream()
+                .map(history -> OrderStatusInfo.builder()
+                        .statusId(history.getShippingStatus().getStatusId())
+                        .statusCode(history.getShippingStatus().getStatusCode())
+                        .statusName(history.getShippingStatus().getStatusName())
+                        .description(history.getShippingStatus().getDescription())
+                        .createdAt(history.getCreatedAt())
+                        .note(history.getNote())
+                        .build())
+                .collect(Collectors.toList());
 
         // Map OrderDetails with ProductVariant
-        List<OrderResponse.OrderDetailInfo> orderDetailInfos = order.getOrderDetails().stream()
-            .map(detail -> {
-                ProductVariant variant = detail.getOdProductVariant();
-                
-                // Get image URL
-                String imageUrl = null;
-                if (variant.getProdvImg() != null && variant.getProdvImg().getImageData() != null) {
-                    imageUrl = variant.getProdvImg().getImageData();
-                }
-                
-                // Map ProductVariant info
-                OrderResponse.ProductVariantInfo variantInfo = new OrderResponse.ProductVariantInfo(
-                    variant.getProdvId(),
-                    variant.getProdvName(),
-                    variant.getProdvModel(),
-                    variant.getProdvVersion(),
-                    variant.getProdvColor(),
-                    imageUrl,
-                    variant.getProdvProduct() != null ? variant.getProdvProduct().getProdId() : 0,
-                    variant.getProdvProduct() != null ? variant.getProdvProduct().getProdName() : ""
-                );
+        List<OrderDetailResponse> orderDetailInfos = order.getOrderDetails().stream()
+                .map(detail -> {
+                    ProductVariant variant = detail.getOdProductVariant();
 
-                // Get price
-                double price = 0;
-                if (detail.getOdPrice() != null) {
-                    price = detail.getOdPrice().getPpPrice();
-                }
+                    // Get image URL
+                    String imageUrl = null;
+                    if (variant.getProdvImg() != null && variant.getProdvImg().getImageData() != null) {
+                        imageUrl = variant.getProdvImg().getImageData();
+                    }
 
-                return new OrderResponse.OrderDetailInfo(
-                    detail.getOdId(),
-                    detail.getOdQuantity(),
-                    detail.getOdTotalPrice(),
-                    variantInfo,
-                    price
-                );
-            })
-            .collect(Collectors.toList());
+                    // Map ProductVariant info
+                    ProductVariantResponse variantInfo = ProductVariantResponse.toProductVariantResponse(variant);
+
+                    return new OrderDetailResponse(
+                            detail.getOdId(),
+                            detail.getOdQuantity(),
+                            detail.getOdTotalPrice(),
+                            variantInfo
+                    );
+                })
+                .collect(Collectors.toList());
+
+        // Get current statuses
+        PaymentStatus currentPayment = order.getCurrentPaymentStatus();
+        ShippingStatus currentShipping = order.getCurrentShippingStatus();
 
         return OrderResponse.builder()
-            .orderId(order.getOrderId())
-            .orderDate(order.getOrderDate())
-            .orderTotalAmount(order.getOrderTotalAmount())
-            .paymentStatusHistory(paymentHistory)
-            .shippingStatusHistory(shippingHistory)
-            .orderShippingAddress(addressInfo)
-            .orderUser(userInfo)
-            .orderDetails(orderDetailInfos)
-            .build();
+                .orderId(order.getOrderId())
+                .orderDate(order.getOrderDate())
+                .orderTotalAmount(order.getOrderTotalAmount())
+                .currentPaymentStatus(currentPayment != null ? OrderStatusInfo.builder()
+                        .statusId(currentPayment.getStatusId())
+                        .statusCode(currentPayment.getStatusCode())
+                        .statusName(currentPayment.getStatusName())
+                        .description(currentPayment.getDescription())
+                        .build() : null)
+                .currentShippingStatus(currentShipping != null ? OrderStatusInfo.builder()
+                        .statusId(currentShipping.getStatusId())
+                        .statusCode(currentShipping.getStatusCode())
+                        .statusName(currentShipping.getStatusName())
+                        .description(currentShipping.getDescription())
+                        .build() : null)
+                .paymentStatusHistory(paymentHistory)
+                .shippingStatusHistory(shippingHistory)
+                .orderShippingAddress(addressInfo)
+                .orderUser(userInfo)
+                .orderDetails(orderDetailInfos)
+                .build();
     }
-
-<<<<<<< Updated upstream
-
-
 
     @Override
     @Transactional(readOnly = true)
     public Page<OrderListResponse> getOrderList(
             String keyword,
-            PaymentStatus paymentStatus,
-            ShippingStatus shippingStatus,
+            String paymentStatusCode,
+            String shippingStatusCode,
             Pageable pageable
     ) {
-        Page<Order> ordersPage = orderRepository.searchOrders(keyword, paymentStatus, shippingStatus, pageable);
+        Page<Order> ordersPage = orderRepository.searchOrders(keyword, paymentStatusCode, shippingStatusCode, pageable);
 
         List<OrderListResponse> dtoList = ordersPage.getContent().stream().map(order -> {
             int totalProduct = order.getOrderDetails()
@@ -361,35 +354,35 @@ public class OrderServiceImpl implements OrderService {
                     .mapToInt(OrderDetail::getOdQuantity)
                     .sum();
 
-            return new OrderListResponse(
-                    order.getOrderId(),
-                    order.getOrderUser().getName(),
-                    order.getOrderUser().getEmail(),
-                    totalProduct,
-                    order.getOrderTotalAmount(),
-                    order.getOrderPaymentStatus(),
-                    order.getOrderShippingStatus(),
-                    order.getOrderDate()
-            );
+            PaymentStatus currentPayment = order.getCurrentPaymentStatus();
+            ShippingStatus currentShipping = order.getCurrentShippingStatus();
+
+            return OrderListResponse.builder()
+                    .orderId(order.getOrderId())
+                    .orderDate(order.getOrderDate())
+                    .totalAmount(order.getOrderTotalAmount())
+                    .totalProducts(totalProduct)
+                    .userName(order.getOrderUser().getName())
+                    .userEmail(order.getOrderUser().getEmail())
+                    .currentPaymentStatus(currentPayment != null ? new OrderStatusInfo(currentPayment.getStatusCode(), currentPayment.getStatusName()) : null)
+                    .currentShippingStatus(currentShipping != null ? new OrderStatusInfo(currentShipping.getStatusCode(), currentShipping.getStatusName()) : null)
+                    .build();
         }).toList();
 
         return new PageImpl<>(dtoList, pageable, ordersPage.getTotalElements());
     }
 
-
-
     @Override
     @Transactional(readOnly = true)
     public OrderStatisticsResponse getOrderStatistics() {
-
         long totalOrders = orderRepository.count();
 
         BigDecimal totalRevenue = orderRepository.getTotalRevenue();
         if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
 
-        long completedOrders = orderRepository.countByOrderShippingStatus(ShippingStatus.DELIVERED);
+        long completedOrders = orderRepository.countByCurrentShippingStatus("DELIVERED");
 
-        long processingOrders = orderRepository.countByOrderShippingStatus(ShippingStatus.PROCESSING);
+        long processingOrders = orderRepository.countProcessingOrders();
 
         return new OrderStatisticsResponse(
                 totalOrders,
@@ -398,77 +391,41 @@ public class OrderServiceImpl implements OrderService {
                 processingOrders
         );
     }
-    @Override
-    @Transactional
-    public OrderListResponse updateOrderStatus(int orderId, OrderStatusUpdateRequest request) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        if (request.getPaymentStatus() != null) {
-            order.setOrderPaymentStatus(request.getPaymentStatus());
-        }
-        if (request.getShippingStatus() != null) {
-            order.setOrderShippingStatus(request.getShippingStatus());
-        }
-        orderRepository.save(order);
-        int totalProduct = order.getOrderDetails()
-                .stream()
-                .mapToInt(OrderDetail::getOdQuantity)
-                .sum();
-        return new OrderListResponse(
-                order.getOrderId(),
-                order.getOrderUser().getName(),
-                order.getOrderUser().getEmail(),
-                totalProduct,
-                order.getOrderTotalAmount(),
-                order.getOrderPaymentStatus(),
-                order.getOrderShippingStatus(),
-                order.getOrderDate()
-        );
-    }
 
     @Override
     public void deleteById(int id) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-        if (order.getOrderShippingStatus() == ShippingStatus.DELIVERED ||
-                order.getOrderPaymentStatus() == PaymentStatus.PAID) {
-            throw new RuntimeException("Cannot delete completed or paid order");
-        }
-        orderRepository.delete(order);
     }
+
     @Override
     @Transactional(readOnly = true)
-    public OrderDetailResponse getOrderDetail(int orderId) {
+    public OrderResponse getOrderDetail(int orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        List<OrderDetailResponse.ProductDetail> products = order.getOrderDetails().stream()
-                .map(od -> {
-                    ProductVariant pv = od.getOdProductVariant();
-                    return new OrderDetailResponse.ProductDetail(
-                            pv.getProdvId(),
-                            pv.getProdvName(),
-                            pv.getProdvModel(),
-                            pv.getProdvVersion(),
-                            pv.getProdvColor(),
-                            pv.getProdvPrice() != null ? pv.getProdvPrice().getPpPrice() : 0.0,
-                            pv.getProdvImg() != null ? pv.getProdvImg().getImageData() : null,
-                            od.getOdQuantity()
-                    );
-                }).toList();
+        List<OrderDetailResponse> orderDetails = order.getOrderDetails().stream()
+                .map(od -> OrderDetailResponse.builder()
+                        .orderId(od.getOrder().getOrderId())
+                        .quantity(od.getOdQuantity())
+                        .totalPrice(od.getOdTotalPrice())
+                        .productVariantResponse(ProductVariantResponse.toProductVariantResponse(od.getOdProductVariant()))
+                        .build()
+                )
+                .toList();
 
-        return new OrderDetailResponse(
-                order.getOrderId(),
-                order.getOrderUser().getName(),
-                order.getOrderUser().getEmail(),
-                order.getOrderPaymentStatus(),
-                order.getOrderShippingStatus(),
-                order.getOrderDate(),
-                order.getOrderTotalAmount(),
-                products
-        );
-=======
+        PaymentStatus currentPayment = order.getCurrentPaymentStatus();
+        ShippingStatus currentShipping = order.getCurrentShippingStatus();
+
+        return OrderResponse.builder()
+                .orderId(order.getOrderId())
+                .orderDate(order.getOrderDate())
+                .orderTotalAmount(order.getOrderTotalAmount())
+                .orderUser(new OrderResponse.OrderUserInfo(order.getOrderUser().getName(), order.getOrderUser().getEmail()))
+                .currentPaymentStatus(currentPayment != null ? new OrderStatusInfo(currentPayment.getStatusCode(), currentPayment.getStatusName()) : null)
+                .currentShippingStatus(currentShipping != null ? new OrderStatusInfo(currentShipping.getStatusCode(), currentShipping.getStatusName()) : null)
+                .orderDetails(orderDetails)
+                .build();
+    }
+
     @Override
     @Transactional
     public Order cancelOrder(int orderId, Long userId) {
@@ -506,18 +463,12 @@ public class OrderServiceImpl implements OrderService {
                     .message("đã hủy đơn hàng")
                     .timestamp(LocalDateTime.now())
                     .build();
-            
+
             notificationService.sendOrderNotificationToAdmin(notification);
         } catch (Exception e) {
             System.err.println("Failed to send notification: " + e.getMessage());
         }
 
         return savedOrder;
-    }
-
-    @Override
-    public OrderRefundRequest createRefundRequest(int orderId, Long userId, String reason, String refundType) {
-        return null;
->>>>>>> Stashed changes
     }
 }

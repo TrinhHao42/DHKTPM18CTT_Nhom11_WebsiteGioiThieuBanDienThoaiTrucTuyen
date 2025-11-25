@@ -1,7 +1,6 @@
 'use client'
 import React, { createContext, useContext, ReactNode, useState, useEffect, useRef } from 'react';
-import type { Notification, OrderNotification } from "@/types/Notification";
-import { convertOrderNotificationToNotification } from "@/types/Notification";
+import type { Notification } from "@/types/Notification";
 
 interface WebSocketContextType {
     notifications: Notification[];
@@ -20,7 +19,6 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             },
             message: "requests permission to change",
             time: "5 min ago",
-            status: "online",
         },
         {
             user: {
@@ -30,7 +28,6 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             },
             message: "requests permission to change",
             time: "8 min ago",
-            status: "online",
         },
         {
             user: {
@@ -40,7 +37,6 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
             },
             message: "requests permission to change",
             time: "1 hr ago",
-            status: "error",
         }
     ]);
 
@@ -72,12 +68,10 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
                 ws.onmessage = (event) => {
                     console.log('📩 Admin received:', event.data);
                     try {
-                        const orderNotif: OrderNotification = JSON.parse(event.data);
-                        const notification = convertOrderNotificationToNotification(orderNotif);
+                        const notification: Notification = JSON.parse(event.data);
                         
                         setNotifications((prev) => [notification, ...prev]);
-                        
-                        // Browser notification
+
                         if (typeof window !== 'undefined' && 'Notification' in window) {
                             if (window.Notification.permission === 'granted') {
                                 new window.Notification('Thông báo đơn hàng mới', {

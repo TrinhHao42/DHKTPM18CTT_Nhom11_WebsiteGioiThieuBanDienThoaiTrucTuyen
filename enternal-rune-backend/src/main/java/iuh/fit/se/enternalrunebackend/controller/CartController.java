@@ -21,7 +21,6 @@ public class CartController {
     /**
      * Thêm sản phẩm vào giỏ hàng
      * POST /cart/add/{userId}
-     * Body: { "productId": 1, "quantity": 2, "color": "Black", "storage": "128GB", "version": "Pro" }
      */
     @PostMapping("/add/{userId}")
     public ResponseEntity<CartResponse> addToCart(

@@ -8,70 +8,7 @@ import { useWebSocketContext } from "@/context/WebSocketContext";
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifying, setNotifying] = useState(true);
-<<<<<<< Updated upstream
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      user: {
-        id: "1",
-        name: "Terry Franci",
-        avatar: "/images/user/user-02.jpg",
-      },
-      message: "requests permission to change",
-      time: "5 min ago",
-      status: "online",
-    },
-    {
-      user: {
-        id: "2",
-        name: "Alena Franci",
-        avatar: "/images/user/user-03.jpg",
-      },
-      message: "requests permission to change",
-      time: "8 min ago",
-      status: "online",
-    },
-    {
-      user: {
-        id: "3",
-        name: "Brandon Philips",
-        avatar: "/images/user/user-05.jpg",
-      },
-      message: "requests permission to change",
-      time: "1 hr ago",
-      status: "error",
-    }
-  ]);
-
-  // useEffect(() => {
-  //   const socket = new WebSocket("ws://localhost:8080/notifications?role=admin");
-
-  //   socket.onopen = () => {
-  //     console.log("WebSocket connected");
-  //   };
-
-  //   socket.onerror = (err) => {
-  //     console.error("WebSocket error:", err);
-  //   };
-
-  //   socket.onmessage = (event) => {
-  //     console.log("WebSocket message received:", event.data);
-  //     // const newNotification: Notification = JSON.parse(event.data);
-  //     // setNotifications((prev) => [newNotification, ...prev]);
-  //     // setNotifying(true);
-  //   };
-
-  //   socket.onclose = () => {
-  //     console.log("WebSocket disconnected");
-  //   };
-
-  //   return () => {
-  //     socket.close();
-  //   };
-  // }, []);
-
-=======
   const { notifications } = useWebSocketContext();
->>>>>>> Stashed changes
 
   function toggleDropdown() {
     setIsOpen(!isOpen);

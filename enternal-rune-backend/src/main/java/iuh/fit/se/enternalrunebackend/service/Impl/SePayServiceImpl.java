@@ -4,10 +4,9 @@ import iuh.fit.se.enternalrunebackend.config.QRConfig;
 import iuh.fit.se.enternalrunebackend.dto.request.TransactionRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.QRCodeResponse;
 import iuh.fit.se.enternalrunebackend.entity.Order;
-import iuh.fit.se.enternalrunebackend.entity.OrderRefundRequest;
 import iuh.fit.se.enternalrunebackend.entity.PaymentStatus;
 import iuh.fit.se.enternalrunebackend.entity.Transaction;
-import iuh.fit.se.enternalrunebackend.repository.OrderRefundRequestRepository;
+import iuh.fit.se.enternalrunebackend.repository.OrderRefundRepository;
 import iuh.fit.se.enternalrunebackend.repository.OrderRepository;
 import iuh.fit.se.enternalrunebackend.repository.PaymentStatusRepository;
 import iuh.fit.se.enternalrunebackend.repository.TransactionRepository;
@@ -20,7 +19,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,7 +34,7 @@ public class SePayServiceImpl implements SePayService {
     private TransactionRepository transactionRepository;
 
     @Autowired
-    private OrderRefundRequestRepository orderRefundRequestRepository;
+    private OrderRefundRepository orderRefundRequestRepository;
 
     @Autowired
     private PaymentStatusRepository paymentStatusRepository;
@@ -57,7 +55,6 @@ public class SePayServiceImpl implements SePayService {
     }
 
     public boolean sePayWebHookPayment(TransactionRequest transactionRequest) {
-
         Pattern pattern = Pattern.compile("ORD\\s*(\\d+)");
         Matcher matcher = pattern.matcher(transactionRequest.getDescription());
 

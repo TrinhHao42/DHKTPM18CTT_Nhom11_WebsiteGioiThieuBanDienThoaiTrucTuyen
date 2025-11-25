@@ -46,7 +46,7 @@ export const createOrder = async (request: CreateOrderRequest): Promise<CreateOr
 
 export const getOrderPaymentStatus = async (orderId: number): Promise<PaymentStatus> => {
     const response = await AxiosInstance.get(`/orders/status/${orderId}`);
-    return response.data.status;
+    return response.data;
 }
 
 export const getQrCodeSepay = async (amount: number, description: string): Promise<Blob> => {

@@ -7,14 +7,14 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "order_shipping_status_history")
+@Table(name = "order_refund_payment_history")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OrderShippingStatusHistory {
+public class OrderRefundPaymentHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,12 +22,12 @@ public class OrderShippingStatusHistory {
     Long historyId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
-    Order order;
+    @JoinColumn(name = "or_id", nullable = false)
+    OrderRefund orderRefund;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "status_id", nullable = false)
-    ShippingStatus shippingStatus;
+    PaymentStatus paymentStatus;
 
     @Column(name = "created_at", nullable = false)
     LocalDateTime createdAt;
@@ -42,3 +42,4 @@ public class OrderShippingStatusHistory {
         }
     }
 }
+

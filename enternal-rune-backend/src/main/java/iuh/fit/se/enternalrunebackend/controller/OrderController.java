@@ -3,15 +3,14 @@ package iuh.fit.se.enternalrunebackend.controller;
 import iuh.fit.se.enternalrunebackend.dto.request.CreateOrderRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.OrderResponse;
 import iuh.fit.se.enternalrunebackend.entity.Order;
-import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
 import iuh.fit.se.enternalrunebackend.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -52,7 +51,7 @@ public class OrderController {
      * GET /orders/user/{userId}?page=0&size=5
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getUserOrders(
+    public ResponseEntity<?> getUserOrdersFullHistories(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
@@ -119,33 +118,9 @@ public class OrderController {
         }
     }
 
-    /**
-     * Tạo yêu cầu hoàn tiền/trả hàng
-     * POST /api/orders/{orderId}/refund
-     */
-    @PostMapping("/{orderId}/refund")
-    public ResponseEntity<?> createRefundRequest(
-            @PathVariable int orderId,
-            @RequestParam Long userId,
-            @RequestParam String reason,
-            @RequestParam String refundType // "CANCEL" or "RETURN"
-    ) {
-        try {
-            var refundRequest = orderService.createRefundRequest(orderId, userId, reason, refundType);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Tạo yêu cầu hoàn tiền thành công!");
-            response.put("refundRequestId", refundRequest.getOrId());
-            response.put("status", refundRequest.getOrStatus());
-            
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("message", "Không thể tạo yêu cầu hoàn tiền: " + e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
+    @GetMapping("/status/{orderId}")
+    public String getOrderStatusById(@PathVariable int orderId){
+        return orderService.getOrderById(orderId).getCurrentPaymentStatus().getStatusCode();
     }
 }
 
