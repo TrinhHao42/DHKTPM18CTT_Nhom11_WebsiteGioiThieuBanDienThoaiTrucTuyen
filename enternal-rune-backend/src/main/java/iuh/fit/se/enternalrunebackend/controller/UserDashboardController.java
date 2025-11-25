@@ -1,18 +1,15 @@
 package iuh.fit.se.enternalrunebackend.controller;
 
 import iuh.fit.se.enternalrunebackend.dto.response.UserDashboardResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.UserDetailResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.UserStatisticsResponse;
-import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
 import iuh.fit.se.enternalrunebackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,4 +33,16 @@ public class UserDashboardController {
     public ResponseEntity<UserStatisticsResponse> getStatistics(){
         return ResponseEntity.ok(userService.getStatistics());
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDetailResponse> getUserDetail(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserDetail(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
+    }
+
 }

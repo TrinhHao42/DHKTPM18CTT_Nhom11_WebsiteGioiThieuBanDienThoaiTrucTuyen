@@ -1,10 +1,7 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
 
 import iuh.fit.se.enternalrunebackend.dto.request.AddressRequest;
-import iuh.fit.se.enternalrunebackend.dto.response.AddressResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.UserDashboardResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.UserResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.UserStatisticsResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.*;
 import iuh.fit.se.enternalrunebackend.entity.Address;
 import iuh.fit.se.enternalrunebackend.entity.Order;
 import iuh.fit.se.enternalrunebackend.entity.Role;
@@ -194,4 +191,44 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public UserDetailResponse getUserDetail(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + userId));
+
+        // Convert địa chỉ
+        List<AddressResponse> addressResponses = user.getAddresses().stream()
+                .map(a -> new AddressResponse(
+                        a.getAddressId(),
+                        a.getStreetName(),
+                        a.getWardName(),
+                        a.getCityName(),
+                        a.getCountryName()
+                )).toList();
+
+        // Tính tổng order và tiền
+        List<Order> orders = orderRepository.findByOrderUser_UserId(user.getUserId());
+        int totalOrder = orders.size();
+        BigDecimal totalPrice = orders.stream()
+                .map(Order::getOrderTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new UserDetailResponse(
+                user.getName(),
+                user.getEmail(),
+                user.isUserActive(),
+                addressResponses,
+                totalOrder,
+                totalPrice
+        );
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + userId));
+        userRepository.delete(user);
+    }
 }
