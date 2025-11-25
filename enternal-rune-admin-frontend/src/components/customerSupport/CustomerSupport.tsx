@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { chatService, Conversation, Message, ChatUser } from '@/services/chatService';
 import ChatModal from './ChatModal';
 
@@ -15,6 +15,7 @@ export default function CustomerSupport() {
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [userInfoCache, setUserInfoCache] = useState<Map<string, ChatUser>>(new Map());
   const [unreadCounts, setUnreadCounts] = useState<Map<string, number>>(new Map());
+  const openConversationIdRef = useRef<string | null>(null);
   const pageSize = 20;
 
   // ID nhân viên - trong thực tế sẽ lấy từ auth context
@@ -88,18 +89,26 @@ export default function CustomerSupport() {
   // Subscribe to messages của một conversation
   const subscribeToConversationMessages = (conversationId: string) => {
     chatService.subscribeToConversation(conversationId, (newMessage) => {
-      // Nếu tin nhắn từ customer và không phải conversation đang mở
-      if (newMessage.senderRole === 'CUSTOMER') {
-        const isCurrentlyOpen = selectedConversation?.id === conversationId && isChatModalOpen;
-        
-        if (!isCurrentlyOpen) {
-          // Đánh dấu có tin nhắn chưa đọc
-          setUnreadCounts((prevCounts) => {
-            const newCounts = new Map(prevCounts);
-            newCounts.set(conversationId, 1);
-            return newCounts;
-          });
-        }
+      // Kiểm tra xem có đang xem conversation này không
+      const isViewingThis = openConversationIdRef.current === conversationId;
+      
+      if (isViewingThis) {
+        // Cập nhật messages nếu đang xem
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === newMessage.id);
+          if (exists) return prev;
+          return [...prev, newMessage];
+        });
+      }
+      
+      // Nếu tin nhắn từ customer và KHÔNG đang xem conversation này
+      if (newMessage.senderRole === 'CUSTOMER' && !isViewingThis) {
+        // Đánh dấu có tin nhắn chưa đọc
+        setUnreadCounts((prevCounts) => {
+          const newCounts = new Map(prevCounts);
+          newCounts.set(conversationId, 1);
+          return newCounts;
+        });
       }
     });
   };
@@ -139,33 +148,14 @@ export default function CustomerSupport() {
 
   const handleSelectConversation = async (conversation: Conversation) => {
     setSelectedConversation(conversation);
+    openConversationIdRef.current = conversation.id;
 
     try {
       // Load messages
       const conversationMessages = await chatService.getMessages(conversation.id);
       setMessages(conversationMessages);
 
-      // Subscribe to real-time updates for this conversation
-      chatService.subscribeToConversation(conversation.id, (newMessage) => {
-        setMessages((prev) => {
-          // Avoid duplicates
-          const exists = prev.some((m) => m.id === newMessage.id);
-          if (exists) return prev;
-          return [...prev, newMessage];
-        });
-        
-        // Nếu tin nhắn từ customer và modal đang mở thì không tăng unread
-        // Nếu modal đóng thì đánh dấu có tin nhắn mới
-        if (newMessage.senderRole === 'CUSTOMER' && !isChatModalOpen) {
-          setUnreadCounts((prevCounts) => {
-            const newCounts = new Map(prevCounts);
-            newCounts.set(conversation.id, 1); // Chỉ set = 1, không tăng dần
-            return newCounts;
-          });
-        }
-      });
-
-      // Đánh dấu đã đọc khi mở conversation
+      // Xóa chấm đỏ khi mở conversation
       setUnreadCounts((prevCounts) => {
         const newCounts = new Map(prevCounts);
         newCounts.delete(conversation.id);
@@ -195,6 +185,8 @@ export default function CustomerSupport() {
   const handleSendMessage = (content: string) => {
     if (!selectedConversation) return;
 
+    // Gửi tin nhắn qua WebSocket
+    // Tin nhắn sẽ được nhận lại qua WebSocket subscription và hiển thị
     chatService.sendMessage(selectedConversation.id, {
       senderId: agentId,
       senderRole: 'AGENT',
@@ -239,11 +231,9 @@ export default function CustomerSupport() {
 
   const handleCloseModal = () => {
     setIsChatModalOpen(false);
-    if (selectedConversation) {
-      chatService.unsubscribeFromConversation(selectedConversation.id);
-      // Subscribe lại để nhận tin nhắn mới và hiển thị dấu chấm đỏ
-      subscribeToConversationMessages(selectedConversation.id);
-    }
+    setSelectedConversation(null);
+    openConversationIdRef.current = null;
+    // Không unsubscribe để tiếp tục nhận tin nhắn từ tất cả conversations
   };
 
   const formatTime = (dateString: string) => {
