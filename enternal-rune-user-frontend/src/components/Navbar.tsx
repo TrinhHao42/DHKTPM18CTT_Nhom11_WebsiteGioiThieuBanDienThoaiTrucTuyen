@@ -19,7 +19,7 @@ export const Navbar = () => {
 
 
     if (!mounted) return null;
-    
+
     const isLoggedIn = !!token && !!user; // ✅ Kiểm tra đăng nhập từ context
 
     return (
@@ -37,17 +37,20 @@ export const Navbar = () => {
                 className={`max-md:absolute max-md:top-0 max-md:left-0 max-md:h-full items-center justify-center ${open ? "max-md:w-full" : "max-md:w-0"
                     } transition-[width] max-md:bg-white/50 backdrop-blur flex-col md:flex-row flex gap-8 text-gray-900 text-sm font-semibold`}
             >
-                <Link href="#" className="hover:text-blue-600">
-                    Sản phẩm
+                <Link href="/" className="hover:text-blue-600">
+                    Trang chủ
                 </Link>
-                <Link href="#" className="hover:text-blue-600">
-                    Câu chuyện khách hàng
+                <Link href="/ProductListScreen" className="hover:text-blue-600">
+                    Sản phẩm
                 </Link>
                 <Link href="#" className="hover:text-blue-600">
                     Bảng giá
                 </Link>
                 <Link href="#" className="hover:text-blue-600">
                     Tài liệu
+                </Link>
+                <Link href="/AssistanceChatScreen" className="hover:text-blue-600">
+                    Hỗ trợ
                 </Link>
                 <button
                     id="closeMenu"
@@ -75,12 +78,15 @@ export const Navbar = () => {
 
                 {isLoggedIn ? (
                     <>
-                        <span className="text-sm text-gray-700">
+                        <Link
+                            href="/Profile"
+                            className="text-sm text-gray-700"
+                        >
                             Hi,{" "}
                             <strong className="text-blue-600">
                                 {user?.userName}
                             </strong>
-                        </span>
+                        </Link>
                         <button
                             onClick={logout}
                             className="bg-red-500 text-white px-5 py-2 rounded-full text-sm hover:bg-red-600 transition"

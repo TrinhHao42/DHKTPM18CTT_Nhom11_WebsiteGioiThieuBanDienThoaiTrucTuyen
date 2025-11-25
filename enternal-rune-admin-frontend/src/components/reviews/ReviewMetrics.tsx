@@ -52,7 +52,7 @@ export default function ReviewMetrics() {
         trendValue="15.3%"
         icon={
           <svg
-            className="w-6 h-6 text-brand"
+            className="w-6 h-6 text-brand dark:text-white/90"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -68,7 +68,7 @@ export default function ReviewMetrics() {
         trendValue="0.2"
         icon={
           <svg
-            className="w-6 h-6 text-brand"
+            className="w-6 h-6 text-brand dark:text-white/90"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -90,7 +90,7 @@ export default function ReviewMetrics() {
         trendValue="8.1%"
         icon={
           <svg
-            className="w-6 h-6 text-brand"
+            className="w-6 h-6 text-brand dark:text-white/90"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -112,7 +112,7 @@ export default function ReviewMetrics() {
         trendValue="18.7%"
         icon={
           <svg
-            className="w-6 h-6 text-brand"
+            className="w-6 h-6 text-brand dark:text-white/90"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

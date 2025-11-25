@@ -1,37 +1,57 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Toast, ToastType } from '@/components/Toast'
-import { createRoot } from 'react-dom/client'
-
-let toastId = 0
+import toast from 'react-hot-toast'
 
 export const useToast = () => {
-  const showToast = useCallback((message: string, type: ToastType = 'info', duration?: number) => {
-    const id = `toast-${toastId++}`
-    const container = document.createElement('div')
-    container.id = id
-    container.style.position = 'fixed'
-    container.style.top = `${16 + (document.querySelectorAll('[id^="toast-"]').length * 72)}px`
-    container.style.right = '16px'
-    container.style.zIndex = '10000'
-    
-    document.body.appendChild(container)
-    
-    const root = createRoot(container)
-    
-    const handleClose = () => {
-      root.unmount()
-      container.remove()
-    }
-    
-    root.render(<Toast message={message} type={type} duration={duration} onClose={handleClose} />)
-  }, [])
-
   return {
-    success: (message: string, duration?: number) => showToast(message, 'success', duration),
-    error: (message: string, duration?: number) => showToast(message, 'error', duration),
-    info: (message: string, duration?: number) => showToast(message, 'info', duration),
-    warning: (message: string, duration?: number) => showToast(message, 'warning', duration),
+    success: (message: string, duration?: number) =>
+      toast.success(message, {
+        duration: duration || 3000,
+        style: {
+          background: '#10B981',
+          color: '#fff',
+          cursor: 'pointer',
+        },
+        iconTheme: {
+          primary: '#fff',
+          secondary: '#10B981',
+        },
+      }),
+
+    error: (message: string, duration?: number) =>
+      toast.error(message, {
+        duration: duration || 3000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+          cursor: 'pointer',
+        },
+        iconTheme: {
+          primary: '#fff',
+          secondary: '#EF4444',
+        },
+      }),
+
+    info: (message: string, duration?: number) =>
+      toast(message, {
+        duration: duration || 3000,
+        icon: 'ℹ️',
+        style: {
+          background: '#3B82F6',
+          color: '#fff',
+          cursor: 'pointer',
+        },
+      }),
+
+    warning: (message: string, duration?: number) =>
+      toast(message, {
+        icon: '⚠️',
+        duration: duration || 3000,
+        style: {
+          background: '#F59E0B',
+          color: '#fff',
+          cursor: 'pointer',
+        },
+      }),
   }
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Address } from '@/types/Address';
+import { useToast } from '@/hooks/useToast';
 
 interface PersonalDetailsProps {
     formData: {
@@ -15,6 +16,7 @@ interface PersonalDetailsProps {
 }
 
 const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
+    const toast = useToast();
     const { user, addUserAddress } = useAuth();
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -92,7 +94,7 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
 
     const handleAddAddress = async () => {
         if (!newAddress.streetName.trim() || !newAddress.wardName.trim() || !newAddress.cityName.trim()) {
-            alert('Vui lòng điền đầy đủ thông tin địa chỉ');
+            toast.error('Vui lòng điền đầy đủ thông tin địa chỉ');
             return;
         }
 
@@ -101,8 +103,7 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
             
             const addedAddress = await addUserAddress(newAddress);
 
-            alert('Thêm địa chỉ thành công!');
-            console.log(addedAddress)
+            toast.success('Đã thêm địa chỉ mới');
 
             if (addedAddress) {
 
@@ -126,6 +127,7 @@ const PersonalDetails = ({ formData, onInputChange }: PersonalDetailsProps) => {
 
             setShowAddressForm(false);
         } catch (err: any) {
+            toast.error("Đã có lỗi xảy ra, xin vui lòng thử lại")
             console.error('Lỗi khi thêm địa chỉ:', err);
             alert(err.message || 'Không thể thêm địa chỉ');
         } finally {

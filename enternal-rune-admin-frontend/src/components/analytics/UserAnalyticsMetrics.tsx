@@ -60,7 +60,7 @@ export default function UserAnalyticsMetrics() {
       <MetricCard
         icon={
           <svg
-            className="h-7 w-7 text-brand-600 dark:text-brand-400"
+            className="h-7 w-7 text-dark-600 dark:text-dark-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -82,7 +82,7 @@ export default function UserAnalyticsMetrics() {
       <MetricCard
         icon={
           <svg
-            className="h-7 w-7 text-brand-600 dark:text-brand-400"
+            className="h-7 w-7 text-dark-600 dark:text-dark-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -104,7 +104,7 @@ export default function UserAnalyticsMetrics() {
       <MetricCard
         icon={
           <svg
-            className="h-7 w-7 text-brand-600 dark:text-brand-400"
+            className="h-7 w-7 text-dark-600 dark:text-dark-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -126,7 +126,7 @@ export default function UserAnalyticsMetrics() {
       <MetricCard
         icon={
           <svg
-            className="h-7 w-7 text-brand-600 dark:text-brand-400"
+            className="h-7 w-7 text-dark-600 dark:text-dark-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

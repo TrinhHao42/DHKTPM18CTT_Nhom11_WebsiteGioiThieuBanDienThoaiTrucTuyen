@@ -29,6 +29,17 @@ body {
   100% { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes slideUpFadeIn {
+  0% { 
+    opacity: 0; 
+    transform: translateY(40px) scale(0.95); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
 @keyframes slideInRight {
   0% { 
     opacity: 0; 
@@ -55,6 +66,10 @@ body {
   animation: fadeInUp 1s ease-in-out;
 }
 
+.animate-slideUpFadeIn {
+  animation: slideUpFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .animate-slideInRight {
   animation: slideInRight 0.3s ease-out;
 }
@@ -63,3 +78,8 @@ body {
   animation: slideOutRight 0.3s ease-in;
 }
 
+/* Toast click to dismiss */
+[data-sonner-toast],
+[data-sonner-toast] > div {
+  cursor: pointer !important;
+}

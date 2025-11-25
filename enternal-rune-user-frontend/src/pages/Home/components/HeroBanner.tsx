@@ -3,8 +3,10 @@
 import React from 'react'
 import Image from 'next/image'
 import { ArrowRight, Sparkles, Shield, Truck } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 const HeroBanner = () => {
+  const router = useRouter()
   return (
     <section className="px-10 md:px-20 relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50">
       {/* Background Decorations */}
@@ -38,7 +40,7 @@ const HeroBanner = () => {
                   Giá tốt nhất
                 </span>
               </h1>
-              
+
               <p className="text-base md:text-lg text-gray-600 max-w-lg leading-relaxed">
                 Khám phá bộ sưu tập điện thoại thông minh mới nhất từ các thương hiệu hàng đầu với ưu đãi đặc biệt và dịch vụ tận tâm.
               </p>
@@ -79,12 +81,16 @@ const HeroBanner = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <button className="group bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2">
+              <button
+                onClick={() => router.push('/ProductListScreen')}
+                className="cursor-pointer group bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2">
                 <span>Mua ngay</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
-              
-              <button className="group bg-white text-gray-700 px-6 py-3 rounded-xl font-semibold border-2 border-gray-200 hover:border-blue-500 hover:text-blue-600 transition-all duration-300 flex items-center justify-center gap-2">
+
+              <button
+                onClick={() => router.push('/ProductListScreen')}
+                className="cursor-pointer group bg-white text-gray-700 px-6 py-3 rounded-xl font-semibold border-2 border-gray-200 hover:border-blue-500 hover:text-blue-600 transition-all duration-300 flex items-center justify-center gap-2">
                 <span>Xem sản phẩm</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -123,7 +129,7 @@ const HeroBanner = () => {
                   className="w-full h-full object-cover"
                   priority
                 />
-                
+
                 {/* Floating Price Tag */}
                 <div className="absolute -top-4 -right-4 bg-gradient-to-r from-red-500 to-red-600 text-white px-5 py-2.5 rounded-2xl shadow-lg transform rotate-12">
                   <p className="text-sm font-medium">Giảm 20%</p>

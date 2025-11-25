@@ -39,6 +39,8 @@ const navItems: NavItem[] = [
       { name: "Danh sách đơn hàng", path: "/orders", pro: false },
       { name: "Giao dịch", path: "/payments", pro: false },
       { name: "Vận chuyển", path: "/shipping", pro: false },
+      { name: "Yêu cầu hủy đơn", path: "/cancel-requests", pro: false },
+      { name: "Yêu cầu trả hàng", path: "/return-requests", pro: false },
     ],
   },
   {

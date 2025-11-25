@@ -175,29 +175,6 @@ export const ProductListProvider = ({ children }: ProductListProviderProps) => {
   // Chọn products để sử dụng (API hoặc local)
   const activeProducts = apiProducts
 
-  // Initial load: fetch default products from API
-  useEffect(() => {
-    let mounted = true
-    setIsLoading(true)
-    ProductService.getFilteredProducts({ page: 0, size: 100 })
-      .then(data => {
-        if (!mounted) return
-        setApiProducts(data)
-      })
-      .catch(err => {
-        if (!mounted) return
-        setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi tải sản phẩm')
-      })
-      .finally(() => {
-        if (!mounted) return
-        setIsLoading(false)
-      })
-
-    return () => {
-      mounted = false
-    }
-  }, [])
-
   // When using API-only, server returns filtered products. Use server results as-is.
   const filteredProducts = useMemo(() => {
     return [...activeProducts]

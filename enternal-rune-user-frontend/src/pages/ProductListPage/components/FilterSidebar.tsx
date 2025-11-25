@@ -45,6 +45,11 @@ export default function FilterSidebar({ onClose, isMobile = false }: FilterSideb
     fetchBrandOptions()
   }, [])
 
+  // Sync localFilters with context filters
+  useEffect(() => {
+    setLocalFilters(filters)
+  }, [filters])
+
   // Price range options
   const priceOptions: FilterOption[] = [
     { value: 'under-5m', label: 'Dưới 5 triệu', type: 'checkbox' },

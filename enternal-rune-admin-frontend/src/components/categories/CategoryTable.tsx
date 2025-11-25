@@ -278,7 +278,7 @@ export default function CategoryTable() {
                 placeholder="Tìm kiếm danh mục..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
           </div>
@@ -287,7 +287,7 @@ export default function CategoryTable() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 px-4 py-2 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="active">Hoạt động</option>
@@ -298,7 +298,7 @@ export default function CategoryTable() {
           <select
             value={levelFilter}
             onChange={(e) => setLevelFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 px-4 py-2 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             <option value="all">Tất cả cấp</option>
             <option value="parent">Danh mục cha</option>
@@ -319,7 +319,7 @@ export default function CategoryTable() {
               >
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-purple-600 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-800"
+                  className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
                 />
               </TableCell>
               <TableCell
@@ -366,12 +366,12 @@ export default function CategoryTable() {
             {sortedCategories.map((category) => (
               <TableRow
                 key={category.id}
-                className="transition-colors hover:bg-purple-50/30 dark:hover:bg-purple-900/10"
+                className="transition-colors hover:bg-blue-50/30 dark:hover:bg-blue-900/10"
               >
                 <TableCell className="py-3 pl-4">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-purple-600 focus:ring-purple-500 dark:border-gray-600 dark:bg-gray-800"
+                    className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
                   />
                 </TableCell>
                 <TableCell className="py-3">
@@ -427,7 +427,7 @@ export default function CategoryTable() {
                 <TableCell className="py-3">
                   <div className="flex items-center justify-center gap-2">
                     <button
-                      className="p-2 text-gray-500 transition-colors hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400"
+                      className="p-2 text-gray-500 transition-colors hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
                       title="Chỉnh sửa"
                     >
                       <svg
@@ -499,7 +499,7 @@ export default function CategoryTable() {
             <button className="text-theme-sm rounded-lg border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]">
               Trước
             </button>
-            <button className="text-theme-sm rounded-lg border border-purple-600 bg-purple-600 px-3 py-2 font-medium text-white transition-colors hover:bg-purple-700">
+            <button className="text-theme-sm rounded-lg border border-blue-600 bg-blue-600 px-3 py-2 font-medium text-white transition-colors hover:bg-blue-700">
               1
             </button>
             <button className="text-theme-sm rounded-lg border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]">

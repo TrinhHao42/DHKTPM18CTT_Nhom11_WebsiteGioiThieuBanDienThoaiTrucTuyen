@@ -3,6 +3,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { TrendingUp } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 const categories = [
     {
@@ -13,7 +14,8 @@ const categories = [
         bgColor: 'bg-gray-50',
         products: '150+ sản phẩm',
         trending: true,
-        image: 'https://cdn-media.sforum.vn/storage/app/media/thunguyen/y-nghia-logo-apple-2.jpg'
+        image: 'https://cdn-media.sforum.vn/storage/app/media/thunguyen/y-nghia-logo-apple-2.jpg',
+        brandId: 1 // Apple
     },
     {
         id: 2,
@@ -23,7 +25,8 @@ const categories = [
         bgColor: 'bg-blue-50',
         products: '200+ sản phẩm',
         trending: true,
-        image: 'https://hienlaptop.com/wp-content/uploads/2024/12/logo-samsung-vector-6.png'
+        image: 'https://hienlaptop.com/wp-content/uploads/2024/12/logo-samsung-vector-6.png',
+        brandId: 9
     },
     {
         id: 3,
@@ -33,7 +36,8 @@ const categories = [
         bgColor: 'bg-orange-50',
         products: '180+ sản phẩm',
         trending: false,
-        image: 'https://cellphones.com.vn/sforum/wp-content/uploads/2021/03/Xiaomi-Mi-Logo.jpg'
+        image: 'https://cellphones.com.vn/sforum/wp-content/uploads/2021/03/Xiaomi-Mi-Logo.jpg',
+        brandId: 10
     },
     {
         id: 4,
@@ -43,7 +47,8 @@ const categories = [
         bgColor: 'bg-yellow-50',
         products: '120+ sản phẩm',
         trending: false,
-        image: 'https://crystalpng.com/wp-content/uploads/2025/05/realme_logo.png'
+        image: 'https://crystalpng.com/wp-content/uploads/2025/05/realme_logo.png',
+        brandId: 13
     },
     {
         id: 5,
@@ -53,22 +58,29 @@ const categories = [
         bgColor: 'bg-blue-100',
         products: '90+ sản phẩm',
         trending: false,
-        image: 'https://www.vivosmartphone.vn/themes/vivo/img/vivo-fb-page.png'
+        image: 'https://www.vivosmartphone.vn/themes/vivo/img/vivo-fb-page.png',
+        brandId: 12
     },
     {
         id: 6,
-        name: 'Poco',
+        name: 'Oppo',
         description: 'RAM lớn, hệ thống tối ưu',
         color: 'from-green-500 to-green-700',
         bgColor: 'bg-green-50',
         products: '500+ sản phẩm',
         trending: true,
-        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR71YHRC0euvSwQX0q_i-uSS4Jzxck0PbEcvMAB9ACCsRVuYI0Z4g2ANRG5UTs3VsAR3QA&usqp=CAU'
+        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR71YHRC0euvSwQX0q_i-uSS4Jzxck0PbEcvMAB9ACCsRVuYI0Z4g2ANRG5UTs3VsAR3QA&usqp=CAU',
+        brandId: 3
     }
 ]
 
 const CategoriesSection = () => {
+    const router = useRouter()
     const displayCategories = categories.slice(0, 6);
+
+    const handleCategoryClick = (brandId: number) => {
+        router.push(`/ProductListScreen?brand=${brandId}`)
+    }
 
     return (
         <section className="py-8 lg:py-12 bg-white">
@@ -90,6 +102,7 @@ const CategoriesSection = () => {
                             style={{
                                 animationDelay: `${index * 50}ms`
                             }}
+                            onClick={() => handleCategoryClick(category.brandId)}
                         >
                             {/* Trending Badge */}
                             {category.trending && (

@@ -15,15 +15,12 @@ spring:
             model: gemini-2.0-flash
         embedding:
           api-key: ${GEMINI_API_KEY}
-
-
-
   #    vectorstore:
-#      pgvector:
-#      index-type: HNSW
-#      distance-type: COSINE_DISTANCE
-#      dimensions: 1536
-#      max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
+  #      pgvector:
+  #      index-type: HNSW
+  #      distance-type: COSINE_DISTANCE
+  #      dimensions: 1536
+  #      max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
   application:
     name: enternal-rune-backend
 
@@ -71,6 +68,9 @@ spring:
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
             jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
             user-name-attribute: sub
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
 
 
 qr:
@@ -82,6 +82,9 @@ qr:
 sepay:
   api: ${SEPAY_API}
 
+frontend:
+  user: ${USER_URL}
+  admin: ${ADMIN_URL}
 
 
 server:
