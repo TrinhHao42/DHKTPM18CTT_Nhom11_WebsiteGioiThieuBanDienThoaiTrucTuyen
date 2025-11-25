@@ -7,6 +7,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -18,11 +19,31 @@ public class OrderResponse {
     private int orderId;
     private LocalDate orderDate;
     private BigDecimal orderTotalAmount;
+    
+    // Current status (for user frontend - backward compatible)
     private PaymentStatus orderPaymentStatus;
     private ShippingStatus orderShippingStatus;
+    
+    // Full status history (for admin)
+    private List<StatusHistoryInfo> paymentStatusHistory;
+    private List<StatusHistoryInfo> shippingStatusHistory;
+    
     private AddressResponse orderShippingAddress;
     private UserInfo orderUser;
     private List<OrderDetailInfo> orderDetails;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class StatusHistoryInfo {
+        private Long statusId;
+        private String statusCode;
+        private String statusName;
+        private String description;
+        private LocalDateTime createdAt;
+    }
 
     @Getter
     @Setter

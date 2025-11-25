@@ -14,7 +14,6 @@ import java.util.ArrayList;
 @RestController
 @RequestMapping("/cart")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class CartController {
 
     private final CartService cartService;

@@ -1,13 +1,13 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
 
+import iuh.fit.se.enternalrunebackend.dto.notification.OrderNotification;
 import iuh.fit.se.enternalrunebackend.dto.request.CreateOrderRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.OrderItemRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.OrderStatusUpdateRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.*;
 import iuh.fit.se.enternalrunebackend.entity.*;
-import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
-import iuh.fit.se.enternalrunebackend.entity.enums.ShippingStatus;
 import iuh.fit.se.enternalrunebackend.repository.*;
+import iuh.fit.se.enternalrunebackend.service.NotificationService;
 import iuh.fit.se.enternalrunebackend.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +39,20 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private DiscountRepository discountRepository;
 
+<<<<<<< Updated upstream
+=======
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private OrderRefundRequestRepository orderRefundRequestRepository;
+
+    @Autowired
+    private PaymentStatusRepository paymentStatusRepository;
+
+    @Autowired
+    private ShippingStatusRepository shippingStatusRepository;
+>>>>>>> Stashed changes
 
     @Override
     public DashboardSummaryResponse getSummaryForMonth(int year, int month) {
@@ -110,18 +125,28 @@ public class OrderServiceImpl implements OrderService {
                     .orElse(null);
         }
 
-        // 5. Tạo Order
+        // 5. Lấy initial statuses
+        PaymentStatus pendingPaymentStatus = paymentStatusRepository.findByStatusCode("PENDING")
+                .orElseThrow(() -> new RuntimeException("Payment status PENDING not found"));
+        ShippingStatus processingShippingStatus = shippingStatusRepository.findByStatusCode("PROCESSING")
+                .orElseThrow(() -> new RuntimeException("Shipping status PROCESSING not found"));
+
+        // 6. Tạo Order
         Order order = Order.builder()
                 .orderDate(LocalDate.now())
-                .orderPaymentStatus(PaymentStatus.PENDING)
-                .orderShippingStatus(ShippingStatus.PROCESSING)
                 .orderUser(user)
                 .orderShippingAddress(address)
                 .discount(discount)
                 .orderDetails(new ArrayList<>())
+                .paymentStatusHistories(new ArrayList<>())
+                .shippingStatusHistories(new ArrayList<>())
                 .build();
+        
+        // Add initial statuses with note
+        order.addPaymentStatus(pendingPaymentStatus, "Đơn hàng mới tạo");
+        order.addShippingStatus(processingShippingStatus, "Đơn hàng đang được xử lý");
 
-        // 6. Tạo OrderDetails và tính tổng tiền
+        // 7. Tạo OrderDetails và tính tổng tiền
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest item : request.getOrderItems()) {
@@ -150,7 +175,7 @@ public class OrderServiceImpl implements OrderService {
             order.getOrderDetails().add(orderDetail);
         }
 
-        // 7. Áp dụng discount nếu có
+        // 8. Áp dụng discount nếu có
         if (discount != null) {
             // Kiểm tra discount còn hiệu lực không
             LocalDate now = LocalDate.now();
@@ -185,24 +210,28 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        // 8. Set tổng tiền cho order
+        // 9. Set tổng tiền cho order
         order.setOrderTotalAmount(totalAmount);
 
-        // 9. Lưu order (cascade sẽ lưu OrderDetails)
+        // 10. Lưu order (cascade sẽ lưu OrderDetails)
         Order savedOrder = orderRepository.save(order);
 
+        // 11. Gửi notification tới admin
+        try {
+            OrderNotification notification = OrderNotification.builder()
+                    .type("NEW_ORDER")
+                    .userId(user.getUserId())
+                    .userName(user.getName())
+                    .message("đã đặt một đơn hàng mới")
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            
+            notificationService.sendOrderNotificationToAdmin(notification);
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
         return savedOrder;
-    }
-
-    @Override
-    public PaymentStatus getOrderPaymentStatus(int orderId) {
-        return orderRepository.getOrderPaymentStatus(orderId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Order> getOrdersByUserId(Long userId) {
-        return orderRepository.findOrdersByCustomerId(userId);
     }
 
     @Override
@@ -238,6 +267,28 @@ public class OrderServiceImpl implements OrderService {
             order.getOrderUser().getName(),
             order.getOrderUser().getEmail()
         );
+
+        // Map Payment Status History
+        List<OrderResponse.StatusHistoryInfo> paymentHistory = order.getPaymentStatusHistories().stream()
+            .map(history -> OrderResponse.StatusHistoryInfo.builder()
+                .statusId(history.getPaymentStatus().getStatusId())
+                .statusCode(history.getPaymentStatus().getStatusCode())
+                .statusName(history.getPaymentStatus().getStatusName())
+                .description(history.getPaymentStatus().getDescription())
+                .createdAt(history.getCreatedAt())
+                .build())
+            .collect(Collectors.toList());
+
+        // Map Shipping Status History
+        List<OrderResponse.StatusHistoryInfo> shippingHistory = order.getShippingStatusHistories().stream()
+            .map(history -> OrderResponse.StatusHistoryInfo.builder()
+                .statusId(history.getShippingStatus().getStatusId())
+                .statusCode(history.getShippingStatus().getStatusCode())
+                .statusName(history.getShippingStatus().getStatusName())
+                .description(history.getShippingStatus().getDescription())
+                .createdAt(history.getCreatedAt())
+                .build())
+            .collect(Collectors.toList());
 
         // Map OrderDetails with ProductVariant
         List<OrderResponse.OrderDetailInfo> orderDetailInfos = order.getOrderDetails().stream()
@@ -282,14 +333,15 @@ public class OrderServiceImpl implements OrderService {
             .orderId(order.getOrderId())
             .orderDate(order.getOrderDate())
             .orderTotalAmount(order.getOrderTotalAmount())
-            .orderPaymentStatus(order.getOrderPaymentStatus())
-            .orderShippingStatus(order.getOrderShippingStatus())
+            .paymentStatusHistory(paymentHistory)
+            .shippingStatusHistory(shippingHistory)
             .orderShippingAddress(addressInfo)
             .orderUser(userInfo)
             .orderDetails(orderDetailInfos)
             .build();
     }
 
+<<<<<<< Updated upstream
 
 
 
@@ -416,5 +468,56 @@ public class OrderServiceImpl implements OrderService {
                 order.getOrderTotalAmount(),
                 products
         );
+=======
+    @Override
+    @Transactional
+    public Order cancelOrder(int orderId, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        // Kiểm tra quyền của user
+        if (!order.getOrderUser().getUserId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền hủy đơn hàng này!");
+        }
+
+        // Kiểm tra trạng thái đơn hàng
+        ShippingStatus currentShippingStatus = order.getCurrentShippingStatus();
+        if (currentShippingStatus == null || !"PROCESSING".equals(currentShippingStatus.getStatusCode())) {
+            throw new RuntimeException("Chỉ có thể hủy đơn hàng đang xử lý!");
+        }
+
+        PaymentStatus currentPaymentStatus = order.getCurrentPaymentStatus();
+        if (currentPaymentStatus != null && "PAID".equals(currentPaymentStatus.getStatusCode())) {
+            throw new RuntimeException("Không thể hủy đơn hàng đã thanh toán. Vui lòng tạo yêu cầu hoàn tiền!");
+        }
+
+        // Cập nhật trạng thái
+        ShippingStatus cancelledStatus = shippingStatusRepository.findByStatusCode("CANCELLED")
+                .orElseThrow(() -> new RuntimeException("Shipping status CANCELLED not found"));
+        order.addShippingStatus(cancelledStatus, "Đơn hàng bị hủy bởi khách hàng");
+        Order savedOrder = orderRepository.save(order);
+
+        // Gửi notification tới admin
+        try {
+            OrderNotification notification = OrderNotification.builder()
+                    .type("CANCEL_ORDER")
+                    .userId(order.getOrderUser().getUserId())
+                    .userName(order.getOrderUser().getName())
+                    .message("đã hủy đơn hàng")
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            
+            notificationService.sendOrderNotificationToAdmin(notification);
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
+        return savedOrder;
+    }
+
+    @Override
+    public OrderRefundRequest createRefundRequest(int orderId, Long userId, String reason, String refundType) {
+        return null;
+>>>>>>> Stashed changes
     }
 }

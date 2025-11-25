@@ -15,16 +15,15 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/orders")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class OrderController {
 
     private final OrderService orderService;
 
     /**
      * Tạo order mới
-     * POST /api/orders
+     * POST /orders
      */
     @PostMapping
     public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest request) {
@@ -37,8 +36,6 @@ public class OrderController {
             response.put("orderId", order.getOrderId());
             response.put("orderDate", order.getOrderDate());
             response.put("totalAmount", order.getOrderTotalAmount());
-            response.put("paymentStatus", order.getOrderPaymentStatus());
-            response.put("shippingStatus", order.getOrderShippingStatus());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
@@ -52,7 +49,7 @@ public class OrderController {
 
     /**
      * Lấy danh sách orders của user với phân trang
-     * GET /api/orders/user/{userId}?page=0&size=5
+     * GET /orders/user/{userId}?page=0&size=5
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserOrders(
@@ -83,7 +80,7 @@ public class OrderController {
 
     /**
      * Lấy order theo ID
-     * GET /api/orders/{orderId}
+     * GET /orders/{orderId}
      */
     @GetMapping("/{orderId}")
     public ResponseEntity<?> getOrderById(@PathVariable int orderId) {
@@ -98,16 +95,55 @@ public class OrderController {
         }
     }
 
-    @GetMapping("/status/{id}")
-    public ResponseEntity<?> getOrderPaymentStatus(@PathVariable int id){
+
+    /**
+     * Hủy đơn hàng
+     * PUT /api/orders/{orderId}/cancel
+     */
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable int orderId, @RequestParam Long userId) {
         try {
-            PaymentStatus status = orderService.getOrderPaymentStatus(id);
+            Order cancelledOrder = orderService.cancelOrder(orderId, userId);
+            
             Map<String, Object> response = new HashMap<>();
-            response.put("status", status);
+            response.put("success", true);
+            response.put("message", "Hủy đơn hàng thành công!");
+            response.put("orderId", cancelledOrder.getOrderId());
+            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Không tìm thấy đơn hàng: " + e.getMessage());
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể hủy đơn hàng: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * Tạo yêu cầu hoàn tiền/trả hàng
+     * POST /api/orders/{orderId}/refund
+     */
+    @PostMapping("/{orderId}/refund")
+    public ResponseEntity<?> createRefundRequest(
+            @PathVariable int orderId,
+            @RequestParam Long userId,
+            @RequestParam String reason,
+            @RequestParam String refundType // "CANCEL" or "RETURN"
+    ) {
+        try {
+            var refundRequest = orderService.createRefundRequest(orderId, userId, reason, refundType);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Tạo yêu cầu hoàn tiền thành công!");
+            response.put("refundRequestId", refundRequest.getOrId());
+            response.put("status", refundRequest.getOrStatus());
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể tạo yêu cầu hoàn tiền: " + e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }

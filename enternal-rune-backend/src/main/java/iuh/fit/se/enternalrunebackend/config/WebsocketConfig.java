@@ -19,7 +19,8 @@ public class WebsocketConfig implements WebSocketConfigurer, WebSocketMessageBro
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(new SendNotificationHandler(), "/notifications").setAllowedOriginPatterns(userUrl, adminUrl);
+        registry.addHandler(new SendNotificationHandler(), "/notifications")
+                .setAllowedOriginPatterns(userUrl, adminUrl);
     }
 
     @Override

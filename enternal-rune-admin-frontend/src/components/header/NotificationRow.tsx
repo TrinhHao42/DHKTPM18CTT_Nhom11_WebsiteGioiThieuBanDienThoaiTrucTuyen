@@ -26,7 +26,7 @@ export function NotificationRow({ item, onClick }: Props) {
         <Image
           width={40}
           height={40}
-          src={item.user.avatar}
+          src={item.user.avatar || "/images/user/owner.jpg"}
           alt={item.user.name}
           className="w-full overflow-hidden rounded-full"
         />

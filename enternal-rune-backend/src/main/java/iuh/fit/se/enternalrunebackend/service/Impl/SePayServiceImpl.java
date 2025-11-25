@@ -5,12 +5,11 @@ import iuh.fit.se.enternalrunebackend.dto.request.TransactionRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.QRCodeResponse;
 import iuh.fit.se.enternalrunebackend.entity.Order;
 import iuh.fit.se.enternalrunebackend.entity.OrderRefundRequest;
+import iuh.fit.se.enternalrunebackend.entity.PaymentStatus;
 import iuh.fit.se.enternalrunebackend.entity.Transaction;
-import iuh.fit.se.enternalrunebackend.entity.User;
-import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
-import iuh.fit.se.enternalrunebackend.entity.enums.ShippingStatus;
 import iuh.fit.se.enternalrunebackend.repository.OrderRefundRequestRepository;
 import iuh.fit.se.enternalrunebackend.repository.OrderRepository;
+import iuh.fit.se.enternalrunebackend.repository.PaymentStatusRepository;
 import iuh.fit.se.enternalrunebackend.repository.TransactionRepository;
 import iuh.fit.se.enternalrunebackend.service.SePayService;
 import iuh.fit.se.enternalrunebackend.util.GenerateQRURL;
@@ -31,9 +30,6 @@ public class SePayServiceImpl implements SePayService {
     private QRConfig qrConfig;
 
     @Autowired
-    private GenerateQRURL generateQRURL;
-
-    @Autowired
     private OrderRepository orderRepository;
 
     @Autowired
@@ -41,6 +37,12 @@ public class SePayServiceImpl implements SePayService {
 
     @Autowired
     private OrderRefundRequestRepository orderRefundRequestRepository;
+
+    @Autowired
+    private PaymentStatusRepository paymentStatusRepository;
+
+    @Autowired
+    private GenerateQRURL generateQRURL;
 
     public QRCodeResponse getQRCode(BigDecimal amount, String description) throws IOException {
         String url = generateQRURL.getQRURL(qrConfig, amount, description);
@@ -88,29 +90,15 @@ public class SePayServiceImpl implements SePayService {
         Transaction transactionSaved = transactionRepository.save(newTransaction);
 
         if (transactionSaved != null) {
-            int row = orderRepository.updateOrderStatusByID(orderId, PaymentStatus.PAID, PaymentStatus.PENDING);
-            return row > 0;
+            // Update order payment status by adding PAID status to history
+            PaymentStatus paidStatus = paymentStatusRepository.findByStatusCode("PAID")
+                    .orElseThrow(() -> new RuntimeException("Payment status PAID not found"));
+            orderPayment.addPaymentStatus(paidStatus, "Thanh toán thành công qua SePay");
+            orderRepository.save(orderPayment);
+            return true;
         }
 
         return false;
-    }
-
-    @Override
-    public OrderRefundRequest updateRefundRequestPaymentStatus(TransactionRequest transactionRequest) {
-        String content = transactionRequest.getContent();
-
-        Integer refundRequestId = extractRefundRequestIdFromContent(content);
-
-        if (refundRequestId != null) {
-            OrderRefundRequest refundRequest = orderRefundRequestRepository.findById(refundRequestId)
-                    .orElseThrow(() -> new RuntimeException("Refund request not found with ID: " + refundRequestId));
-
-            refundRequest.setOrPayment(PaymentStatus.PAID);
-
-            return orderRefundRequestRepository.save(refundRequest);
-        }
-
-        throw new RuntimeException("Cannot extract refund request ID from transaction content");
     }
 
     private Integer extractRefundRequestIdFromContent(String content) {

@@ -11,8 +11,24 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class SendNotificationHandler extends TextWebSocketHandler {
-    private static final Set<WebSocketSession> addminSessions = new CopyOnWriteArraySet<>();
+    private static final Set<WebSocketSession> adminSessions = new CopyOnWriteArraySet<>();
     private static final Set<WebSocketSession> userSessions = new CopyOnWriteArraySet<>();
+
+    /**
+     * Send notification to all connected admin sessions
+     * @param message JSON string message to broadcast
+     */
+    public static void sendToAdmins(String message) {
+        for (WebSocketSession admin : adminSessions) {
+            if (admin.isOpen()) {
+                try {
+                    admin.sendMessage(new TextMessage(message));
+                } catch (Exception e) {
+                    System.err.println("Error sending message to admin: " + e.getMessage());
+                }
+            }
+        }
+    }
 
     private String getRole(WebSocketSession session) {
         System.out.println(session.getUri());
@@ -27,17 +43,20 @@ public class SendNotificationHandler extends TextWebSocketHandler {
     public void afterConnectionEstablished(@NotNull WebSocketSession session) throws Exception {
         String role = getRole(session);
         if ("admin".equals(role)){
-            addminSessions.add(session);
+            adminSessions.add(session);
+            System.out.println("Admin connected. Total admins: " + adminSessions.size());
         }
         else {
             userSessions.add(session);
+            System.out.println("User connected. Total users: " + userSessions.size());
         }
     }
 
     @Override
     public void afterConnectionClosed(@NotNull WebSocketSession session, @NotNull CloseStatus status) throws Exception {
-        addminSessions.remove(session);
+        adminSessions.remove(session);
         userSessions.remove(session);
+        System.out.println("Session closed. Admins: " + adminSessions.size() + ", Users: " + userSessions.size());
     }
 
     @Override
@@ -45,7 +64,7 @@ public class SendNotificationHandler extends TextWebSocketHandler {
         String payload = message.getPayload();
         String role = getRole(session);
         if ("user".equals(role)){
-            for (WebSocketSession admin : addminSessions){
+            for (WebSocketSession admin : adminSessions){
                 if (admin.isOpen()){
                     admin.sendMessage(new TextMessage(payload));
                 }

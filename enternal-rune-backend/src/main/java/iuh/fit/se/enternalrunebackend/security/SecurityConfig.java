@@ -58,7 +58,15 @@ public class SecurityConfig {
                 // CORS
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
+<<<<<<< Updated upstream
                     corsConfig.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "http://localhost:3001"));
+=======
+                    // Use allowedOriginPatterns instead of allowedOrigins when allowCredentials is true
+                    corsConfig.setAllowedOriginPatterns(Arrays.asList(
+                            "http://localhost:3000",
+                            "http://localhost:3001"
+                    ));
+>>>>>>> Stashed changes
                     corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     corsConfig.setAllowedHeaders(Arrays.asList("*"));
                     corsConfig.setAllowCredentials(true);

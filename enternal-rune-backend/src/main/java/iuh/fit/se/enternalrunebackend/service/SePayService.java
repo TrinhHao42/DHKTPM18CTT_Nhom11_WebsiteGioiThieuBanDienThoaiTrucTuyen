@@ -14,5 +14,4 @@ import java.util.List;
 public interface SePayService {
     QRCodeResponse getQRCode(BigDecimal amount, String description) throws IOException;
     boolean sePayWebHookPayment(TransactionRequest transactionRequest);
-    OrderRefundRequest updateRefundRequestPaymentStatus(TransactionRequest transactionRequest);
 }

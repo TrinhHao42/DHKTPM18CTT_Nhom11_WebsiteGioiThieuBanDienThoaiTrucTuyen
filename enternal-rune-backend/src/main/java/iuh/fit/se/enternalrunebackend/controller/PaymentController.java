@@ -18,11 +18,6 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@CrossOrigin(
-        origins = "http://localhost:3000",
-        allowedHeaders = "*",
-        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.OPTIONS}
-)
 @RequestMapping("/payment")
 public class PaymentController {
     @Autowired
@@ -50,15 +45,5 @@ public class PaymentController {
     @PostMapping("/webhookPayment")
     public boolean Payment(@RequestBody TransactionRequest transactionRequest) {
         return sePayService.sePayWebHookPayment(transactionRequest);
-    }
-
-    @PostMapping("/webhook/refund")
-    public ResponseEntity<OrderRefundRequest> refundWebhook(@RequestBody TransactionRequest transactionRequest) {
-        try {
-            OrderRefundRequest updatedRefundRequest = sePayService.updateRefundRequestPaymentStatus(transactionRequest);
-            return ResponseEntity.ok(updatedRefundRequest);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
     }
 }

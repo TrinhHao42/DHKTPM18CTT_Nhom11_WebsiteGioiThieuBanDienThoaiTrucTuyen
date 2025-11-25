@@ -19,8 +19,12 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
+<<<<<<< Updated upstream
 @RequestMapping("/api/dashboard-order")
 //@CrossOrigin(origins = "*")
+=======
+@RequestMapping("/api/dashboard")
+>>>>>>> Stashed changes
 public class OrderDashboardController {
     @Autowired
     private OrderService orderService;

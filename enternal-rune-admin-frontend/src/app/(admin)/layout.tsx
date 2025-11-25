@@ -1,6 +1,7 @@
 "use client";
 
 import { useSidebar } from "@/context/SidebarContext";
+import { WebSocketProvider } from "@/context/WebSocketContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
@@ -22,7 +23,11 @@ export default function AdminLayout({
     : "lg:ml-[90px]";
 
   return (
+<<<<<<< Updated upstream
     <ProtectedRoute>
+=======
+    <WebSocketProvider>
+>>>>>>> Stashed changes
       <div className="min-h-screen xl:flex">
         {/* Sidebar and Backdrop */}
         <AppSidebar />
@@ -39,6 +44,10 @@ export default function AdminLayout({
           </div>
         </div>
       </div>
+<<<<<<< Updated upstream
     </ProtectedRoute>
+=======
+    </WebSocketProvider>
+>>>>>>> Stashed changes
   );
 }

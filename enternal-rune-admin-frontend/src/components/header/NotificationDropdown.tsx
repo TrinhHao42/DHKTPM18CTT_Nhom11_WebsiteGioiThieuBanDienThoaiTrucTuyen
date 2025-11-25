@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
-import { Notification } from "@/types/Notification";
 import { NotificationRow } from "./NotificationRow";
+import { useWebSocketContext } from "@/context/WebSocketContext";
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifying, setNotifying] = useState(true);
+<<<<<<< Updated upstream
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       user: {
@@ -68,6 +69,9 @@ export default function NotificationDropdown() {
   //   };
   // }, []);
 
+=======
+  const { notifications } = useWebSocketContext();
+>>>>>>> Stashed changes
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -139,9 +143,9 @@ export default function NotificationDropdown() {
         </div>
         <ul className="flex flex-col h-auto overflow-y-auto custom-scrollbar">
           {
-            notifications.map((item) => (
+            notifications.map((item, index) => (
               <NotificationRow
-                key={item.user.id}
+                key={index}
                 item={item}
                 onClick={closeDropdown}
               />

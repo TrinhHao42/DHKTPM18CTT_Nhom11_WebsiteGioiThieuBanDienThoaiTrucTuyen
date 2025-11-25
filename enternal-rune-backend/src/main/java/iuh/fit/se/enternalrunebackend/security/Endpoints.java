@@ -27,11 +27,7 @@ public class Endpoints {
             "/account/login",
             "/account/register",
             "/api/auth/**",
-            "/api/users/*/address",
-            "/addresses/**",
-            "/payment/**",
             "/ai/generate",
-            "/notifications",
 
             // ==== TẠO CONVERSATION CHAT, TEST WS ====
             "/api/messages/**",

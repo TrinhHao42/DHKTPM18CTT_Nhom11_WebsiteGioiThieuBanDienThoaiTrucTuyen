@@ -23,7 +23,7 @@ export interface CreateOrderResponse {
 
 export const createOrder = async (request: CreateOrderRequest): Promise<CreateOrderResponse> => {
     try {
-        const response = await AxiosInstance.post('/api/orders', request);
+        const response = await AxiosInstance.post('/orders', request);
         return response.data;
     } catch (error: any) {
         console.error('❌ Lỗi tạo đơn hàng:', error);
@@ -45,7 +45,7 @@ export const createOrder = async (request: CreateOrderRequest): Promise<CreateOr
 };
 
 export const getOrderPaymentStatus = async (orderId: number): Promise<PaymentStatus> => {
-    const response = await AxiosInstance.get(`/api/orders/status/${orderId}`);
+    const response = await AxiosInstance.get(`/orders/status/${orderId}`);
     return response.data.status;
 }
 
@@ -59,7 +59,7 @@ export const getQrCodeSepay = async (amount: number, description: string): Promi
 
 export const getUserOrders = async (userId: number, page: number = 0, size: number = 5): Promise<any> => {
     try {
-        const response = await AxiosInstance.get(`/api/orders/user/${userId}`, {
+        const response = await AxiosInstance.get(`/orders/user/${userId}`, {
             params: { page, size }
         });
         return response.data;
@@ -71,10 +71,49 @@ export const getUserOrders = async (userId: number, page: number = 0, size: numb
 
 export const getOrderById = async (orderId: number): Promise<any> => {
     try {
-        const response = await AxiosInstance.get(`/api/orders/${orderId}`);
+        const response = await AxiosInstance.get(`/orders/${orderId}`);
         return response.data;
     } catch (error) {
         console.error('Error fetching order:', error);
+        throw error;
+    }
+}
+
+export const cancelOrder = async (orderId: number, userId: number): Promise<any> => {
+    try {
+        console.log('🚫 Hủy đơn hàng:', { orderId, userId });
+        const response = await AxiosInstance.put(`/orders/${orderId}/cancel`, null, {
+            params: { userId }
+        });
+        console.log('✅ Hủy đơn hàng thành công:', response.data);
+        return response.data;
+    } catch (error: any) {
+        console.error('❌ Lỗi hủy đơn hàng:', error);
+        if (error.response?.data?.message) {
+            throw new Error(error.response.data.message);
+        }
+        throw error;
+    }
+}
+
+export const createRefundRequest = async (
+    orderId: number, 
+    userId: number, 
+    reason: string, 
+    refundType: 'CANCEL' | 'RETURN'
+): Promise<any> => {
+    try {
+        console.log('💰 Tạo yêu cầu hoàn tiền:', { orderId, userId, reason, refundType });
+        const response = await AxiosInstance.post(`/orders/${orderId}/refund`, null, {
+            params: { userId, reason, refundType }
+        });
+        console.log('✅ Tạo yêu cầu hoàn tiền thành công:', response.data);
+        return response.data;
+    } catch (error: any) {
+        console.error('❌ Lỗi tạo yêu cầu hoàn tiền:', error);
+        if (error.response?.data?.message) {
+            throw new Error(error.response.data.message);
+        }
         throw error;
     }
 }
