@@ -3,14 +3,11 @@ import {
   UserAnalyticsMetrics,
   UserGrowthChart,
   UserDeviceChart,
-  UserLocationAnalytics,
   UserActivityHeatmap,
-  UserDemographics,
-  UserRetentionChart,
   UserEngagementChart,
   UserSourcesChart,
   UserBehaviorChart,
-} from '@/components/analytics';
+} from '@/components/analytics-ui';
 import PageBreadCrumb from '@/components/common/PageBreadCrumb';
 
 export default function AnalyticsPage() {
@@ -18,15 +15,15 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <PageBreadCrumb pageTitle="Phân tích dữ liệu người dùng" />
 
-      <UserAnalyticsMetrics />
+      <UserAnalyticsMetrics websiteId="cmic2k2820000ml8mu0miqhlm" />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-3">
-          <UserGrowthChart />
+          <UserGrowthChart websiteId="cmic2k2820000ml8mu0miqhlm" />
         </div>
-        <UserDeviceChart />
-        <UserBehaviorChart />
-        <UserSourcesChart />
+        <UserDeviceChart websiteId="cmic2k2820000ml8mu0miqhlm" />
+        <UserBehaviorChart websiteId="cmic2k2820000ml8mu0miqhlm" />
+        <UserSourcesChart websiteId="cmic2k2820000ml8mu0miqhlm" />
       </div>
 
       {/* <div className="grid grid-cols-1">
@@ -38,10 +35,10 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="lg:col-span-2">
-          <UserEngagementChart />
+          <UserEngagementChart websiteId="cmic2k2820000ml8mu0miqhlm" />
         </div>
         <div className="lg:col-span-2">
-      <UserActivityHeatmap />
+          <UserActivityHeatmap websiteId="cmic2k2820000ml8mu0miqhlm" />
         </div>
       </div>
 

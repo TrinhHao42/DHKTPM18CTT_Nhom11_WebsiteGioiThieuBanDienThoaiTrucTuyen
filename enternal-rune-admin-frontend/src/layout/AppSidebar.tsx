@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState,useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -224,18 +224,20 @@ const AppSidebar: React.FC = () => {
   // const isActive = (path: string) => path === pathname;
    const isActive = useCallback((path: string) => path === pathname, [pathname]);
 
-  useEffect(() => {
+  const matchedSubmenu = useMemo(() => {
     // Check if the current path matches any submenu item
     let submenuMatched = false;
+    let result: { type: "main"; index: number } | null = null;
+
     ["main"].forEach((menuType) => {
       navItems.forEach((nav, index) => {
-        if (nav.subItems) {
+        if (nav.subItems && !submenuMatched) {
           nav.subItems.forEach((subItem) => {
-            if (isActive(subItem.path)) {
-              setOpenSubmenu({
+            if (isActive(subItem.path) && !submenuMatched) {
+              result = {
                 type: menuType as "main",
                 index,
-              });
+              };
               submenuMatched = true;
             }
           });
@@ -243,11 +245,12 @@ const AppSidebar: React.FC = () => {
       });
     });
 
-    // If no submenu item matches, close the open submenu
-    if (!submenuMatched) {
-      setOpenSubmenu(null);
-    }
-  }, [pathname,isActive]);
+    return result;
+  }, [isActive]);
+
+  useEffect(() => {
+    setOpenSubmenu(matchedSubmenu);
+  }, [matchedSubmenu]);
 
   useEffect(() => {
     // Set the height of the submenu items when the submenu is opened

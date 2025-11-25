@@ -27,6 +27,13 @@ export interface ChatMessageDto {
   content: string;
 }
 
+export interface ChatUser {
+  id: string;
+  displayName: string;
+  email?: string;
+  role: 'CUSTOMER' | 'AGENT' | 'ADMIN';
+}
+
 // API Conversation
 export const createConversation = async (customerId: string): Promise<Conversation> => {
   const response = await AxiosInstance.post(`/api/conversations?customerId=${customerId}`);
@@ -51,5 +58,19 @@ export const getMessagesByConversation = async (conversationId: string): Promise
 
 export const getMessage = async (messageId: string): Promise<Message> => {
   const response = await AxiosInstance.get(`/api/messages/${messageId}`);
+  return response.data;
+};
+
+// API Chat Users
+export const registerOrUpdateChatUser = async (
+  userId: string, 
+  displayName: string, 
+  email?: string
+): Promise<ChatUser> => {
+  const response = await AxiosInstance.post('/api/chat-users/register-or-update', {
+    userId,
+    displayName,
+    email
+  });
   return response.data;
 };
