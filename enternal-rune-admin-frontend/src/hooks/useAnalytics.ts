@@ -56,8 +56,8 @@ export type LocationStats = {
 };
 
 export type HourlyActivity = {
-  hour: string;
-  [key: string]: string | number; // For days of week
+  name: string;
+  [key: string]: string | number; // For hourly data like '00h', '02h', etc.
 };
 
 export type SourceStats = {
@@ -81,9 +81,10 @@ export type RetentionData = {
 
 export type EngagementData = {
   hour: string;
-  avgTime: number;
-  pagesPerSession: number;
-  interactions: number;
+  pageViews: number;
+  events: number;
+  sessions: number;
+  avgEngagement: number;
 };
 
 export type DemographicsData = {
@@ -408,13 +409,8 @@ export function useEngagementData(websiteId?: string) {
           avgEngagement: number;
         }>>(`/engagement${params}`);
         
-        // Transform to match EngagementData type
-        const transformedData: EngagementData[] = engagementResponse.map(item => ({
-          hour: item.hour,
-          avgTime: item.avgEngagement * 60, // Convert to seconds
-          pagesPerSession: item.sessions > 0 ? Math.round(item.pageViews / item.sessions * 100) / 100 : 0,
-          interactions: item.events,
-        }));
+        // Data already matches EngagementData type from API
+        const transformedData: EngagementData[] = engagementResponse;
         
         setData(transformedData);
       } catch (err) {

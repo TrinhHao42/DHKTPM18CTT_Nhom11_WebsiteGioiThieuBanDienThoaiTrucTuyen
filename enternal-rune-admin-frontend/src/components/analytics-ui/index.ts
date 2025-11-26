@@ -8,3 +8,4 @@ export { default as UserRetentionChart } from "./UserRetentionChart";
 export { default as UserEngagementChart } from "./UserEngagementChart";
 export { default as UserSourcesChart } from "./UserSourcesChart";
 export { default as UserBehaviorChart } from "./UserBehaviorChart";
+export { default as RealtimeAnalytics, OnlineUsersWidget, RecentActivityFeed } from "./RealtimeAnalytics";

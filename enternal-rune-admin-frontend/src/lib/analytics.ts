@@ -228,18 +228,36 @@ export class AnalyticsService {
    * Get active users (users with activity in period)
    */
   async getActiveUsers(websiteId: string, startDate: Date, endDate: Date): Promise<number> {
+    // Count unique sessions that have either events OR pageviews in the time period
     const result = await prisma.userSession.findMany({
       where: {
         websiteId,
-        createdAt: {
-          gte: startDate,
-          lte: endDate,
-        },
+        OR: [
+          {
+            events: {
+              some: {
+                createdAt: {
+                  gte: startDate,
+                  lte: endDate,
+                },
+              },
+            },
+          },
+          {
+            pageViews: {
+              some: {
+                createdAt: {
+                  gte: startDate,
+                  lte: endDate,
+                },
+              },
+            },
+          },
+        ],
       },
       select: {
-        distinctId: true,
+        id: true,
       },
-      distinct: ['distinctId'],
     });
 
     return result.length;
@@ -249,7 +267,7 @@ export class AnalyticsService {
    * Get average session duration
    */
   async getAverageSessionDuration(websiteId: string, startDate: Date, endDate: Date): Promise<number> {
-    // Get sessions with their page views to calculate duration
+    // Get sessions with their page views and events to calculate duration
     const sessions = await prisma.userSession.findMany({
       where: {
         websiteId,
@@ -264,6 +282,11 @@ export class AnalyticsService {
             createdAt: 'asc',
           },
         },
+        events: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
       },
     });
 
@@ -271,15 +294,27 @@ export class AnalyticsService {
     let validSessions = 0;
 
     for (const session of sessions) {
-      if (session.pageViews.length > 1) {
-        const firstPageView = session.pageViews[0];
-        const lastPageView = session.pageViews[session.pageViews.length - 1];
-        const duration = lastPageView.createdAt.getTime() - firstPageView.createdAt.getTime();
+      // Collect all activities (page views + events) and sort by time
+      const activities = [
+        ...session.pageViews.map(pv => ({ type: 'pageview', createdAt: pv.createdAt })),
+        ...session.events.map(ev => ({ type: 'event', createdAt: ev.createdAt }))
+      ].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
-        if (duration > 0 && duration < 30 * 60 * 1000) { // Max 30 minutes
+      if (activities.length > 1) {
+        // Calculate duration from first activity to last activity
+        const firstActivity = activities[0];
+        const lastActivity = activities[activities.length - 1];
+        const duration = lastActivity.createdAt.getTime() - firstActivity.createdAt.getTime();
+
+        // Only count sessions with reasonable duration (between 1 second and 30 minutes)
+        if (duration > 1000 && duration < 30 * 60 * 1000) {
           totalDuration += duration;
           validSessions++;
         }
+      } else if (activities.length === 1) {
+        // For single-activity sessions, use a default minimum duration (e.g., 10 seconds)
+        totalDuration += 10 * 1000; // 10 seconds in milliseconds
+        validSessions++;
       }
     }
 
@@ -469,16 +504,24 @@ export class AnalyticsService {
    */
   async getEngagementByHour(websiteId: string, startDate: Date, endDate: Date): Promise<{ hour: number; sessions: number; pageViews: number }[]> {
     try {
+      // Convert to local timezone (Asia/Ho_Chi_Minh = UTC+7)
+      const localTimezone = 'Asia/Ho_Chi_Minh';
       const hourlyData = await prisma.$queryRaw<Array<{ hour: number; sessions: bigint; pageviews: bigint }>>`
+        WITH local_times AS (
+          SELECT 
+            created_at AT TIME ZONE 'UTC' AT TIME ZONE ${localTimezone} as local_time,
+            session_id
+          FROM page_views
+          WHERE website_id = ${websiteId}
+            AND created_at >= ${startDate}
+            AND created_at <= ${endDate}
+        )
         SELECT 
-          EXTRACT(HOUR FROM created_at) as hour,
+          EXTRACT(HOUR FROM local_time) as hour,
           COUNT(DISTINCT session_id) as sessions,
           COUNT(*) as pageviews
-        FROM page_views
-        WHERE website_id = ${websiteId}
-          AND created_at >= ${startDate}
-          AND created_at <= ${endDate}
-        GROUP BY EXTRACT(HOUR FROM created_at)
+        FROM local_times
+        GROUP BY EXTRACT(HOUR FROM local_time)
         ORDER BY hour
       `;
 
@@ -505,16 +548,24 @@ export class AnalyticsService {
    */
   async getHeatmapData(websiteId: string, startDate: Date, endDate: Date): Promise<{ weekday: number; hour: number; activeUsers: number }[]> {
     try {
+      // Convert to local timezone (Asia/Ho_Chi_Minh = UTC+7)
+      const localTimezone = 'Asia/Ho_Chi_Minh';
       const heatmapData = await prisma.$queryRaw<Array<{ weekday: number; hour: number; users: bigint }>>`
+        WITH local_times AS (
+          SELECT 
+            created_at AT TIME ZONE 'UTC' AT TIME ZONE ${localTimezone} as local_time,
+            session_id
+          FROM page_views
+          WHERE website_id = ${websiteId}
+            AND created_at >= ${startDate}
+            AND created_at <= ${endDate}
+        )
         SELECT 
-          EXTRACT(DOW FROM created_at) as weekday,
-          EXTRACT(HOUR FROM created_at) as hour,
+          EXTRACT(DOW FROM local_time) as weekday,
+          EXTRACT(HOUR FROM local_time) as hour,
           COUNT(DISTINCT session_id) as users
-        FROM page_views
-        WHERE website_id = ${websiteId}
-          AND created_at >= ${startDate}
-          AND created_at <= ${endDate}
-        GROUP BY EXTRACT(DOW FROM created_at), EXTRACT(HOUR FROM created_at)
+        FROM local_times
+        GROUP BY EXTRACT(DOW FROM local_time), EXTRACT(HOUR FROM local_time)
         ORDER BY weekday, hour
       `;
 
@@ -606,30 +657,30 @@ export class AnalyticsService {
         eventWhereConditions.push(`created_at >= '${startDate.toISOString()}' AND created_at <= '${endDate.toISOString()}'`);
       }
 
-      // Get page views and sessions by hour
+      // Get page views and sessions by hour with timezone conversion
       const pageViewQuery = `
         SELECT
-          EXTRACT(HOUR FROM pv.created_at) as hour,
+          EXTRACT(HOUR FROM (pv.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')) as hour,
           COUNT(pv.page_view_id) as "pageViews",
           COUNT(DISTINCT pv.session_id) as sessions,
           AVG(EXTRACT(EPOCH FROM (pv.created_at - s.created_at))) / 60 as "avgEngagement"
         FROM page_views pv
         LEFT JOIN user_sessions s ON pv.session_id = s.session_id
         ${pageViewWhereConditions.length > 0 ? `WHERE ${pageViewWhereConditions.join(' AND ')}` : ''}
-        GROUP BY EXTRACT(HOUR FROM pv.created_at)
+        GROUP BY EXTRACT(HOUR FROM (pv.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh'))
         ORDER BY hour
       `;
 
       const pageViewData = await prisma.$queryRawUnsafe(pageViewQuery);
 
-      // Get events by hour
+      // Get events by hour with timezone conversion
       const eventQuery = `
         SELECT
-          EXTRACT(HOUR FROM created_at) as hour,
+          EXTRACT(HOUR FROM (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')) as hour,
           COUNT(*) as events
         FROM events
         ${eventWhereConditions.length > 0 ? `WHERE ${eventWhereConditions.join(' AND ')}` : ''}
-        GROUP BY EXTRACT(HOUR FROM created_at)
+        GROUP BY EXTRACT(HOUR FROM (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh'))
         ORDER BY hour
       `;
 
@@ -828,6 +879,145 @@ export class AnalyticsService {
     } catch (error) {
       console.error('Error getting user behavior:', error);
       return [];
+    }
+  }
+
+  /**
+   * Get recent events for debugging
+   */
+  async getRecentEvents(websiteId?: string, limit: number = 50) {
+    const where: Record<string, unknown> = websiteId ? { websiteId } : {};
+
+    try {
+      const events = await prisma.event.findMany({
+        where,
+        include: {
+          session: {
+            select: {
+              browser: true,
+              os: true,
+              device: true,
+              country: true,
+              distinctId: true,
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit
+      });
+
+      return events.map(event => ({
+        id: event.id,
+        eventName: event.eventName,
+        eventData: event.eventData,
+        urlPath: event.urlPath,
+        pageTitle: event.pageTitle,
+        createdAt: event.createdAt,
+        session: {
+          browser: event.session.browser,
+          os: event.session.os,
+          device: event.session.device,
+          country: event.session.country,
+          userId: event.session.distinctId
+        }
+      }));
+    } catch (error) {
+      console.error('Error getting recent events:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get top events by frequency
+   */
+  async getTopEvents(websiteId?: string, startDate?: Date, endDate?: Date, limit: number = 10) {
+    const where: Record<string, unknown> = websiteId ? { websiteId } : {};
+    if (startDate && endDate) {
+      where.createdAt = { gte: startDate, lte: endDate };
+    }
+
+    try {
+      const topEvents = await prisma.event.groupBy({
+        by: ['eventName'],
+        where,
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: limit
+      });
+
+      return topEvents.map(event => ({
+        eventName: event.eventName,
+        count: event._count.id,
+        percentage: 0 // Will be calculated if needed
+      }));
+    } catch (error) {
+      console.error('Error getting top events:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get hourly activity data formatted for heatmap visualization
+   */
+  async getHourlyActivityData(websiteId: string, startDate: Date, endDate: Date): Promise<Array<{ 
+    name: string; 
+    [key: string]: number | string; 
+  }>> {
+    try {
+      // Get heatmap data from existing method
+      const heatmapData = await this.getHeatmapData(websiteId, startDate, endDate);
+      
+      // Day names in Vietnamese
+      const dayNames = [
+        'Chủ nhật', // 0 = Sunday
+        'Thứ 2',    // 1 = Monday  
+        'Thứ 3',    // 2 = Tuesday
+        'Thứ 4',    // 3 = Wednesday
+        'Thứ 5',    // 4 = Thursday
+        'Thứ 6',    // 5 = Friday
+        'Thứ 7'     // 6 = Saturday
+      ];
+
+      // Initialize result array
+      const result = dayNames.map(name => ({ name }));
+
+      // Fill in the data for each day and hour
+      for (let weekday = 0; weekday < 7; weekday++) {
+        const dayResult: { name: string; [key: string]: number | string } = { 
+          name: dayNames[weekday] 
+        };
+
+        // Generate all hour slots (00h, 02h, 04h, 06h, 08h, 10h, 12h, 14h, 16h, 18h, 20h, 22h)
+        for (let hour = 0; hour < 24; hour += 2) {
+          const hourKey = `${hour.toString().padStart(2, '0')}h`;
+          
+          // Sum up users from this hour and the next hour (since we group by 2-hour slots)
+          const hour1Data = heatmapData.find(d => d.weekday === weekday && d.hour === hour);
+          const hour2Data = heatmapData.find(d => d.weekday === weekday && d.hour === (hour + 1));
+          
+          const totalUsers = (hour1Data ? hour1Data.activeUsers : 0) + 
+                           (hour2Data ? hour2Data.activeUsers : 0);
+          
+          dayResult[hourKey] = totalUsers;
+        }
+
+        result[weekday] = dayResult;
+      }
+
+      return result;
+
+    } catch (error) {
+      console.error('Error getting hourly activity data:', error);
+      // Return empty structure if error
+      const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+      return dayNames.map(name => {
+        const dayResult: { name: string; [key: string]: number | string } = { name };
+        for (let hour = 0; hour < 24; hour += 2) {
+          const hourKey = `${hour.toString().padStart(2, '0')}h`;
+          dayResult[hourKey] = 0;
+        }
+        return dayResult;
+      });
     }
   }
 }
