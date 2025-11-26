@@ -1,6 +1,7 @@
 'use client'
-import React, { createContext, useContext, ReactNode, useState, useEffect, useRef } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect, useRef } from 'react';
 import type { Notification } from "@/types/Notification";
+import { useAuth } from './AuthContext';
 
 interface WebSocketContextType {
     notifications: Notification[];
@@ -10,54 +11,48 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-    const [notifications, setNotifications] = useState<Notification[]>([
-        {
-            user: {
-                id: "1",
-                name: "Terry Franci",
-                avatar: "/images/user/user-02.jpg",
-            },
-            message: "requests permission to change",
-            time: "5 min ago",
-        },
-        {
-            user: {
-                id: "2",
-                name: "Alena Franci",
-                avatar: "/images/user/user-03.jpg",
-            },
-            message: "requests permission to change",
-            time: "8 min ago",
-        },
-        {
-            user: {
-                id: "3",
-                name: "Brandon Philips",
-                avatar: "/images/user/user-05.jpg",
-            },
-            message: "requests permission to change",
-            time: "1 hr ago",
-        }
-    ]);
+    const { isAuthenticated, token } = useAuth();
+    const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const socketRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isConnectingRef = useRef(false);
 
     useEffect(() => {
+        if (!isAuthenticated || !token) {
+            console.log('⏸️ WebSocket: Waiting for authentication...');
+            return;
+        }
+
         let isMounted = true;
 
         const connect = () => {
-            if (!isMounted) return;
+            if (!isMounted || !isAuthenticated) return;
+
+            // Tránh tạo multiple connections
+            if (socketRef.current?.readyState === WebSocket.CONNECTING || 
+                socketRef.current?.readyState === WebSocket.OPEN) {
+                console.log('⏭️ WebSocket already connecting or connected, skipping...');
+                return;
+            }
+
+            // Tránh race condition khi Strict Mode mount 2 lần
+            if (isConnectingRef.current) {
+                console.log('⏭️ Connection already in progress, skipping...');
+                return;
+            }
 
             try {
+                isConnectingRef.current = true;
                 console.log('🔄 Attempting to connect to WebSocket...');
-                const ws = new WebSocket('ws://localhost:8080/notifications?role=admin');
+                // Truyền token vào WebSocket URL
+                const ws = new WebSocket(`ws://localhost:8080/notifications?role=admin&token=${token}`);
                 socketRef.current = ws;
 
                 ws.onopen = () => {
+                    isConnectingRef.current = false;
                     console.log('✅ Admin WebSocket connected successfully');
-                    
-                    // Request notification permission
+
                     if (typeof window !== 'undefined' && 'Notification' in window) {
                         if (window.Notification.permission === 'default') {
                             window.Notification.requestPermission();
@@ -86,22 +81,25 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
                 };
 
                 ws.onerror = (event) => {
+                    isConnectingRef.current = false;
                     console.error('❌ Admin WebSocket error - Kiểm tra backend có đang chạy tại http://localhost:8080 không?');
-                    console.error('WebSocket URL:', 'ws://localhost:8080/notifications?role=admin');
+                    console.error('WebSocket URL:', `ws://localhost:8080/notifications?role=admin&token=${token}`);
                 };
 
                 ws.onclose = (event) => {
+                    isConnectingRef.current = false;
                     console.log('🔌 Admin WebSocket closed', {
                         code: event.code,
                         reason: event.reason,
                         wasClean: event.wasClean
                     });
-                    if (isMounted) {
+                    if (isMounted && isAuthenticated) {
                         console.log('🔄 Reconnecting in 5s...');
                         reconnectTimeoutRef.current = setTimeout(connect, 5000);
                     }
                 };
             } catch (error) {
+                isConnectingRef.current = false;
                 console.error('Failed to create WebSocket:', error);
                 if (isMounted) {
                     reconnectTimeoutRef.current = setTimeout(connect, 5000);
@@ -113,14 +111,17 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
         return () => {
             isMounted = false;
+            isConnectingRef.current = false;
             if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
             }
             if (socketRef.current) {
+                console.log('🔌 Cleaning up WebSocket connection...');
                 socketRef.current.close();
+                socketRef.current = null;
             }
         };
-    }, []);
+    }, [isAuthenticated, token]);
 
     const addNotification = (notification: Notification) => {
         setNotifications((prev) => [notification, ...prev]);

@@ -6,11 +6,13 @@ import { useAuth } from '@/context/AuthContext'
 import { useCartActions } from '@/context/CartContext'
 import { createOrder, CreateOrderResponse } from '@/services/checkoutService'
 import PersonalDetails from './components/PersonalDetails'
-import QRPayment from './components/QRPayment'
+import CheckoutPayment from './components/CheckoutPayment'
 import Complete from './components/Complete'
 import OrderSummary from './components/OrderSummary'
 import ProgressStepper from './components/ProgressStepper'
 import { useToast } from '@/hooks/useToast'
+import { createSepayCheckout } from '@/configs/SepayClient'
+
 
 const Payment = () => {
     const router = useRouter();
@@ -21,10 +23,10 @@ const Payment = () => {
     const { removeCartItem } = useCartActions();
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
-    const [showQRPayment, setShowQRPayment] = useState(false);
+    const [showPayment, setShowPayment] = useState(false);
     const [createdOrder, setCreatedOrder] = useState<CreateOrderResponse | null>(null);
     const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-    
+
     // Get query params
     const orderId = searchParams?.get('orderId');
     const fromOrder = searchParams?.get('fromOrder');
@@ -40,21 +42,13 @@ const Payment = () => {
         ward: ''
     });
 
-    const [paymentMethod, setPaymentMethod] = useState('credit-card');
-    const [cardData, setCardData] = useState({
-        cardNumber: '',
-        cardName: '',
-        expiryDate: '',
-        cvv: ''
-    });
-
     // Check if coming from order management with order data
     useEffect(() => {
         if (fromOrder === 'true' && orderId && orderDataParam) {
             try {
                 // Decode and parse order data from URL
                 const decodedOrderData = JSON.parse(decodeURIComponent(orderDataParam));
-                
+
                 // Transform to CreateOrderResponse format expected by QRPayment
                 const orderResponse: CreateOrderResponse = {
                     success: true,
@@ -65,10 +59,10 @@ const Payment = () => {
                     paymentStatus: decodedOrderData.paymentStatus,
                     shippingStatus: decodedOrderData.shippingStatus
                 };
-                
+
                 setCreatedOrder(orderResponse);
                 setCurrentStep(2);
-                setShowQRPayment(true);
+                setShowPayment(true);
                 setIsLoading(false);
             } catch (error) {
                 console.error('Failed to parse order data:', error);
@@ -105,7 +99,7 @@ const Payment = () => {
 
     const handleNextStep = () => {
         if (currentStep === 1) {
-            setShowQRPayment(true);
+            setShowPayment(true);
             setCurrentStep(2);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else if (currentStep < 3) {
@@ -150,7 +144,7 @@ const Payment = () => {
             if (response.success) {
                 setCreatedOrder(response);
                 toast.success("Đặt hàng thành công!");
-                // Xóa các items đã đặt hàng khỏi giỏ hàng
+
                 try {
                     for (const item of checkoutItems) {
                         await removeCartItem(item.cartItemId);
@@ -158,11 +152,36 @@ const Payment = () => {
                 } catch (cartError) {
                     console.error('❌ Lỗi khi xóa giỏ hàng:', cartError);
                 }
-                
-                // Chuyển sang bước thanh toán QR
-                setShowQRPayment(true);
-                setCurrentStep(2);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                // 👉 CHÈN SEPAY TẠI ĐÂY
+                try {
+                    const { checkoutFormfields, checkoutURL } = await createSepayCheckout(response);
+
+                    // Tạo form để submit sang SePay
+                    const form = document.createElement("form");
+                    form.method = "POST";
+                    form.action = checkoutURL;
+                    form.target = "_blank";
+
+                    Object.entries(checkoutFormfields).forEach(([key, value]) => {
+                        const input = document.createElement("input");
+                        input.type = "hidden";
+                        input.name = key;
+                        input.value = value as string;
+                        form.appendChild(input);
+                    });
+
+                    document.body.appendChild(form);
+                    form.submit();
+                    document.body.removeChild(form);
+
+                    setShowPayment(true);
+                    setCurrentStep(2);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } catch (sepayError: any) {
+                    console.error('❌ Lỗi khi tạo SePay checkout:', sepayError);
+                    toast.error('Không thể tạo liên kết thanh toán. Vui lòng thử lại!');
+                }
             } else {
                 alert('Không thể tạo đơn hàng: ' + response.message);
             }
@@ -175,7 +194,7 @@ const Payment = () => {
     };
 
     const handlePaymentSuccess = () => {
-        setShowQRPayment(false);
+        setShowPayment(false);
         setCurrentStep(3);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -212,15 +231,15 @@ const Payment = () => {
 
                 <div className="flex flex-col lg:flex-row gap-8">
                     <div className="flex-1">
-                        {currentStep === 1 && !showQRPayment && (
+                        {currentStep === 1 && !showPayment && (
                             <PersonalDetails
                                 formData={personalData}
                                 onInputChange={handlePersonalDataChange}
                             />
                         )}
 
-                        {currentStep === 2 && showQRPayment && createdOrder && (
-                            <QRPayment
+                        {currentStep === 2 && showPayment && createdOrder && (
+                            <CheckoutPayment
                                 order={createdOrder}
                                 onPaymentSuccess={handlePaymentSuccess}
                             />
@@ -235,7 +254,7 @@ const Payment = () => {
 
 
                         <div className="mt-6 flex flex-col sm:flex-row gap-4">
-                            {currentStep < 3 && !showQRPayment && (
+                            {currentStep < 3 && !showPayment && (
                                 <button
                                     onClick={currentStep === 1 ? handlePayment : handleNextStep}
                                     disabled={!isStepValid() || isCreatingOrder}
@@ -248,7 +267,7 @@ const Payment = () => {
                     </div>
 
                     {/* Right Side - Order Summary */}
-                    {!showQRPayment && currentStep < 3 && (
+                    {!showPayment && currentStep < 3 && (
                         <div className="lg:w-96">
                             <OrderSummary items={orderItems} />
                         </div>

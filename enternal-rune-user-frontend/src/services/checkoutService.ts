@@ -49,14 +49,6 @@ export const getOrderPaymentStatus = async (orderId: number): Promise<PaymentSta
     return response.data;
 }
 
-export const getQrCodeSepay = async (amount: number, description: string): Promise<Blob> => {
-    const response = await AxiosInstance.post("/payment/getQRcode", {
-        amount,
-        description
-    }, { responseType: "blob" });
-    return response.data;
-}
-
 export const getUserOrders = async (userId: number, page: number = 0, size: number = 5): Promise<any> => {
     try {
         const response = await AxiosInstance.get(`/orders/user/${userId}`, {
@@ -117,3 +109,4 @@ export const createRefundRequest = async (
         throw error;
     }
 }
+

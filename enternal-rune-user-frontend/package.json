@@ -12,8 +12,8 @@
     "node": "18.x"
   },
   "dependencies": {
-    "@stomp/stompjs": "^7.2.1",
     "@hookform/resolvers": "^5.2.2",
+    "@stomp/stompjs": "^7.2.1",
     "axios": "^1.12.2",
     "gsap": "^3.13.0",
     "lucide-react": "^0.546.0",
@@ -25,6 +25,7 @@
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.5.0",
     "sass": "^1.93.2",
+    "sepay-pg-node": "^1.0.0",
     "sockjs-client": "^1.6.1",
     "use-context-selector": "^2.0.0",
     "use-debounce": "^10.0.6",

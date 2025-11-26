@@ -24,6 +24,7 @@ import { useToast } from '@/hooks/useToast'
 import CancelOrderModal from './CancelOrderModal'
 import RefundRequestModal from './RefundRequestModal'
 import ReturnRequestModal from './ReturnRequestModal'
+import { createSepayCheckout } from '@/configs/SepayClient'
 
 interface OrderCardProps {
     order: Order
@@ -162,16 +163,59 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
         }
     }
 
-    const handlePayment = () => {
-        const orderData = {
-            orderId: order.orderId,
-            orderDate: order.orderDate,
-            totalAmount: order.orderTotalAmount,
-            paymentStatus: order.currentPaymentStatus.statusCode,
-            shippingStatus: order.currentShippingStatus.statusCode
+    const handlePayment = async () => {
+        try {
+            setIsProcessing(true)
+            
+            // Transform order to CreateOrderResponse format
+            const orderResponse = {
+                success: true,
+                message: 'Order retrieved successfully',
+                orderId: order.orderId,
+                orderDate: order.orderDate,
+                totalAmount: order.orderTotalAmount,
+                paymentStatus: order.currentPaymentStatus.statusCode,
+                shippingStatus: order.currentShippingStatus.statusCode
+            }
+
+            // Call SePay API through server-side route
+            const { checkoutFormfields, checkoutURL } = await createSepayCheckout(orderResponse)
+
+            // Create and submit form to SePay in new tab
+            const form = document.createElement("form")
+            form.method = "POST"
+            form.action = checkoutURL
+            form.target = "_blank"
+
+            Object.entries(checkoutFormfields).forEach(([key, value]) => {
+                const input = document.createElement("input")
+                input.type = "hidden"
+                input.name = key
+                input.value = value as string
+                form.appendChild(input)
+            })
+
+            document.body.appendChild(form)
+            form.submit()
+            document.body.removeChild(form)
+
+            // Redirect to Payment page (step 2) with order data
+            const orderData = {
+                orderId: order.orderId,
+                orderDate: order.orderDate,
+                totalAmount: order.orderTotalAmount,
+                paymentStatus: order.currentPaymentStatus.statusCode,
+                shippingStatus: order.currentShippingStatus.statusCode
+            }
+            const encodedOrder = encodeURIComponent(JSON.stringify(orderData))
+            router.push(`/PaymentScreen?orderId=${order.orderId}&fromOrder=true&orderData=${encodedOrder}`)
+
+        } catch (error: any) {
+            console.error('❌ Lỗi khi tạo SePay checkout:', error)
+            toast.error('Không thể tạo liên kết thanh toán. Vui lòng thử lại!')
+        } finally {
+            setIsProcessing(false)
         }
-        const encodedOrder = encodeURIComponent(JSON.stringify(orderData))
-        router.push(`/PaymentScreen?orderId=${order.orderId}&fromOrder=true&orderData=${encodedOrder}`)
     }
 
     const handleReturn = async () => {
