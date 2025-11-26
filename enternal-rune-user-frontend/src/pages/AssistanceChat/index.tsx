@@ -7,6 +7,7 @@ import {
   createConversation,
   getConversationsByCustomer,
   getMessagesByConversation,
+  registerOrUpdateChatUser,
   Message as BackendMessage,
   Conversation,
 } from '@/services/assistanceChatService';
@@ -86,43 +87,60 @@ const AssistanceChat = () => {
       try {
         setIsLoading(true);
         
-        // 1. Get or create conversation
+        // 1. Đăng ký hoặc cập nhật user trong MongoDB
+        await registerOrUpdateChatUser(
+          user.userId.toString(), 
+          user.userName || 'Khách hàng',
+          user.userEmail
+        );
+
+        // 2. Kiểm tra xem có conversation active không
         const conversations = await getConversationsByCustomer(user.userId.toString());
-        let activeConversation: Conversation;
+        const activeConv = conversations.find(
+          conv => conv.status === 'PENDING' || conv.status === 'IN_PROGRESS'
+        );
 
-        if (conversations.length > 0) {
-          // Use existing conversation (latest one)
-          activeConversation = conversations[conversations.length - 1];
+        if (activeConv) {
+          // Nếu có conversation active, load lịch sử và kết nối
+          setConversationId(activeConv.id);
+
+          // Load message history
+          const history = await getMessagesByConversation(activeConv.id);
+          setMessages(history.map(convertBackendMessage));
+
+          // Setup WebSocket
+          wsService.onConnect(() => {
+            setIsConnected(true);
+          });
+
+          wsService.onDisconnect(() => {
+            setIsConnected(false);
+          });
+
+          // Connect to WebSocket
+          wsService.connect();
+
+          // Subscribe to conversation messages
+          await wsService.subscribeToConversation(activeConv.id, (newMessage: BackendMessage) => {
+            setMessages((prev) => {
+              const exists = prev.some(msg => msg.id === newMessage.id);
+              if (exists) return prev;
+              return [...prev, convertBackendMessage(newMessage)];
+            });
+          });
         } else {
-          // Create new conversation
-          activeConversation = await createConversation(user.userId.toString());
+          // Không có conversation active, chỉ setup WebSocket connection
+          // Conversation sẽ được tạo khi user gửi tin nhắn đầu tiên
+          wsService.onConnect(() => {
+            setIsConnected(true);
+          });
+
+          wsService.onDisconnect(() => {
+            setIsConnected(false);
+          });
+
+          wsService.connect();
         }
-
-        setConversationId(activeConversation.id);
-
-        // 2. Load message history
-        const history = await getMessagesByConversation(activeConversation.id);
-        setMessages(history.map(convertBackendMessage));
-
-        // 3. Setup WebSocket callbacks
-        wsService.onConnect(() => {
-          setIsConnected(true);
-        });
-
-        wsService.onDisconnect(() => {
-          setIsConnected(false);
-        });
-
-        // 4. Connect to WebSocket
-        wsService.connect();
-
-        // 5. Subscribe to conversation messages (wait for connection)
-        await wsService.subscribeToConversation(activeConversation.id, (newMessage: BackendMessage) => {
-          // Only add message if it's from AGENT (not our own message)
-          if (newMessage.senderRole === 'AGENT') {
-            setMessages((prev) => [...prev, convertBackendMessage(newMessage)]);
-          }
-        });
 
         setIsLoading(false);
       } catch (error) {
@@ -142,25 +160,41 @@ const AssistanceChat = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.userId, token]);
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim() || !conversationId || !user?.userId) return;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !user?.userId) return;
 
     const wsService = wsServiceRef.current;
-
-    // Add message to UI immediately (optimistic update)
-    const tempMessage: Message = {
-      id: Date.now().toString(),
-      content: inputMessage,
-      sender: 'user',
-      timestamp: new Date(),
-      senderName: user.userName || 'Bạn',
-    };
-
-    setMessages((prev) => [...prev, tempMessage]);
+    const messageContent = inputMessage;
+    
+    // Clear input immediately for better UX
     setInputMessage('');
 
-    // Send message via WebSocket
-    wsService.sendMessage(conversationId, user.userId.toString(), inputMessage);
+    try {
+      // Nếu chưa có conversation, tạo mới trước khi gửi tin nhắn
+      let currentConvId = conversationId;
+      
+      if (!currentConvId) {
+        const newConversation = await createConversation(user.userId.toString());
+        currentConvId = newConversation.id;
+        setConversationId(currentConvId);
+
+        // Subscribe to the new conversation
+        await wsService.subscribeToConversation(currentConvId, (newMessage: BackendMessage) => {
+          setMessages((prev) => {
+            const exists = prev.some(msg => msg.id === newMessage.id);
+            if (exists) return prev;
+            return [...prev, convertBackendMessage(newMessage)];
+          });
+        });
+      }
+
+      // Send message via WebSocket - server will broadcast it back to all clients
+      wsService.sendMessage(currentConvId, user.userId.toString(), messageContent);
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+      // Khôi phục tin nhắn nếu có lỗi
+      setInputMessage(messageContent);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

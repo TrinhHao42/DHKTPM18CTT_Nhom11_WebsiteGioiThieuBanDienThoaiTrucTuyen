@@ -368,7 +368,6 @@ public class OrderServiceImpl implements OrderService {
                     .currentShippingStatus(currentShipping != null ? new OrderStatusInfo(currentShipping.getStatusCode(), currentShipping.getStatusName()) : null)
                     .build();
         }).toList();
-
         return new PageImpl<>(dtoList, pageable, ordersPage.getTotalElements());
     }
 
