@@ -14,15 +14,15 @@ model UserSession {
   websiteId String   @map("website_id") @db.VarChar(36)
   
   // Device & Browser Info
-  browser   String?  @db.VarChar(20)
-  os        String?  @db.VarChar(20)
+  browser   String?  @db.VarChar(50)
+  os        String?  @db.VarChar(50)
   device    String?  @db.VarChar(20)
-  screen    String?  @db.VarChar(11)
+  screen    String?  @db.VarChar(20)
   language  String?  @db.VarChar(35)
   
   // Location Info
-  country   String?  @db.Char(2)
-  region    String?  @db.Char(20)
+  country   String?  @db.VarChar(50)
+  region    String?  @db.VarChar(50)
   city      String?  @db.VarChar(50)
   
   // Tracking
@@ -63,7 +63,7 @@ model PageView {
   createdAt DateTime @default(now()) @map("created_at")
   
   // Relations
-  session UserSession @relation(fields: [sessionId], references: [id])
+  session UserSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
   @@index([sessionId])
@@ -71,6 +71,7 @@ model PageView {
   @@index([websiteId, createdAt])
   @@index([urlPath])
   @@index([referrerDomain])
+  @@index([websiteId, urlPath])
   @@map("page_views")
 }
 
@@ -80,7 +81,7 @@ model Event {
   websiteId String   @map("website_id") @db.VarChar(36)
   
   // Event Details
-  eventName String  @map("event_name") @db.VarChar(50)
+  eventName String  @map("event_name") @db.VarChar(100)
   eventData Json?   @map("event_data")
   
   // Page Context
@@ -91,13 +92,14 @@ model Event {
   createdAt DateTime @default(now()) @map("created_at")
   
   // Relations
-  session UserSession @relation(fields: [sessionId], references: [id])
+  session UserSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
   @@index([sessionId])
   @@index([websiteId])
   @@index([websiteId, createdAt])
   @@index([eventName])
+  @@index([websiteId, eventName])
   @@map("events")
 }
 
