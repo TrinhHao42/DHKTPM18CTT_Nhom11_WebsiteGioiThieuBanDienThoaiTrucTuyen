@@ -36,6 +36,7 @@ export type PageView = {
 
 export type UserBehavior = {
   action: string;
+  urlPath?: string;
   currentMonth: number;
   previousMonth: number;
   change: number;
@@ -189,7 +190,7 @@ export function usePageViews(websiteId?: string) {
   return { data, loading, error };
 }
 
-export function useUserBehavior(websiteId?: string) {
+export function useUserBehavior(websiteId?: string, timeRange?: 'today' | 'yesterday' | '7days' | '30days') {
   const [data, setData] = useState<UserBehavior[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -199,7 +200,13 @@ export function useUserBehavior(websiteId?: string) {
       try {
         setLoading(true);
         setError(null);
-        const params = websiteId ? `?websiteId=${websiteId}` : '';
+        
+        // Build query parameters
+        const queryParams = new URLSearchParams();
+        if (websiteId) queryParams.append('websiteId', websiteId);
+        if (timeRange) queryParams.append('timeRange', timeRange);
+        
+        const params = queryParams.toString() ? `?${queryParams.toString()}` : '';
         const behavior = await fetchAnalyticsData<UserBehavior[]>(`/user-behavior${params}`);
         setData(behavior);
       } catch (err) {
@@ -210,7 +217,7 @@ export function useUserBehavior(websiteId?: string) {
     };
 
     fetchData();
-  }, [websiteId]);
+  }, [websiteId, timeRange]);
 
   return { data, loading, error };
 }

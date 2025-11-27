@@ -28,7 +28,28 @@ export async function GET(request: NextRequest) {
     // Get metrics using AnalyticsService
     const overallMetrics = await analyticsService.getOverallMetrics(websiteId, startDate, endDate);
     
-    console.log('[API] Overall metrics:', overallMetrics);
+    // Calculate trend data by comparing with previous period
+    const periodDuration = endDate.getTime() - startDate.getTime();
+    const previousStartDate = new Date(startDate.getTime() - periodDuration);
+    const previousEndDate = new Date(startDate.getTime() - 1); // End at 1ms before current start
+    
+    const previousMetrics = await analyticsService.getOverallMetrics(websiteId, previousStartDate, previousEndDate);
+
+    // Helper function to calculate trend
+    const calculateTrend = (current: number, previous: number): { value: string; isPositive: boolean } => {
+      if (previous === 0) {
+        return { value: current > 0 ? '+100%' : '0%', isPositive: current > 0 };
+      }
+      
+      const change = ((current - previous) / previous) * 100;
+      const isPositive = change >= 0;
+      const formattedChange = Math.abs(change).toFixed(1);
+      
+      return {
+        value: `${isPositive ? '+' : '-'}${formattedChange}%`,
+        isPositive
+      };
+    };
 
     const result = {
       totalPageViews: overallMetrics.totalPageViews,
@@ -38,10 +59,15 @@ export async function GET(request: NextRequest) {
       averageSessionDuration: overallMetrics.averageSessionDuration,
       topPages: overallMetrics.topPages || [],
       topCountries: [], // TODO: Implement countries data
-      deviceTypes: [] // TODO: Implement device types data
+      deviceTypes: [], // TODO: Implement device types data
+      
+      // Add trend data
+      totalUsersTrend: calculateTrend(overallMetrics.totalUsers, previousMetrics.totalUsers),
+      newUsersTrend: calculateTrend(overallMetrics.uniqueVisitors, previousMetrics.uniqueVisitors),
+      activeUsersTrend: calculateTrend(overallMetrics.totalUsers, previousMetrics.totalUsers),
+      sessionTimeTrend: calculateTrend(overallMetrics.averageSessionDuration, previousMetrics.averageSessionDuration),
     };
 
-    console.log('[API] Returning result');
 
     return NextResponse.json({
       success: true,
