@@ -54,6 +54,10 @@ function UserBehaviorDetailList({ websiteId, timeRange, getFriendlyEventName, ev
           return b.action === 'page_engagement';
         } else if (eventFilter === 'external_link') {
           return b.action === 'external_link';
+        } else if (eventFilter === 'add_to_cart') {
+          return b.action === 'add_to_cart';
+        } else if (eventFilter === 'buy_now') {
+          return b.action === 'buy_now';
         } else {
           // For other categories, match by action
           return b.action === eventFilter;
@@ -65,8 +69,43 @@ function UserBehaviorDetailList({ websiteId, timeRange, getFriendlyEventName, ev
       {behaviors.length > 0 ? (
         behaviors.map((behavior, index) => {
           let label = behavior.urlPath || behavior.action;
+          let productInfo = null;
           
-          if (label.startsWith('/')) {
+          // Handle e-commerce events
+          if (behavior.action === 'add_to_cart' || behavior.action === 'buy_now') {
+            try {
+              // Try to parse product info from eventData or urlPath
+              const eventData = behavior.eventData || {};
+              
+              // Check all possible property name formats
+              const productName = eventData.product_name || eventData.productName || eventData['product-name'];
+              const productPrice = eventData.product_price || eventData.productPrice || eventData['product-price'];
+              const productId = eventData.product_id || eventData.productId || eventData['product-id'];
+              const productBrand = eventData.product_brand || eventData.productBrand || eventData['product-brand'];
+              const quantity = eventData.quantity || 1;
+              
+              // Show product info if we have at least a name or ID
+              if (productName || productId) {
+                const finalProductName = productName || `Sản phẩm #${productId}` || 'Sản phẩm không xác định';
+                
+                // Customize label to include product name
+                label = `${getFriendlyEventName(behavior.action)} - ${finalProductName}`;
+                
+                productInfo = {
+                  name: finalProductName,
+                  price: productPrice,
+                  quantity: quantity,
+                  id: productId,
+                  brand: productBrand
+                };
+              } else {
+                label = getFriendlyEventName(behavior.action);
+              }
+            } catch (error) {
+              console.error('Error parsing e-commerce event data:', error);
+              label = getFriendlyEventName(behavior.action);
+            }
+          } else if (label.startsWith('/')) {
             if (label.includes(':')) {
               label = label.split(':')[0];
             }
@@ -88,7 +127,34 @@ function UserBehaviorDetailList({ websiteId, timeRange, getFriendlyEventName, ev
                   <h4 className="font-medium text-gray-900 dark:text-white truncate">
                     {label}
                   </h4>
-                  {behavior.urlPath && behavior.urlPath !== behavior.action && (
+                  
+                  {/* Product information for e-commerce events */}
+                  {(behavior.action === 'add_to_cart' || behavior.action === 'buy_now') && (
+                    <div className="mt-2 space-y-1">
+                      {productInfo ? (
+                        <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
+                          {productInfo.price && (
+                            <span>💰 {productInfo.price.toLocaleString('vi-VN')} ₫</span>
+                          )}
+                          <span>📊 Số lần: {behavior.currentMonth}</span>
+                          {productInfo.brand && (
+                            <span>🏷️ {productInfo.brand}</span>
+                          )}
+                          {productInfo.id && (
+                            <span className="font-mono">ID: {productInfo.id}</span>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-orange-600 dark:text-orange-400">⚠️ Thiếu thông tin sản phẩm</span>
+                          <span>📊 Số lần: {behavior.currentMonth}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Regular URL path for other events */}
+                  {!productInfo && behavior.urlPath && behavior.urlPath !== behavior.action && (
                     <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                       {behavior.urlPath}
                     </p>
@@ -180,6 +246,10 @@ export default function UserBehaviorModal({
         categories.add('page_engagement');
       } else if (b.action === 'external_link') {
         categories.add('external_link');
+      } else if (b.action === 'add_to_cart') {
+        categories.add('add_to_cart');
+      } else if (b.action === 'buy_now') {
+        categories.add('buy_now');
       } else if (b.action.startsWith('/')) {
         // Action is a path - treat as page
         categories.add('pages');
@@ -196,6 +266,12 @@ export default function UserBehaviorModal({
     if (categories.has('pages')) {
       categoryOptions.push({ value: 'pages', label: 'Trang web' });
     }
+    if (categories.has('add_to_cart')) {
+      categoryOptions.push({ value: 'add_to_cart', label: getFriendlyEventName('add_to_cart') });
+    }
+    if (categories.has('buy_now')) {
+      categoryOptions.push({ value: 'buy_now', label: getFriendlyEventName('buy_now') });
+    }
     if (categories.has('page_engagement')) {
       categoryOptions.push({ value: 'page_engagement', label: getFriendlyEventName('page_engagement') });
     }
@@ -205,7 +281,7 @@ export default function UserBehaviorModal({
     
     // Add other unique actions
     Array.from(categories).forEach(cat => {
-      if (!['pages', 'page_engagement', 'external_link'].includes(cat)) {
+      if (!['pages', 'page_engagement', 'external_link', 'add_to_cart', 'buy_now'].includes(cat)) {
         categoryOptions.push({ 
           value: cat, 
           label: getFriendlyEventName(cat) 
@@ -240,22 +316,15 @@ export default function UserBehaviorModal({
     
     if (isOpen) {
       document.addEventListener('keydown', handleEsc);
-      // More aggressive body scroll prevention
+      // Prevent body scroll but allow modal scroll
       const originalStyle = document.body.style.overflow;
-      const originalPosition = document.body.style.position;
       const scrollY = window.scrollY;
       
       document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
       
       return () => {
         document.removeEventListener('keydown', handleEsc);
         document.body.style.overflow = originalStyle;
-        document.body.style.position = originalPosition;
-        document.body.style.top = '';
-        document.body.style.width = '';
         window.scrollTo(0, scrollY);
       };
     }
@@ -297,17 +366,15 @@ export default function UserBehaviorModal({
       }}
     >
       <div 
-        className="modal-content bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden"
+        className="modal-content bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         style={{
           width: '100%',
           maxWidth: '896px', // max-w-4xl = 896px
-          maxHeight: '85vh', // Slightly smaller to avoid header overlap
+          maxHeight: '90vh', // More space
+          height: 'auto',
           position: 'relative',
           margin: 0,
-          zIndex: 999999, // Same high z-index
-          // Prevent any interference
-          transform: 'translateZ(0)',
-          willChange: 'transform'
+          zIndex: 999999
         }}
       >
         {/* Modal Header */}
@@ -380,10 +447,12 @@ export default function UserBehaviorModal({
 
         {/* Modal Content */}
         <div 
-          className="overflow-y-auto p-6" 
+          className="overflow-y-auto overflow-x-hidden p-6 flex-1" 
           style={{ 
-            maxHeight: 'calc(85vh - 180px)', // Adjusted for smaller modal height
-            overflowX: 'hidden'
+            maxHeight: 'calc(90vh - 200px)', // Match new modal height
+            minHeight: '300px', // Ensure minimum height
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent'
           }}
         >
           <UserBehaviorDetailList 

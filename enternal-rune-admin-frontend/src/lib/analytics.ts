@@ -860,7 +860,7 @@ export class AnalyticsService {
         _count: { id: true },
       });
 
-      // Get event counts for current month (now using eventName which contains URL paths)
+      // Get regular event counts for current month (excluding e-commerce events)
       const currentMonthEvents = await prisma.event.groupBy({
         by: ['eventName'],
         where: {
@@ -869,13 +869,16 @@ export class AnalyticsService {
             gte: currentMonthStart,
             lte: currentMonthEnd,
           },
+          eventName: {
+            notIn: ['add_to_cart', 'buy_now']
+          }
         },
         _count: { id: true },
         orderBy: { _count: { id: 'desc' } },
         take: 15
       });
 
-      // Get event counts for previous month
+      // Get regular event counts for previous month (excluding e-commerce events)
       const previousMonthEvents = await prisma.event.groupBy({
         by: ['eventName'],
         where: {
@@ -884,8 +887,49 @@ export class AnalyticsService {
             gte: previousMonthStart,
             lte: previousMonthEnd,
           },
+          eventName: {
+            notIn: ['add_to_cart', 'buy_now']
+          }
         },
         _count: { id: true },
+      });
+
+      // Get e-commerce events grouped by product_id for current month
+      const currentMonthEcommerceEvents = await prisma.event.findMany({
+        where: {
+          ...where,
+          createdAt: {
+            gte: currentMonthStart,
+            lte: currentMonthEnd,
+          },
+          eventName: {
+            in: ['add_to_cart', 'buy_now']
+          }
+        },
+        select: {
+          eventName: true,
+          eventData: true,
+          id: true
+        }
+      });
+
+      // Get e-commerce events grouped by product_id for previous month
+      const previousMonthEcommerceEvents = await prisma.event.findMany({
+        where: {
+          ...where,
+          createdAt: {
+            gte: previousMonthStart,
+            lte: previousMonthEnd,
+          },
+          eventName: {
+            in: ['add_to_cart', 'buy_now']
+          }
+        },
+        select: {
+          eventName: true,
+          eventData: true,
+          id: true
+        }
       });
 
       // Calculate changes and format data
@@ -895,6 +939,7 @@ export class AnalyticsService {
         currentMonth: number;
         previousMonth: number;
         change: number;
+        eventData?: Record<string, unknown>;
       }> = [];
 
       // Add page views by URL path
@@ -912,10 +957,11 @@ export class AnalyticsService {
           currentMonth: pageView._count.id,
           previousMonth: previousCount,
           change: roundedChange,
+          eventData: undefined
         });
       }
 
-      // Add events (eventName already contains URL paths like "/path:click")
+      // Add regular events (eventName already contains URL paths like "/path:click")
       for (const event of currentMonthEvents) {
         const previousCount = previousMonthEvents.find(e => e.eventName === event.eventName)?._count.id || 0;
         const change = previousCount > 0 ?
@@ -940,8 +986,61 @@ export class AnalyticsService {
           currentMonth: event._count.id,
           previousMonth: previousCount,
           change: roundedChange,
+          eventData: undefined
         });
       }
+
+      // Process e-commerce events grouped by product_id
+      const processEcommerceEvents = (events: typeof currentMonthEcommerceEvents) => {
+        const grouped = new Map<string, { count: number; eventData?: Record<string, unknown>; eventName: string }>();
+        
+        events.forEach(event => {
+          try {
+            const eventData = event.eventData as Record<string, unknown> || {};
+            const productId = eventData.product_id || eventData.productId || eventData['product-id'] || 'unknown';
+            const key = `${event.eventName}_${productId}`;
+            
+            if (grouped.has(key)) {
+              grouped.get(key)!.count++;
+            } else {
+              grouped.set(key, {
+                count: 1,
+                eventData: eventData,
+                eventName: event.eventName
+              });
+            }
+          } catch (error) {
+            console.error('Error processing e-commerce event:', error);
+          }
+        });
+        
+        return grouped;
+      };
+
+      const currentEcommerceGrouped = processEcommerceEvents(currentMonthEcommerceEvents);
+      const previousEcommerceGrouped = processEcommerceEvents(previousMonthEcommerceEvents);
+
+      // Add e-commerce events to userBehavior
+      currentEcommerceGrouped.forEach((current, key) => {
+        const previous = previousEcommerceGrouped.get(key);
+        const previousCount = previous ? previous.count : 0;
+        const change = previousCount > 0 ?
+          ((current.count - previousCount) / previousCount) * 100 : 
+          (current.count > 0 ? 100 : 0);
+
+        const roundedChange = Math.round(change * 100) / 100;
+        
+        console.log(`E-commerce Event Change - ${key}: current=${current.count}, previous=${previousCount}, change=${roundedChange}%`);
+        
+        userBehavior.push({
+          action: current.eventName,
+          urlPath: undefined,
+          currentMonth: current.count,
+          previousMonth: previousCount,
+          change: roundedChange,
+          eventData: current.eventData
+        });
+      });
 
       // Sort by current month count (descending)
       return userBehavior

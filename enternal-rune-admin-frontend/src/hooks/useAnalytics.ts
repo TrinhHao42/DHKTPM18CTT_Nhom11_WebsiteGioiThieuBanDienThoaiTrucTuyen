@@ -40,6 +40,16 @@ export type UserBehavior = {
   currentMonth: number;
   previousMonth: number;
   change: number;
+  eventData?: {
+    product_name?: string;
+    productName?: string;
+    product_price?: number;
+    productPrice?: number;
+    product_id?: string;
+    productId?: string;
+    quantity?: number;
+    [key: string]: string | number | boolean | undefined;
+  };
 };
 
 export type DeviceStats = {

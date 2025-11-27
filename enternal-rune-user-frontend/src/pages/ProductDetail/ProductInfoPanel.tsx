@@ -8,6 +8,15 @@ import { useCart } from '@/context/CartContext'
 import { useToast } from '@/hooks/useToast'
 import { CommentsPageResponse } from '@/types/Comment'
 
+// Type definition for umami analytics
+declare global {
+    interface Window {
+        umami?: {
+            track: (eventName: string, eventData: Record<string, unknown>) => void;
+        }
+    }
+}
+
 interface ProductInfoPanelProps {
     product: Product
     selectedColor?: string
@@ -54,6 +63,23 @@ export default function ProductInfoPanel({ product, selectedColor, onColorChange
                     version: undefined
                 }
             )
+            
+            // Track add to cart event
+            if (typeof window !== 'undefined' && window.umami) {
+                window.umami.track('add_to_cart', {
+                    product_id: product.prodId,
+                    product_name: product.prodName,
+                    product_brand: product.prodBrand || 'Unknown',
+                    product_price: unitPrice,
+                    quantity: quantity,
+                    selected_color: selectedColor,
+                    selected_storage: selectedStorage,
+                    selected_protection_plan: selectedPlan,
+                    total_price: totalPrice,
+                    currency: 'VND'
+                })
+            }
+            
             toast.success(`✅ Đã thêm "${product.prodName}" vào giỏ hàng!`)
         } catch (error) {
             console.error('Failed to add to cart:', error)
@@ -266,6 +292,23 @@ export default function ProductInfoPanel({ product, selectedColor, onColorChange
             <div className='flex gap-4'>
                 <button
                     className="cursor-pointer bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-2xl font-semibold text-md shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-3 group hover:scale-102"
+                    onClick={() => {
+                        // Track buy now event
+                        if (typeof window !== 'undefined' && window.umami) {
+                            window.umami.track('buy_now', {
+                                product_id: product.prodId,
+                                product_name: product.prodName,
+                                product_brand: product.prodBrand || 'Unknown',
+                                product_price: unitPrice,
+                                quantity: quantity,
+                                selected_color: selectedColor,
+                                selected_storage: selectedStorage,
+                                selected_protection_plan: selectedPlan,
+                                total_price: totalPrice,
+                                currency: 'VND'
+                            })
+                        }
+                    }}
                 >
                     Mua ngay - {formatPrice(totalPrice)}
                 </button>

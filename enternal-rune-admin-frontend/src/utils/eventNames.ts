@@ -27,8 +27,14 @@ export const EVENT_DISPLAY_NAMES: Record<string, string> = {
   'interaction_hover': 'Tương tác hover',
   'interaction_focus': 'Tương tác focus',
 
-  // Custom events (common ones)
-  'purchase_intent': 'Ý định mua hàng',
+  // E-commerce events
+  'add_to_cart': 'Thêm vào giỏ hàng',
+  'buy_now': 'Mua ngay',
+  'purchase_completed': 'Hoàn thành mua hàng',
+  'checkout_started': 'Bắt đầu thanh toán',
+  'product_view': 'Xem sản phẩm',
+  
+  // Other custom events
   'search': 'Tìm kiếm',
   'download': 'Tải xuống',
   'video_play': 'Phát video',

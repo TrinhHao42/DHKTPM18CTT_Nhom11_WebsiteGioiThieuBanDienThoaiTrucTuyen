@@ -59,7 +59,8 @@
       'interaction_focus': 'Tương tác focus',
 
       // Custom events (common ones)
-      'purchase_intent': 'Ý định mua hàng',
+      'add_to_cart': 'Thêm vào giỏ hàng',
+      'buy_now': 'Mua ngay',
       'search': 'Tìm kiếm',
       'download': 'Tải xuống',
       'video_play': 'Phát video',
