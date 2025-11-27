@@ -89,7 +89,13 @@ export default function UserEngagementChart({ websiteId }: UserEngagementChartPr
       shared: true,
       intersect: false,
       y: {
-        formatter: (val: number) => `${val} phút`,
+        formatter: (val: number, opts?: { seriesIndex: number; series: { name: string }[] }) => {
+          const seriesName = opts?.series?.[opts.seriesIndex]?.name || '';
+          if (seriesName.includes('Lượt xem')) return `${val} lượt xem`;
+          if (seriesName.includes('Sự kiện')) return `${val} sự kiện`;
+          if (seriesName.includes('Phiên')) return `${val} phiên`;
+          return `${val}`;
+        },
       },
     },
   };
@@ -97,16 +103,16 @@ export default function UserEngagementChart({ websiteId }: UserEngagementChartPr
   // Transform API data to chart series
   const series: { name: string; data: number[] }[] = engagementData ? [
     {
-      name: 'Thời gian trung bình (phút)',
-      data: engagementData.map(item => Math.round(item.avgTime / 60)),
+      name: 'Lượt xem trang',
+      data: engagementData.map(item => item.pageViews || 0),
     },
     {
-      name: 'Trang/phiên', 
-      data: engagementData.map(item => item.pagesPerSession),
+      name: 'Sự kiện', 
+      data: engagementData.map(item => item.events || 0),
     },
     {
-      name: 'Tương tác',
-      data: engagementData.map(item => item.interactions),
+      name: 'Phiên truy cập',
+      data: engagementData.map(item => item.sessions || 0),
     },
   ] : [];
 
