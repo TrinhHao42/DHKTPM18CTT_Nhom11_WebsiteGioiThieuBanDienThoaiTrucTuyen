@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics Tracking Test Page</title>
+  
+  <!-- Include tracking script -->
+  <script 
+    src="/tracking.js"
+    data-website-id="cmic2k2820000ml8mu0miqhlm"
+    data-api-url="http://localhost:3001/api/analytics/track"
+    data-debug="true">
+  </script>
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+    }
+    
+    h1, h2 {
+      color: #333;
+    }
+    
+    .test-section {
+      background: #f8f9fa;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+    
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+    
+    button:hover {
+      background: #0056b3;
+    }
+    
+    button.secondary {
+      background: #6c757d;
+    }
+    
+    button.success {
+      background: #28a745;
+    }
+    
+    button.danger {
+      background: #dc3545;
+    }
+    
+    input, textarea, select {
+      padding: 10px;
+      margin: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      min-width: 200px;
+    }
+    
+    .form-group {
+      margin: 15px 0;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #555;
+    }
+    
+    .section {
+      height: 400px;
+      margin: 20px 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    
+    .section:nth-child(even) {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .stats {
+      background: #e9ecef;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    
+    .link-section a {
+      display: inline-block;
+      color: #007bff;
+      text-decoration: none;
+      padding: 8px 16px;
+      margin: 5px;
+      border: 1px solid #007bff;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+    
+    .link-section a:hover {
+      background: #007bff;
+      color: white;
+    }
+    
+    #debug-panel {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 300px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 11px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    
+    #debug-panel h4 {
+      margin: 0 0 10px 0;
+      color: #4CAF50;
+    }
+    
+    .event-log {
+      border-bottom: 1px solid #444;
+      padding-bottom: 5px;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🚀 Analytics Tracking Test Page</h1>
+    
+    <div class="stats" id="session-stats">
+      <strong>Session Info:</strong><br>
+      Session ID: <span id="session-id">Loading...</span><br>
+      User ID: <span id="user-id">Loading...</span><br>
+      Page Load Time: <span id="load-time">Loading...</span><br>
+      Events Sent: <span id="events-count">0</span>
+    </div>
+    
+    <!-- Test Section 1: Button Interactions -->
+    <div class="test-section">
+      <h2>🖱️ Button Interaction Tests</h2>
+      <p>Test different button interactions to see tracking in action:</p>
+      
+      <button onclick="trackCustomEvent('button_primary_click', {buttonType: 'primary', testId: 1})">
+        Primary Button
+      </button>
+      
+      <button class="secondary" onclick="trackCustomEvent('button_secondary_click', {buttonType: 'secondary', testId: 2})">
+        Secondary Button
+      </button>
+      
+      <button class="success" onclick="trackCustomEvent('cta_click', {action: 'signup', source: 'test_page'})">
+        Call to Action
+      </button>
+      
+      <button class="danger" onclick="trackCustomEvent('error_button_click', {severity: 'high', errorType: 'user_action'})">
+        Error Button
+      </button>
+    </div>
+    
+    <!-- Test Section 2: Form Interactions -->
+    <div class="test-section">
+      <h2>📝 Form Interaction Tests</h2>
+      
+      <form id="test-form" onsubmit="handleFormSubmit(event)">
+        <div class="form-group">
+          <label for="name">Name:</label>
+          <input type="text" id="name" name="name" placeholder="Enter your name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input type="email" id="email" name="email" placeholder="Enter your email" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="category">Category:</label>
+          <select id="category" name="category">
+            <option value="general">General</option>
+            <option value="support">Support</option>
+            <option value="sales">Sales</option>
+            <option value="feedback">Feedback</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="message">Message:</label>
+          <textarea id="message" name="message" rows="4" placeholder="Enter your message"></textarea>
+        </div>
+        
+        <button type="submit">Submit Form</button>
+        <button type="button" onclick="clearForm()">Clear Form</button>
+      </form>
+    </div>
+    
+    <!-- Test Section 3: Link Tests -->
+    <div class="test-section link-section">
+      <h2>🔗 Link Navigation Tests</h2>
+      <p>Test different types of links:</p>
+      
+      <a href="#section1" onclick="trackCustomEvent('internal_link_click', {linkType: 'anchor', target: 'section1'})">
+        Go to Section 1
+      </a>
+      
+      <a href="#section2" onclick="trackCustomEvent('internal_link_click', {linkType: 'anchor', target: 'section2'})">
+        Go to Section 2
+      </a>
+      
+      <a href="https://example.com" target="_blank" onclick="trackCustomEvent('external_link_click', {domain: 'example.com', openType: 'new_tab'})">
+        External Link
+      </a>
+      
+      <a href="mailto:test@example.com" onclick="trackCustomEvent('email_link_click', {action: 'mailto'})">
+        Email Link
+      </a>
+    </div>
+    
+    <!-- Test Section 4: E-commerce Simulation -->
+    <div class="test-section">
+      <h2>🛒 E-commerce Event Tests</h2>
+      <p>Simulate e-commerce interactions:</p>
+      
+      <button onclick="simulateProductView()">View Product</button>
+      <button onclick="simulateAddToCart()">Add to Cart</button>
+      <button onclick="simulateCheckout()">Start Checkout</button>
+      <button onclick="simulatePurchase()">Complete Purchase</button>
+    </div>
+    
+    <!-- Test Section 5: User Behavior -->
+    <div class="test-section">
+      <h2>👤 User Behavior Tests</h2>
+      
+      <button onclick="simulateUserLogin()">Simulate Login</button>
+      <button onclick="simulateUserSignup()">Simulate Signup</button>
+      <button onclick="simulateSearch()">Simulate Search</button>
+      <button onclick="simulateDownload()">Simulate Download</button>
+    </div>
+    
+    <!-- Scroll Sections for Scroll Tracking -->
+    <div id="section1" class="section">
+      <div>
+        <h2>📊 Section 1 - Scroll Tracking</h2>
+        <p>This section helps test scroll depth tracking. Keep scrolling to trigger scroll milestones!</p>
+      </div>
+    </div>
+    
+    <div id="section2" class="section">
+      <div>
+        <h2>🎯 Section 2 - More Content</h2>
+        <p>Continue scrolling to reach 50%, 75%, and 100% scroll milestones.</p>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div>
+        <h2>🏁 Section 3 - End of Page</h2>
+        <p>You've reached the end! This should trigger the 100% scroll milestone.</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Debug Panel -->
+  <div id="debug-panel">
+    <h4>📡 Debug Panel</h4>
+    <div id="debug-logs">
+      <div class="event-log">Tracking initialized...</div>
+    </div>
+  </div>
+  
+  <script>
+    // Global variables
+    let eventsCount = 0;
+    const startTime = Date.now();
+    
+    // Helper function to track custom events
+    function trackCustomEvent(eventName, eventData = {}) {
+      if (window.analyticsTracker) {
+        window.analyticsTracker.trackEvent(eventName, {
+          ...eventData,
+          timestamp: Date.now(),
+          testPage: true
+        });
+        
+        eventsCount++;
+        updateStats();
+        logEvent(`Event: ${eventName}`, eventData);
+      }
+    }
+    
+    // Update session stats display
+    function updateStats() {
+      if (window.analyticsTracker) {
+        document.getElementById('session-id').textContent = window.analyticsTracker.session.sessionId.substring(0, 8) + '...';
+        document.getElementById('user-id').textContent = window.analyticsTracker.session.userId.substring(0, 8) + '...';
+        document.getElementById('load-time').textContent = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+        document.getElementById('events-count').textContent = eventsCount;
+      }
+    }
+    
+    // Log events to debug panel
+    function logEvent(title, data) {
+      const debugLogs = document.getElementById('debug-logs');
+      const logEntry = document.createElement('div');
+      logEntry.className = 'event-log';
+      logEntry.innerHTML = `
+        <strong>${title}</strong><br>
+        ${JSON.stringify(data, null, 2)}
+      `;
+      debugLogs.insertBefore(logEntry, debugLogs.firstChild);
+      
+      // Keep only last 10 logs
+      while (debugLogs.children.length > 10) {
+        debugLogs.removeChild(debugLogs.lastChild);
+      }
+    }
+    
+    // Form submit handler
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      
+      const formData = new FormData(event.target);
+      const data = Object.fromEntries(formData.entries());
+      
+      trackCustomEvent('form_submission', {
+        formId: 'test-form',
+        fields: Object.keys(data),
+        hasEmail: !!data.email,
+        category: data.category
+      });
+      
+      alert('Form submitted! Check the debug panel for tracking data.');
+    }
+    
+    // Clear form
+    function clearForm() {
+      document.getElementById('test-form').reset();
+      trackCustomEvent('form_cleared', { formId: 'test-form' });
+    }
+    
+    // E-commerce simulation functions
+    function simulateProductView() {
+      trackCustomEvent('product_view', {
+        productId: 'test-product-123',
+        productName: 'Test Product',
+        category: 'Electronics',
+        price: 299.99,
+        currency: 'USD'
+      });
+    }
+    
+    function simulateAddToCart() {
+      trackCustomEvent('add_to_cart', {
+        productId: 'test-product-123',
+        productName: 'Test Product',
+        quantity: 1,
+        price: 299.99,
+        currency: 'USD'
+      });
+    }
+    
+    function simulateCheckout() {
+      trackCustomEvent('checkout_started', {
+        cartValue: 299.99,
+        itemCount: 1,
+        currency: 'USD',
+        step: 1
+      });
+    }
+    
+    function simulatePurchase() {
+      trackCustomEvent('purchase_completed', {
+        transactionId: 'txn-' + Date.now(),
+        revenue: 299.99,
+        currency: 'USD',
+        itemCount: 1,
+        paymentMethod: 'credit_card'
+      });
+    }
+    
+    // User behavior simulation functions
+    function simulateUserLogin() {
+      trackCustomEvent('user_login', {
+        loginMethod: 'email',
+        isFirstTime: false,
+        duration: Math.floor(Math.random() * 5000) + 1000
+      });
+    }
+    
+    function simulateUserSignup() {
+      trackCustomEvent('user_signup', {
+        signupMethod: 'email',
+        source: 'test_page',
+        plan: 'free'
+      });
+    }
+    
+    function simulateSearch() {
+      const searchTerms = ['analytics', 'tracking', 'dashboard', 'metrics', 'data'];
+      const term = searchTerms[Math.floor(Math.random() * searchTerms.length)];
+      
+      trackCustomEvent('search_performed', {
+        searchTerm: term,
+        resultCount: Math.floor(Math.random() * 50) + 1,
+        source: 'test_page'
+      });
+    }
+    
+    function simulateDownload() {
+      trackCustomEvent('file_download', {
+        fileName: 'analytics-report.pdf',
+        fileSize: '2.5MB',
+        fileType: 'pdf',
+        source: 'test_page'
+      });
+    }
+    
+    // Initialize when page loads
+    window.addEventListener('load', function() {
+      // Wait for analytics to initialize
+      setTimeout(() => {
+        updateStats();
+        logEvent('Page loaded', { url: window.location.href });
+      }, 1000);
+    });
+    
+    // Track time spent on page when leaving
+    window.addEventListener('beforeunload', function() {
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      trackCustomEvent('page_exit', {
+        timeSpent: timeSpent,
+        eventsTriggered: eventsCount,
+        exitType: 'beforeunload'
+      });
+    });
+    
+    // Track when user returns from another tab
+    document.addEventListener('visibilitychange', function() {
+      trackCustomEvent('visibility_change', {
+        isVisible: !document.hidden,
+        timestamp: Date.now()
+      });
+    });
+    
+    // Test error tracking
+    window.addEventListener('error', function(e) {
+      trackCustomEvent('javascript_error', {
+        message: e.message,
+        filename: e.filename,
+        lineno: e.lineno,
+        colno: e.colno
+      });
+    });
+  </script>
+</body>
+</html>

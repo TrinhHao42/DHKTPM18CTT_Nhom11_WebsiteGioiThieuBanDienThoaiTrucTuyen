@@ -13,6 +13,7 @@ public class User {
     @Id
     private String id;
     private String displayName; // tên hiển thị
+    private String email;
     @Enumerated(EnumType.STRING)
     private Role role;        // CUSTOMER / AGENT / ADMIN
 }
