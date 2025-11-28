@@ -9,7 +9,6 @@ import {
   ProductStatus,
   ProductFilterParams,
 } from "@/types/product";
-import { mockStatistics, createMockPageResponse } from "@/data/mockProducts";
 
 interface UseProductsReturn {
   // Data
@@ -94,20 +93,15 @@ export function useProducts(
         totalElements: response.totalElements,
       }));
       setError(null);
-    } catch (err) {
-      console.warn("API thất bại, sử dụng dữ liệu mẫu", err);
-      // Sử dụng dữ liệu mẫu khi API thất bại
-      const mockResponse = createMockPageResponse(
-        params?.page ?? pagination.page,
-        params?.size ?? pagination.size
-      );
-      setProducts(mockResponse.content);
+    } catch (err: any) {
+      console.error("Lỗi khi tải danh sách sản phẩm:", err);
+      setProducts([]);
       setPagination((prev) => ({
         ...prev,
-        totalPages: mockResponse.totalPages,
-        totalElements: mockResponse.totalElements,
+        totalPages: 0,
+        totalElements: 0,
       }));
-      setError("Đang sử dụng dữ liệu mẫu (API không khả dụng)");
+      setError(err.message || "Không thể tải danh sách sản phẩm");
     } finally {
       setLoading(false);
     }
@@ -121,9 +115,8 @@ export function useProducts(
       const data = await productService.getStatistics();
       setStatistics(data);
     } catch (err: any) {
-      console.warn("API thất bại, sử dụng thống kê mẫu", err);
-      // Sử dụng thống kê mẫu khi API thất bại
-      setStatistics(mockStatistics);
+      console.error("Lỗi khi tải thống kê:", err);
+      setStatistics(null);
     }
   }, []);
 

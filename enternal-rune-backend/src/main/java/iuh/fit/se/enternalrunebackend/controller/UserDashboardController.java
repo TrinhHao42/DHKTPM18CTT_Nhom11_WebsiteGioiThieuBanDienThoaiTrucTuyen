@@ -44,5 +44,4 @@ public class UserDashboardController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
-
 }

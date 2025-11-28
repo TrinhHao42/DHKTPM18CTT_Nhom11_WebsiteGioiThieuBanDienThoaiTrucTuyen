@@ -14,3 +14,11 @@ export type {
   PageResponse,
   ProductFilterParams,
 } from "./product";
+
+// Brand types
+export type {
+  BrandResponse as Brand,
+  BrandDashboardListResponse,
+  BrandRequest,
+  BrandPageResponse,
+} from "./brand";

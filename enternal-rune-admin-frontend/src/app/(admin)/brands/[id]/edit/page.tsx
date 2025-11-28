@@ -3,90 +3,64 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import ProductForm from '@/components/products/ProductForm';
-import productService from '@/services/productService';
-import { ProductRequest, ProductResponse } from '@/types/product';
+import BrandForm from '@/components/brands/BrandForm';
+import brandService from '@/services/brandService';
+import { BrandRequest, BrandDashboardListResponse } from '@/types/brand';
 
-export default function EditProductPage() {
+export default function EditBrandPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
 
-  const [product, setProduct] = useState<ProductResponse | null>(null);
+  const [brand, setBrand] = useState<BrandDashboardListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
-      fetchProduct();
+      fetchBrand();
     }
   }, [id]);
 
-  const fetchProduct = async () => {
+  const fetchBrand = async () => {
     try {
       setLoading(true);
-      // Lấy sản phẩm từ danh sách dashboard
-      const response = await productService.getAll({ page: 0, size: 1000 });
-      const foundProduct = response.content.find(
-        (p) => p.prodId === parseInt(id)
+      const response = await brandService.getDashboard(undefined, 0, 1000);
+      const foundBrand = response.content.find(
+        (b) => b.brandId === parseInt(id)
       );
       
-      if (!foundProduct) {
-        throw new Error('Không tìm thấy sản phẩm');
+      if (!foundBrand) {
+        throw new Error('Không tìm thấy thương hiệu');
       }
 
-      // Brand mapping
-      const brandMap: Record<string, number> = {
-        'Apple': 1,
-        'Samsung': 2,
-        'Xiaomi': 3,
-        'OPPO': 4,
-        'Vivo': 5,
-        'Realme': 6,
-        'Nokia': 7,
-        'OnePlus': 8,
-      };
-
-      // Convert từ ProductDashboardListResponse sang format phù hợp
-      const productData = {
-        prodId: foundProduct.prodId,
-        prodName: foundProduct.prodName,
-        prodModel: foundProduct.prodModel,
-        productStatus: (foundProduct.productStatus || 'ACTIVE') as 'ACTIVE' | 'INACTIVE' | 'OUT_OF_STOCK',
-        prodVersion: foundProduct.prodVersion,
-        prodColor: foundProduct.prodColor,
-        prodDescription: '',
-        prodRating: foundProduct.prodRating,
-        brandId: brandMap[foundProduct.brandName] || 1,
-      };
-      
-      setProduct(productData as any);
+      setBrand(foundBrand);
       setError(null);
     } catch (err: any) {
-      setError(err.message || 'Không thể tải thông tin sản phẩm');
-      console.error('Error fetching product:', err);
+      setError(err.message || 'Không thể tải thông tin thương hiệu');
+      console.error('Error fetching brand:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (data: ProductRequest) => {
+  const handleSubmit = async (data: BrandRequest) => {
     try {
-      await productService.update(parseInt(id), data);
-      alert('Cập nhật sản phẩm thành công!');
-      router.push('/products');
+      await brandService.update(parseInt(id), data);
+      alert('Cập nhật thương hiệu thành công!');
+      router.push('/brands');
     } catch (error: any) {
-      throw new Error(error.message || 'Không thể cập nhật sản phẩm');
+      throw new Error(error.message || 'Không thể cập nhật thương hiệu');
     }
   };
 
-  const handleDelete = async (productId: number) => {
+  const handleDelete = async (brandId: number) => {
     try {
-      await productService.delete(productId);
-      alert('Xóa sản phẩm thành công!');
-      router.push('/products');
+      await brandService.delete(brandId);
+      alert('Xóa thương hiệu thành công!');
+      router.push('/brands');
     } catch (error: any) {
-      throw new Error(error.message || 'Không thể xóa sản phẩm');
+      throw new Error(error.message || 'Không thể xóa thương hiệu');
     }
   };
 
@@ -119,12 +93,12 @@ export default function EditProductPage() {
     );
   }
 
-  if (error || !product) {
+  if (error || !brand) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3 mb-2">
           <Link
-            href="/products"
+            href="/brands"
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
             <svg
@@ -142,7 +116,7 @@ export default function EditProductPage() {
             </svg>
           </Link>
           <h1 className="text-title-md font-bold text-gray-800 dark:text-white/90">
-            Chỉnh sửa sản phẩm
+            Chỉnh sửa thương hiệu
           </h1>
         </div>
 
@@ -161,10 +135,10 @@ export default function EditProductPage() {
             />
           </svg>
           <p className="text-lg font-medium text-error-800 dark:text-error-300 mb-2">
-            {error || 'Không tìm thấy sản phẩm'}
+            {error || 'Không tìm thấy thương hiệu'}
           </p>
           <Link
-            href="/products"
+            href="/brands"
             className="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 dark:text-brand-400"
           >
             Quay lại danh sách
@@ -181,7 +155,7 @@ export default function EditProductPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Link
-              href="/products"
+              href="/brands"
               className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
               <svg
@@ -199,18 +173,18 @@ export default function EditProductPage() {
               </svg>
             </Link>
             <h1 className="text-title-md font-bold text-gray-800 dark:text-white/90">
-              Chỉnh sửa sản phẩm
+              Chỉnh sửa thương hiệu
             </h1>
           </div>
-          <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-            Cập nhật thông tin sản phẩm #{product.prodId}
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Cập nhật thông tin thương hiệu #{brand.brandId}
           </p>
         </div>
       </div>
 
       {/* Form Content */}
-      <ProductForm
-        initialData={product}
+      <BrandForm
+        initialData={{ brandId: brand.brandId, brandName: brand.brandName }}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
         isEdit={true}

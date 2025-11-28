@@ -1,11 +1,13 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../ui/table';
 import Badge from '../ui/badge/Badge';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ProductDashboardListResponse, ProductStatus } from '@/types/product';
 import { productService } from '@/services/productService';
+import { BrandResponse } from '@/types/brand';
+import brandService from '@/services/brandService';
 
 interface ProductTableProps {
   products: ProductDashboardListResponse[];
@@ -36,9 +38,22 @@ export default function ProductTable({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBrand, setFilterBrand] = useState('all');
   const [filterStatus, setFilterStatus] = useState<ProductStatus | 'all'>('all');
+  const [brands, setBrands] = useState<BrandResponse[]>([]);
 
-  // Get unique brands from products
-  const brands = Array.from(new Set(products.map((product) => product.brandName)));
+  // Fetch brands from API
+  useEffect(() => {
+    fetchBrands();
+  }, []);
+
+  const fetchBrands = async () => {
+    try {
+      const data = await brandService.getNames();
+      setBrands(data);
+    } catch (err) {
+      console.error('Error fetching brands:', err);
+      setBrands([]);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,8 +159,8 @@ export default function ProductTable({
           >
             <option value="all">Tất cả thương hiệu</option>
             {brands.map((brand) => (
-              <option key={brand} value={brand}>
-                {brand}
+              <option key={brand.brandId} value={brand.brandName}>
+                {brand.brandName}
               </option>
             ))}
           </select>
@@ -265,7 +280,7 @@ export default function ProductTable({
                   </TableCell>
                 </TableRow>
               ))
-            ) : products.length > 0 ? (
+            ) : products.length > 0 && (
               products.map((product) => (
                 <TableRow
                   key={product.prodId}
@@ -364,7 +379,7 @@ export default function ProductTable({
                   </TableCell>
                 </TableRow>
               ))
-            ) : null}
+            )}
           </TableBody>
         </Table>
 

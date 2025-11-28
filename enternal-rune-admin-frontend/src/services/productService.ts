@@ -124,6 +124,26 @@ class ProductService {
     return this.handleResponse<string>(response);
   }
 
+  /**
+   * Lấy chi tiết sản phẩm theo ID
+   * GET /products/{id}/active-price (tạm thời dùng endpoint này)
+   */
+  async getById(id: number): Promise<ProductResponse | null> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/products/${id}/active-price`,
+        {
+          method: "GET",
+          headers: this.getAuthHeaders(),
+        }
+      );
+      return this.handleResponse<ProductResponse>(response);
+    } catch (error) {
+      console.error(`Error fetching product ${id}:`, error);
+      return null;
+    }
+  }
+
   // ==================== UTILITY FUNCTIONS ====================
 
   /**
