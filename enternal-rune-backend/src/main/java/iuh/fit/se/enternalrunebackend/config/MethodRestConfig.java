@@ -14,20 +14,19 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 public class MethodRestConfig implements RepositoryRestConfigurer {
     @Autowired
     private EntityManager entityManager;
-    String url = "http://localhost:3000";
+    
     @Override
     public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config, CorsRegistry cors) {
-        // cho phép front-end lấy api
+        // Cho phép front-end lấy API
         cors.addMapping("/**")
-                        .allowedOrigins(url)
-                        .allowedMethods("GET","POST","PUT","DELETE")
-                .allowedHeaders("*");
+                .allowedOriginPatterns("http://localhost:3000", "http://localhost:3001")
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+                
         config.exposeIdsFor(entityManager.getMetamodel().getEntities().stream().map(Type::getJavaType).toArray(Class[]::new));
-//        HttpMethod[] methodDelete={
-//                HttpMethod.DELETE
-//        };
-//        disableHttpMethods(Job.class,config,methodDelete);
     }
+    
     private void disableHttpMethods(Class c,
                                     RepositoryRestConfiguration config,
                                     HttpMethod[] methods){

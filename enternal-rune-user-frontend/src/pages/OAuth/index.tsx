@@ -16,8 +16,6 @@ export default function OAuthSuccessPage() {
   useEffect(() => {
     if (token && loginUser) {
       const user: User = JSON.parse(decodeURIComponent(loginUser)) || null;
-
-      console.log(user)
       
       login(token, user);
       

@@ -2,6 +2,7 @@ package iuh.fit.se.enternalrunebackend.repository;
 
 import iuh.fit.se.enternalrunebackend.entity.Order;
 import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
+import iuh.fit.se.enternalrunebackend.entity.enums.ShippingStatus;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,9 +39,9 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
     Page<Order> findOrdersByCustomerIdWithDetails(@Param("customerId") Long customerId, Pageable pageable);
 
 //    ==========================SUMMARY========================
-// Tổng số đơn hàng
-@Query("SELECT COUNT(o) FROM Order o")
-long countTotalOrders();
+    // Tổng số đơn hàng
+    @Query("SELECT COUNT(o) FROM Order o")
+    long countTotalOrders();
 
     // Tổng số đơn hoàn thành
     @Query("SELECT COUNT(o) FROM Order o WHERE o.orderShippingStatus = 'DELIVERED'")
@@ -80,4 +81,25 @@ long countTotalOrders();
     PaymentStatus getOrderPaymentStatus(@Param("id") int orderId);
 
     Order getOrderByOrderId(int orderId);
+
+    @Query("""
+    SELECT o FROM Order o
+    WHERE (LOWER(o.orderUser.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          OR LOWER(o.orderUser.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          OR :keyword IS NULL)
+      AND (o.orderPaymentStatus = :paymentStatus OR :paymentStatus IS NULL)
+      AND (o.orderShippingStatus = :shippingStatus OR :shippingStatus IS NULL)
+    """)
+    Page<Order> searchOrders(
+            @Param("keyword") String keyword,
+            @Param("paymentStatus") PaymentStatus paymentStatus,
+            @Param("shippingStatus") ShippingStatus shippingStatus,
+            Pageable pageable
+    );
+
+    @Query("SELECT SUM(o.orderTotalAmount) FROM Order o WHERE o.orderPaymentStatus = 'PAID'")
+    BigDecimal getTotalRevenue();
+    long countByOrderShippingStatus(ShippingStatus status);
+
+    List<Order> findByOrderUser_UserId(Long userId);
 }

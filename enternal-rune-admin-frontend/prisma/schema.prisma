@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // Can be changed to "mysql" or "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Core Analytics Tables - Simplified from Umami
+
+model UserSession {
+  id        String   @id @unique @default(cuid()) @map("session_id") @db.VarChar(36)
+  websiteId String   @map("website_id") @db.VarChar(36)
+  
+  // Device & Browser Info
+  browser   String?  @db.VarChar(50)
+  os        String?  @db.VarChar(50)
+  device    String?  @db.VarChar(20)
+  screen    String?  @db.VarChar(20)
+  language  String?  @db.VarChar(35)
+  
+  // Location Info
+  country   String?  @db.VarChar(50)
+  region    String?  @db.VarChar(50)
+  city      String?  @db.VarChar(50)
+  
+  // Tracking
+  distinctId String? @map("distinct_id") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  pageViews PageView[]
+  events    Event[]
+
+  @@index([createdAt])
+  @@index([websiteId])
+  @@index([websiteId, createdAt])
+  @@index([distinctId])
+  @@map("user_sessions")
+}
+
+model PageView {
+  id        String   @id @unique @default(cuid()) @map("page_view_id") @db.VarChar(36)
+  sessionId String   @map("session_id") @db.VarChar(36)
+  websiteId String   @map("website_id") @db.VarChar(36)
+  
+  // Page Info
+  urlPath      String  @map("url_path") @db.VarChar(500)
+  urlQuery     String? @map("url_query") @db.VarChar(500)
+  pageTitle    String? @map("page_title") @db.VarChar(500)
+  hostname     String? @db.VarChar(100)
+  
+  // Traffic Source
+  referrerPath   String? @map("referrer_path") @db.VarChar(500)
+  referrerDomain String? @map("referrer_domain") @db.VarChar(500)
+  utmSource      String? @map("utm_source") @db.VarChar(255)
+  utmMedium      String? @map("utm_medium") @db.VarChar(255)
+  utmCampaign    String? @map("utm_campaign") @db.VarChar(255)
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  session UserSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([sessionId])
+  @@index([websiteId])
+  @@index([websiteId, createdAt])
+  @@index([urlPath])
+  @@index([referrerDomain])
+  @@index([websiteId, urlPath])
+  @@map("page_views")
+}
+
+model Event {
+  id        String   @id @unique @default(cuid()) @map("event_id") @db.VarChar(36)
+  sessionId String   @map("session_id") @db.VarChar(36)
+  websiteId String   @map("website_id") @db.VarChar(36)
+  
+  // Event Details
+  eventName String  @map("event_name") @db.VarChar(100)
+  eventData Json?   @map("event_data")
+  
+  // Page Context
+  urlPath   String  @map("url_path") @db.VarChar(500)
+  pageTitle String? @map("page_title") @db.VarChar(500)
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  session UserSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([sessionId])
+  @@index([websiteId])
+  @@index([websiteId, createdAt])
+  @@index([eventName])
+  @@index([websiteId, eventName])
+  @@map("events")
+}
+
+model DeviceInfo {
+  id        String   @id @unique @default(cuid()) @map("device_info_id") @db.VarChar(36)
+  websiteId String   @map("website_id") @db.VarChar(36)
+  
+  // Device Stats (Aggregated)
+  browser       String   @db.VarChar(20)
+  os            String   @db.VarChar(20)
+  device        String   @db.VarChar(20)
+  
+  // Counts
+  sessionCount  Int      @default(1) @map("session_count")
+  lastSeen      DateTime @default(now()) @map("last_seen")
+  
+  // Date for aggregation
+  date          DateTime @db.Date
+
+  @@unique([websiteId, browser, os, device, date])
+  @@index([websiteId])
+  @@index([date])
+  @@map("device_info")
+}
+
+// Optional: Website configuration table (simplified)
+model Website {
+  id       String  @id @unique @default(cuid()) @map("website_id") @db.VarChar(36)
+  name     String  @db.VarChar(100)
+  domain   String? @db.VarChar(500)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  @@map("websites")
+}

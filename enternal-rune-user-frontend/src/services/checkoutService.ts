@@ -23,9 +23,7 @@ export interface CreateOrderResponse {
 
 export const createOrder = async (request: CreateOrderRequest): Promise<CreateOrderResponse> => {
     try {
-        console.log('📦 Tạo đơn hàng với request:', request);
         const response = await AxiosInstance.post('/api/orders', request);
-        console.log('✅ Tạo đơn hàng thành công:', response.data);
         return response.data;
     } catch (error: any) {
         console.error('❌ Lỗi tạo đơn hàng:', error);

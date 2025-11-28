@@ -14,7 +14,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app_network
-   
+
     command: >
       postgres
       -c shared_preload_libraries=vector

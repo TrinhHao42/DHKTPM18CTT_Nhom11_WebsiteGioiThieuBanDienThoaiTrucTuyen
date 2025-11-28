@@ -49,7 +49,7 @@ export default function SpecificationsSection({ specifications }: Specifications
                     title={String(value)}
                     className="text-sm font-semibold text-gray-900 group-hover:text-blue-800 transition-colors line-clamp-1 overflow-hidden"
                   >
-                    {value}
+                    {value === null ? 'Chưa xác định' : value}
                   </dd>
                 </div>
                 <div className="ml-3 opacity-70 group-hover:opacity-100 transition-opacity">

@@ -9,9 +9,20 @@ export default function ProductCard({ product }: { product: Product }) {
     const currentPrice = product.productPrices?.[0]?.ppPrice || 0;
     const originalPrice = currentPrice * 1.15;
 
+    const handleProductClick = (e: React.MouseEvent) => {
+        // Prevent navigation if clicking on buttons or links
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('a')) {
+            return;
+        }
+        window.location.href = `/products/${product.prodId}`;
+    };
+
     return (
-        <Link href={`/products/${product.prodId}`} className="block">
-            <div className="group cursor-pointer w-full bg-white overflow-hidden rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-500">
+        <div
+            className="group cursor-pointer w-full bg-white overflow-hidden rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-500"
+            onClick={handleProductClick}
+        >
             {/* Image Container */}
             <div className="relative p-4 bg-gradient-to-br from-blue-50 to-white group-hover:from-blue-100 group-hover:to-blue-50 transition-colors duration-300">
                 <Image
@@ -85,14 +96,20 @@ export default function ProductCard({ product }: { product: Product }) {
                 </div>
 
                 <div className="flex gap-2">
-                    <button className="cursor-pointer flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-3 rounded-xl font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2 group/btn">
+                    <button
+                        onClick={handleProductClick}
+                        className="cursor-pointer flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-3 rounded-xl font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2 group/btn">
                         <ShoppingCart className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span>Mua ngay</span>
                     </button>
 
-                    <button className="cursor-pointer bg-blue-50 text-blue-600 py-2 px-3 rounded-xl font-semibold text-sm hover:bg-blue-100 transition-all duration-300 border border-blue-200 hover:border-blue-300">
+                    <Link
+                        href={`/CompareScreen?id=${product.prodId}`}
+                        className="cursor-pointer bg-blue-50 text-blue-600 py-2 px-3 rounded-xl font-semibold text-sm hover:bg-blue-100 transition-all duration-300 border border-blue-200 hover:border-blue-300 text-center block"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         So sánh
-                    </button>
+                    </Link>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                     <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Miễn phí giao hàng</span>
@@ -100,6 +117,5 @@ export default function ProductCard({ product }: { product: Product }) {
                 </div>
             </div>
         </div>
-        </Link>
     );
 }
