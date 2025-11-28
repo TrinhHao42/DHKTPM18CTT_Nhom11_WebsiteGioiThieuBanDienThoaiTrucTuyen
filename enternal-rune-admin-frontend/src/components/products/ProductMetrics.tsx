@@ -65,16 +65,16 @@ export default function ProductMetrics({ statistics, loading }: ProductMetricsPr
     );
   }
 
-  if (!statistics) {
-    return null;
-  }
+  // if (!statistics) {
+  //   return null;
+  // }
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
       <MetricCard
         icon={<BoxIconLine className="text-gray-800 dark:text-white/90" />}
         title="Tổng sản phẩm"
-        value={statistics.totalProducts.toLocaleString()}
+        value={statistics?.totalProducts.toLocaleString() || 0}
       />
       
       <MetricCard
@@ -97,7 +97,7 @@ export default function ProductMetrics({ statistics, loading }: ProductMetricsPr
           </svg>
         }
         title="Đang bán"
-        value={statistics.activeProducts.toLocaleString()}
+        value={statistics?.activeProducts.toLocaleString() || 0}
       />
 
       <MetricCard
@@ -120,7 +120,7 @@ export default function ProductMetrics({ statistics, loading }: ProductMetricsPr
           </svg>
         }
         title="Hết hàng"
-        value={statistics.outOfStockProducts.toLocaleString()}
+        value={statistics?.outOfStockProducts.toLocaleString() || 0}
       />
 
       <MetricCard
@@ -150,7 +150,7 @@ export default function ProductMetrics({ statistics, loading }: ProductMetricsPr
           </svg>
         }
         title="Thương hiệu"
-        value={statistics.totalBrands.toLocaleString()}
+        value={statistics?.totalBrands.toLocaleString() || 0}
       />
     </div>
   );

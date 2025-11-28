@@ -22,3 +22,13 @@ export type {
   BrandRequest,
   BrandPageResponse,
 } from "./brand";
+
+// Customer types
+export type {
+  UserDashboardResponse,
+  UserDetailResponse,
+  UserStatisticsResponse,
+  ShippingAddress,
+  RecentOrder,
+  UserPageResponse,
+} from "./customer";

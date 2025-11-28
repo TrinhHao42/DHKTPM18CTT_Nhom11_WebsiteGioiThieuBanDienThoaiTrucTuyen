@@ -1,20 +1,17 @@
 "use client";
 import React from "react";
-import Badge from "../ui/badge/Badge";
-import { ArrowUpIcon, ArrowDownIcon } from "@/icons";
+import { UserStatisticsResponse } from "@/types/customer";
 
 const MetricCard = ({
   icon,
   title,
   value,
-  trend,
-  trendValue,
+  isLoading,
 }: {
   icon: React.ReactNode;
   title: string;
   value: string | number;
-  trend?: "up" | "down";
-  trendValue?: string;
+  isLoading?: boolean;
 }) => {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
@@ -27,24 +24,27 @@ const MetricCard = ({
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {title}
           </span>
-          <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-            {value}
-          </h4>
+          {isLoading ? (
+            <div className="mt-2 h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+          ) : (
+            <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+              {value}
+            </h4>
+          )}
         </div>
-        {trend && trendValue && (
-          <Badge color={trend === "up" ? "success" : "error"}>
-            {trend === "up" ? <ArrowUpIcon /> : <ArrowDownIcon />}
-            {trendValue}
-          </Badge>
-        )}
       </div>
     </div>
   );
 };
 
-export default function CustomerMetrics() {
+interface CustomerMetricsProps {
+  statistics: UserStatisticsResponse | null;
+  loading?: boolean;
+}
+
+export default function CustomerMetrics({ statistics, loading }: CustomerMetricsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
       <MetricCard
         icon={
           <svg
@@ -86,9 +86,8 @@ export default function CustomerMetrics() {
           </svg>
         }
         title="Tổng khách hàng"
-        value="3,782"
-        trend="up"
-        trendValue="11.01%"
+        value={statistics?.totalUsers.toLocaleString('vi-VN') ?? '0'}
+        isLoading={loading}
       />
       
       <MetricCard
@@ -102,21 +101,14 @@ export default function CustomerMetrics() {
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21"
+              d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.9033 20.9725 14.8354 21.5839C12.7674 22.1953 10.5573 22.1219 8.53447 21.3746C6.51168 20.6273 4.78465 19.2461 3.61096 17.4371C2.43727 15.628 1.87979 13.4881 2.02168 11.3363C2.16356 9.18455 2.99721 7.13631 4.39828 5.49706C5.79935 3.85781 7.69279 2.71537 9.79619 2.24013C11.8996 1.7649 14.1003 1.98232 16.07 2.85999"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
             <path
-              d="M16 21H20C20.5304 21 21.0391 20.7893 21.4142 20.4142C21.7893 20.0391 22 19.5304 22 19V11C22 10.4696 21.7893 9.96086 21.4142 9.58579C21.0391 9.21071 20.5304 9 20 9H16"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M8 21H4C3.46957 21 2.96086 20.7893 2.58579 20.4142C2.21071 20.0391 2 19.5304 2 19V15C2 14.4696 2.21071 13.9609 2.58579 13.5858C2.96086 13.2107 3.46957 13 4 13H8"
+              d="M22 4L12 14.01L9 11.01"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
@@ -124,10 +116,9 @@ export default function CustomerMetrics() {
             />
           </svg>
         }
-        title="Khách hàng mới"
-        value="245"
-        trend="up"
-        trendValue="8.5%"
+        title="Đã kích hoạt"
+        value={statistics?.activatedUsers.toLocaleString('vi-VN') ?? '0'}
+        isLoading={loading}
       />
 
       <MetricCard
@@ -141,14 +132,14 @@ export default function CustomerMetrics() {
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M12 15C15.866 15 19 11.866 19 8C19 4.13401 15.866 1 12 1C8.13401 1 5 4.13401 5 8C5 11.866 8.13401 15 12 15Z"
+              d="M10 15L21 4"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
             <path
-              d="M8.21 13.89L7 23L12 20L17 23L15.79 13.88"
+              d="M21 4L14 21L10 15L3 11L21 4Z"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
@@ -156,63 +147,9 @@ export default function CustomerMetrics() {
             />
           </svg>
         }
-        title="Khách hàng VIP"
-        value="892"
-        trend="up"
-        trendValue="15.3%"
-      />
-
-      <MetricCard
-        icon={
-          <svg
-            className="text-gray-800 size-6 dark:text-white/90"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 6.65685 16.3431 8 18 8Z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M6 15C7.65685 15 9 13.6569 9 12C9 10.3431 7.65685 9 6 9C4.34315 9 3 10.3431 3 12C3 13.6569 4.34315 15 6 15Z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M18 22C19.6569 22 21 20.6569 21 19C21 17.3431 19.6569 16 18 16C16.3431 16 15 17.3431 15 19C15 20.6569 16.3431 22 18 22Z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M8.59 13.51L15.42 17.49"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M15.41 6.51L8.59 10.49"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        }
-        title="Tỷ lệ giới thiệu"
-        value="23.4%"
-        trend="down"
-        trendValue="2.1%"
+        title="Chưa kích hoạt"
+        value={statistics?.inactivatedUsers.toLocaleString('vi-VN') ?? '0'}
+        isLoading={loading}
       />
     </div>
   );
