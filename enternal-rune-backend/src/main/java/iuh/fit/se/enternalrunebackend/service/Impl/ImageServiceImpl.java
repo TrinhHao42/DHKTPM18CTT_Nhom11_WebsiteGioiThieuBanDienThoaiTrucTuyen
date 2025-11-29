@@ -34,13 +34,13 @@ public class ImageServiceImpl implements ImageService {
                 ObjectUtils.asMap(
                         "public_id", publicId,
                         "resource_type", "image",
-                        "transformation", ObjectUtils.asMap(
-                                "width", 1200,
-                                "height", 1200,
-                                "crop", "limit"  // resize nếu ảnh quá lớn
-                        )
+                        "transformation", new com.cloudinary.Transformation()
+                                .width(1200)
+                                .height(1200)
+                                .crop("limit")
                 )
         );
+
 
         return uploadResult.get("secure_url").toString();
     }

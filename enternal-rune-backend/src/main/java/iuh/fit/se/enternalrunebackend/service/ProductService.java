@@ -39,6 +39,7 @@ public interface ProductService {
 
     public void  addProduct(ProductRequest productRequest,List<MultipartFile> files)throws IOException;
     public void deleteProduct(Integer id);
-    public Product updateProduct(Integer productId, ProductRequest request);
+    Product updateProduct(Integer id, ProductRequest request, List<MultipartFile> newFiles) throws IOException;
+    Product getProductById(Integer id);
 
 }
