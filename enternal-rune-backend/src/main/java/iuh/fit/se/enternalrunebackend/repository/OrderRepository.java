@@ -103,4 +103,6 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
            "WHERE ssh.createdAt = (SELECT MAX(ssh2.createdAt) FROM OrderShippingHistory ssh2 WHERE ssh2.order = o) " +
            "AND ss.statusCode = :statusCode")
     long countByCurrentShippingStatus(@Param("statusCode") String statusCode);
+
+    List<Order> findByOrderUser_UserId(Long userId);
 }

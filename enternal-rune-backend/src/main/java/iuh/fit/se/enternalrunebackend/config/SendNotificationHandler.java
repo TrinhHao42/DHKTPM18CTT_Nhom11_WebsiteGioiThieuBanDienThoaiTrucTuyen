@@ -44,12 +44,16 @@ public class SendNotificationHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(@NotNull WebSocketSession session) throws Exception {
         String role = getRole(session);
+        System.out.println("🔗 New WebSocket connection from: " + session.getRemoteAddress());
+        System.out.println("📋 Query string: " + (session.getUri() != null ? session.getUri().getQuery() : "null"));
+        System.out.println("👤 Detected role: " + role);
+        
         if ("admin".equals(role)) {
             adminSessions.add(session);
-            System.out.println("Admin connected. Total admins: " + adminSessions.size() + "; Total users: " + userSessions.size());
+            System.out.println("✅ Admin connected. Total admins: " + adminSessions.size() + "; Total users: " + userSessions.size());
         } else {
             userSessions.add(session);
-            System.out.println("User connected. Total admins: " + adminSessions.size() + "; Total users: " + userSessions.size());
+            System.out.println("✅ User connected. Total admins: " + adminSessions.size() + "; Total users: " + userSessions.size());
         }
     }
 

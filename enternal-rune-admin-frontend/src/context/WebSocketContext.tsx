@@ -1,24 +1,30 @@
 'use client'
 import { createContext, useContext, ReactNode, useState, useEffect, useRef } from 'react';
-import type { Notification } from "@/types/Notification";
+import type { Notification, DisplayNotification } from "@/types/Notification";
 import { useAuth } from './AuthContext';
 
 interface WebSocketContextType {
-    notifications: Notification[];
-    addNotification: (notification: Notification) => void;
+    notifications: DisplayNotification[];
+    addNotification: (notification: DisplayNotification) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-    const { isAuthenticated, token } = useAuth();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const { isAuthenticated, token, isLoading } = useAuth();
+    const [notifications, setNotifications] = useState<DisplayNotification[]>([]);
 
     const socketRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isConnectingRef = useRef(false);
 
     useEffect(() => {
+        // ⚠️ Đợi AuthContext load xong trước
+        if (isLoading) {
+            console.log('⏳ WebSocket: Waiting for auth to load...');
+            return;
+        }
+
         if (!isAuthenticated || !token) {
             console.log('⏸️ WebSocket: Waiting for authentication...');
             return;
@@ -61,22 +67,36 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
                 };
 
                 ws.onmessage = (event) => {
-                    console.log('📩 Admin received:', event.data);
+                    console.log('📩 Admin received raw data:', event.data);
                     try {
-                        const notification: Notification = JSON.parse(event.data);
+                        // Parse backend notification format
+                        const backendNotification: Notification = JSON.parse(event.data);
+                        console.log('📦 Parsed notification:', backendNotification);
                         
-                        setNotifications((prev) => [notification, ...prev]);
+                        // Transform to display format
+                        const displayNotification: DisplayNotification = {
+                            user: {
+                                id: backendNotification.userId.toString(),
+                                name: backendNotification.userName,
+                                avatar: '' // Default empty avatar
+                            },
+                            message: backendNotification.message,
+                            time: backendNotification.timestamp
+                        };
+                        
+                        setNotifications((prev) => [displayNotification, ...prev]);
 
+                        // Browser notification
                         if (typeof window !== 'undefined' && 'Notification' in window) {
                             if (window.Notification.permission === 'granted') {
-                                new window.Notification('Thông báo đơn hàng mới', {
-                                    body: `${notification.user.name} ${notification.message}`,
-                                    icon: notification.user.avatar
+                                new window.Notification('Thông báo mới', {
+                                    body: `${backendNotification.userName} ${backendNotification.message}`,
                                 });
                             }
                         }
                     } catch (error) {
-                        console.error('Error parsing notification:', error);
+                        console.error('❌ Error parsing notification:', error);
+                        console.error('Raw data was:', event.data);
                     }
                 };
 
@@ -93,9 +113,15 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
                         reason: event.reason,
                         wasClean: event.wasClean
                     });
-                    if (isMounted && isAuthenticated) {
-                        console.log('🔄 Reconnecting in 5s...');
-                        reconnectTimeoutRef.current = setTimeout(connect, 5000);
+                    
+                    // Chỉ reconnect nếu component vẫn mounted VÀ đang authenticated
+                    // Code 1006 = abnormal closure (backend đột ngột đóng hoặc network issue)
+                    if (isMounted && isAuthenticated && !isLoading) {
+                        // Không reconnect nếu đang clean up
+                        if (event.code !== 1000) { // 1000 = normal closure
+                            console.log('🔄 Reconnecting in 5s...');
+                            reconnectTimeoutRef.current = setTimeout(connect, 5000);
+                        }
                     }
                 };
             } catch (error) {
@@ -121,9 +147,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
                 socketRef.current = null;
             }
         };
-    }, [isAuthenticated, token]);
+    }, [isAuthenticated, token, isLoading]); // ✅ Thêm isLoading vào dependencies
 
-    const addNotification = (notification: Notification) => {
+    const addNotification = (notification: DisplayNotification) => {
         setNotifications((prev) => [notification, ...prev]);
     };
 

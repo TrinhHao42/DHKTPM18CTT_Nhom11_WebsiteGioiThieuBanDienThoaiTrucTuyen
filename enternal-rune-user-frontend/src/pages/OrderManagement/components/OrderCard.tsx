@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Order } from '@/types/Order'
 import { PaymentStatus } from '@/types/enums/PaymentStatus'
 import { ShippingStatus } from '@/types/enums/ShippingStatus'
-import { cancelOrder, createRefundRequest } from '@/services/checkoutService'
+import { cancelOrder, createRefundRequest, createReturnRequest, createCancelRequest, uploadImage } from '@/services/checkoutService'
 import { useAuth } from '@/context/AuthContext'
 import {
     Package,
@@ -37,45 +37,14 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
     const { user } = useAuth()
     const toast = useToast()
     
-    const [showCancelModal, setShowCancelModal] = useState(false)
     const [showRefundModal, setShowRefundModal] = useState(false)
     const [showReturnModal, setShowReturnModal] = useState(false)
 
-    const getPaymentStatusBadge = (status?: PaymentStatus) => {
-        if (!status) {
-            return (
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-800">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    Không xác định
-                </span>
-            )
-        }
-
-        const statusMap: Record<PaymentStatus, { label: string; color: string; icon: React.ReactNode }> = {
-            [PaymentStatus.PENDING]: { label: 'Chờ thanh toán', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-3.5 h-3.5" /> },
-            [PaymentStatus.PAID]: { label: 'Đã thanh toán', color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-3.5 h-3.5" /> },
-            [PaymentStatus.FAILED]: { label: 'Thanh toán thất bại', color: 'bg-red-100 text-red-800', icon: <XCircle className="w-3.5 h-3.5" /> },
-            [PaymentStatus.REFUNDED]: { label: 'Đã hoàn tiền', color: 'bg-purple-100 text-purple-800', icon: <RotateCcw className="w-3.5 h-3.5" /> },
-            [PaymentStatus.EXPIRED]: { label: 'Đã hết hạn', color: 'bg-gray-100 text-gray-800', icon: <AlertCircle className="w-3.5 h-3.5" /> }
-        }
-
-        const statusInfo = statusMap[status]
-        return (
-            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
-                {statusInfo.icon}
-                {statusInfo.label}
-            </span>
-        )
-    }
-
     const getShippingStatusBadge = (status?: ShippingStatus) => {
         const statusMap: Record<ShippingStatus, { label: string; color: string }> = {
-            [ShippingStatus.PENDING]: { label: 'Chờ xử lý', color: 'bg-gray-100 text-gray-800' },
             [ShippingStatus.PROCESSING]: { label: 'Đang xử lý', color: 'bg-blue-100 text-blue-800' },
             [ShippingStatus.SHIPPED]: { label: 'Đang giao', color: 'bg-indigo-100 text-indigo-800' },
-            [ShippingStatus.IN_TRANSIT]: { label: 'Đang vận chuyển', color: 'bg-cyan-100 text-cyan-800' },
             [ShippingStatus.DELIVERED]: { label: 'Đã giao', color: 'bg-green-100 text-green-800' },
-            [ShippingStatus.FAILED_DELIVERY]: { label: 'Giao thất bại', color: 'bg-red-100 text-red-800' },
             [ShippingStatus.CANCELLED]: { label: 'Đã hủy', color: 'bg-red-100 text-red-800' },
             [ShippingStatus.RETURNED]: { label: 'Đã trả hàng', color: 'bg-orange-100 text-orange-800' },
         }
@@ -90,77 +59,59 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
         )
     }
 
-    const getActionButton = (paymentStatus?: PaymentStatus) => {
+    const getActionButtons = (paymentStatus?: PaymentStatus, shippingStatus?: ShippingStatus) => {
         const buttonClass =
             "w-full sm:w-auto px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 active:scale-95"
 
-        if (!paymentStatus) return null
+        const buttons = []
 
-        switch (paymentStatus) {
-            case PaymentStatus.PENDING:
-                return (
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-end">
-                        <button
-                            onClick={() => handlePayment()}
-                            disabled={isProcessing}
-                            className={`${buttonClass} bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            Thanh toán ngay
-                        </button>
-                        <button
-                            onClick={() => handleReturn()}
-                            disabled={isProcessing}
-                            className={`${buttonClass} bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            {isProcessing ? 'Đang xử lý...' : 'Yêu cầu hủy đơn'}
-                        </button>
-                    </div>
-                )
-            case PaymentStatus.PAID:
-                return (
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-end">
-                        <button
-                            onClick={() => setShowRefundModal(true)}
-                            disabled={isProcessing}
-                            className={`${buttonClass} bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            {isProcessing ? 'Đang xử lý...' : 'Yêu cầu hoàn tiền'}
-                        </button>
-                        <button
-                            onClick={() => setShowReturnModal(true)}
-                            disabled={isProcessing}
-                            className={`${buttonClass} bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                            {isProcessing ? 'Đang xử lý...' : 'Yêu cầu trả hàng'}
-                        </button>
-                    </div>
-                )
-            case PaymentStatus.FAILED:
-                return (
-                    <button
-                        onClick={() => handleRetry()}
-                        className={`${buttonClass} bg-red-600 text-white hover:bg-red-700`}
-                    >
-                        Thử lại
-                    </button>
-                )
-            case PaymentStatus.REFUNDED:
-                return (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 rounded-lg text-sm text-purple-800">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="font-medium">Đã hoàn tiền</span>
-                    </div>
-                )
-            case PaymentStatus.EXPIRED:
-                return (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800">
-                        <AlertCircle className="w-4 h-4" />
-                        <span className="font-medium">Đơn hàng đã hủy</span>
-                    </div>
-                )
-            default:
-                return null
+        // Nút thanh toán khi chưa thanh toán (độc lập)
+        if (paymentStatus === PaymentStatus.PENDING) {
+            buttons.push(
+                <button
+                    key="payment"
+                    onClick={() => handlePayment()}
+                    disabled={isProcessing}
+                    className={`${buttonClass} bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                    {isProcessing ? 'Đang xử lý...' : 'Thanh toán ngay'}
+                </button>
+            )
         }
+
+        // Nút hủy đơn khi đang xử lý (độc lập)
+        if (shippingStatus === ShippingStatus.PROCESSING) {
+            buttons.push(
+                <button
+                    key="cancel"
+                    onClick={() => setShowRefundModal(true)}
+                    disabled={isProcessing}
+                    className={`${buttonClass} bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                    {isProcessing ? 'Đang xử lý...' : 'Hủy đơn hàng'}
+                </button>
+            )
+        }
+
+        // Nút trả hàng khi đã giao (độc lập)
+        if (shippingStatus === ShippingStatus.DELIVERED) {
+            buttons.push(
+                <button
+                    key="return"
+                    onClick={() => setShowReturnModal(true)}
+                    disabled={isProcessing}
+                    className={`${buttonClass} bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                    {isProcessing ? 'Đang xử lý...' : 'Trả hàng'}
+                </button>
+            )
+        }
+
+        return buttons.length > 0 ? (
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-end">
+                {buttons}
+            </div>
+        ) : null
     }
 
     const handlePayment = async () => {
@@ -225,25 +176,9 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
         }
 
         if (order.currentPaymentStatus.statusCode === PaymentStatus.PENDING) {
-            setShowCancelModal(true)
+            setShowRefundModal(true)
         } else if (order.currentPaymentStatus.statusCode === PaymentStatus.PAID) {
             setShowRefundModal(true)
-        }
-    }
-
-    const handleCancelOrder = async () => {
-        if (!user?.userId) return
-
-        try {
-            setIsProcessing(true)
-            await cancelOrder(order.orderId, user.userId)
-            toast.success('Đã gửi yêu cầu hủy đơn hàng!')
-            setTimeout(() => window.location.reload(), 1500)
-        } catch (error: any) {
-            toast.error(error.message || 'Không thể hủy đơn hàng')
-        } finally {
-            setIsProcessing(false)
-            setShowCancelModal(false)
         }
     }
 
@@ -252,11 +187,23 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
 
         try {
             setIsProcessing(true)
-            await createRefundRequest(order.orderId, user.userId, reason, 'CANCEL')
-            toast.success('Đã gửi yêu cầu hoàn tiền!')
+            
+            // Kiểm tra xem đơn hàng đã thanh toán chưa
+            const isPaid = order.currentPaymentStatus.statusCode === PaymentStatus.PAID
+
+            if (isPaid) {
+                // Nếu đã thanh toán, tạo cancel request
+                await createCancelRequest(order.orderId, user.userId, reason)
+                toast.success('Đã gửi yêu cầu hủy đơn hàng đến admin!')
+            } else {
+                // Nếu chưa thanh toán, hủy trực tiếp
+                await cancelOrder(order.orderId, user.userId)
+                toast.success('Đơn hàng chưa thanh toán đã được hủy!')
+            }
+            
             setTimeout(() => window.location.reload(), 1500)
         } catch (error: any) {
-            toast.error(error.message || 'Không thể tạo yêu cầu hoàn tiền')
+            toast.error(error.message || 'Không thể thực hiện yêu cầu')
         } finally {
             setIsProcessing(false)
             setShowRefundModal(false)
@@ -268,7 +215,19 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
 
         try {
             setIsProcessing(true)
-            await createRefundRequest(order.orderId, user.userId, reason, 'RETURN')
+            
+            // Upload ảnh đầu tiên (nếu có nhiều ảnh, chỉ lấy ảnh đầu tiên)
+            let imageUrl = ''
+            if (images.length > 0) {
+                try {
+                    imageUrl = await uploadImage(images[0])
+                } catch (uploadError) {
+                    // Nếu upload thất bại, vẫn tiếp tục gửi request nhưng không có ảnh
+                    console.warn('Upload ảnh thất bại, tiếp tục gửi request không có ảnh')
+                }
+            }
+            
+            await createReturnRequest(order.orderId, user.userId, reason, imageUrl)
             toast.success('Đã gửi yêu cầu trả hàng!')
             setTimeout(() => window.location.reload(), 1500)
         } catch (error: any) {
@@ -311,7 +270,6 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
                                 </div>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
-                                {getPaymentStatusBadge(order.currentPaymentStatus.statusCode as PaymentStatus)}
                                 {getShippingStatusBadge(order.currentShippingStatus.statusCode as ShippingStatus)}
                             </div>
                         </div>
@@ -342,7 +300,7 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
 
                             {/* Actions */}
                             <div className="flex justify-end">
-                                {getActionButton(order.currentPaymentStatus.statusCode as PaymentStatus)}
+                                {getActionButtons(order.currentPaymentStatus.statusCode as PaymentStatus, order.currentShippingStatus.statusCode as ShippingStatus)}
                             </div>
                         </div>
 
@@ -413,13 +371,6 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
             )}
 
             {/* Modals */}
-            <CancelOrderModal
-                isOpen={showCancelModal}
-                onClose={() => setShowCancelModal(false)}
-                onConfirm={handleCancelOrder}
-                order={order}
-                isProcessing={isProcessing}
-            />
             <RefundRequestModal
                 isOpen={showRefundModal}
                 onClose={() => setShowRefundModal(false)}

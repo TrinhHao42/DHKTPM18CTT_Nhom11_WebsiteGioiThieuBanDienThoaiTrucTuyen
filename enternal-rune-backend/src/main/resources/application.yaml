@@ -74,10 +74,10 @@ spring:
 
 
 qr:
-  acc: ${QR_ACC}
-  bank: ${QR_BANK}
-  template: ${QR_TEMPLATE}
-  download: ${QR_DOWNLOAD}
+
+
+
+
 
 sepay:
   api: ${SEPAY_API}

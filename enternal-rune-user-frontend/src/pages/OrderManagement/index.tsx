@@ -6,6 +6,7 @@ import { getUserOrders } from '@/services/checkoutService'
 import { Order } from '@/types/Order'
 import OrderCard from './components/OrderCard'
 import { Package, Loader2, AlertCircle } from 'lucide-react'
+import { ShippingStatus } from '@/types/enums/ShippingStatus'
 import { PaymentStatus } from '@/types/enums/PaymentStatus'
 
 const OrderManagement = () => {
@@ -14,7 +15,7 @@ const OrderManagement = () => {
     const [orders, setOrders] = useState<Order[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const [filterStatus, setFilterStatus] = useState<'all' | PaymentStatus>('all')
+    const [filterStatus, setFilterStatus] = useState<'all' | ShippingStatus>('all')
     const [currentPage, setCurrentPage] = useState(0)
     const [totalPages, setTotalPages] = useState(0)
     const [totalItems, setTotalItems] = useState(0)
@@ -49,11 +50,11 @@ const OrderManagement = () => {
         fetchOrders()
     }, [user, currentPage])
 
-    // 🔵 Filter UI theo PaymentStatus từ API
+    // 🔵 Filter UI theo ShippingStatus từ API
     const filteredOrders =
         filterStatus === 'all'
             ? orders
-            : orders.filter(order => order.currentPaymentStatus.statusCode === filterStatus)
+            : orders.filter(order => order.currentShippingStatus.statusCode === filterStatus)
 
     if (loading) {
         return (
@@ -101,30 +102,33 @@ const OrderManagement = () => {
                 {/* Filter Tabs */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
                     <div className="flex flex-wrap gap-2">
-
                         {[
                             { code: 'all', label: 'Tất cả' },
-                            { code: PaymentStatus.PENDING, label: 'Chờ thanh toán' },
-                            { code: PaymentStatus.PAID, label: 'Đã thanh toán' },
-                            { code: PaymentStatus.FAILED, label: 'Thất bại' },
-                            { code: PaymentStatus.REFUNDED, label: 'Đã hoàn tiền' }
+                            { code: ShippingStatus.PROCESSING, label: 'Đang xử lý' },
+                            { code: ShippingStatus.SHIPPED, label: 'Đang giao' },
+                            { code: ShippingStatus.DELIVERED, label: 'Đã giao' },
+                            { code: ShippingStatus.CANCELLED, label: 'Đã hủy' },
+                            { code: ShippingStatus.RETURNED, label: 'Đã trả hàng' }
                         ].map(tab => (
                             <button
                                 key={tab.code}
                                 onClick={() => setFilterStatus(tab.code as any)}
-                                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                                    filterStatus === tab.code
+                                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${filterStatus === tab.code
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
+                                    }`}
                             >
-                                {tab.label} (
-                                    {orders.filter(o =>
+                                {tab.label}
+                                {(() => {
+                                    const count = orders.filter(o =>
                                         tab.code === 'all'
                                             ? true
-                                            : o.currentPaymentStatus.statusCode === tab.code
-                                    ).length}
-                                )
+                                            : o.currentShippingStatus.statusCode === tab.code
+                                    ).length;
+
+                                    return count > 0 ? ` (${count})` : "";
+                                })()}
+
                             </button>
                         ))}
                     </div>
@@ -164,11 +168,10 @@ const OrderManagement = () => {
                                     <button
                                         key={i}
                                         onClick={() => setCurrentPage(i)}
-                                        className={`px-3 py-2 rounded-lg ${
-                                            currentPage === i
+                                        className={`px-3 py-2 rounded-lg ${currentPage === i
                                                 ? 'bg-blue-600 text-white'
                                                 : 'text-gray-700 hover:bg-gray-100'
-                                        }`}
+                                            }`}
                                     >
                                         {i + 1}
                                     </button>

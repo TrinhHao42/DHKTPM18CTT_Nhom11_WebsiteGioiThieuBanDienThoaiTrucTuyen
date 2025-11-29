@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         const checkoutFormfields = sepayClient.checkout.initOneTimePaymentFields({
             payment_method: 'BANK_TRANSFER',
             operation: 'PURCHASE',
-            order_invoice_number: orderId.toString(),
+            order_invoice_number: `ORD${orderId.toString()}`,
             order_amount: totalAmount,
             currency: 'VND',
             order_description: `Thanh toan don hang ORD${orderId}`,

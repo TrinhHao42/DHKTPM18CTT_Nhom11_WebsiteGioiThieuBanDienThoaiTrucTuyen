@@ -83,10 +83,13 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         loginUser.setUserName(user.getName());
         // Safely get addresses, return empty list if null
         loginUser.setUserAddress(
-                user.getAddresses().stream()
+                Optional.ofNullable(user.getAddresses())
+                        .orElse(List.of())
+                        .stream()
                         .map(AddressResponse::toAddressResponse)
                         .toList()
         );
+
 
         ObjectMapper mapper = new ObjectMapper();
         String userJson = mapper.writeValueAsString(loginUser);

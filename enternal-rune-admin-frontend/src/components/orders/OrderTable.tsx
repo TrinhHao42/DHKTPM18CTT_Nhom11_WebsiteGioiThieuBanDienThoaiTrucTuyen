@@ -1,256 +1,69 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Badge from '@/components/ui/badge/Badge';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
-
-type Order = {
-  id: string;
-  orderNumber: string;
-  customer: {
-    name: string;
-    email: string;
-    avatar: string;
-  };
-  products: number;
-  total: number;
-  status: 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled';
-  paymentStatus: 'paid' | 'unpaid' | 'refunded';
-  paymentMethod: string;
-  createdAt: string;
-};
-
-// Mock data
-const orderData: Order[] = [
-  {
-    id: '1',
-    orderNumber: 'ORD-2024-001',
-    customer: {
-      name: 'Nguyễn Văn A',
-      email: 'nguyenvana@email.com',
-      avatar: '/images/user/user-01.jpg',
-    },
-    products: 3,
-    total: 1250000,
-    status: 'completed',
-    paymentStatus: 'paid',
-    paymentMethod: 'COD',
-    createdAt: '2024-03-15',
-  },
-  {
-    id: '2',
-    orderNumber: 'ORD-2024-002',
-    customer: {
-      name: 'Trần Thị B',
-      email: 'tranthib@email.com',
-      avatar: '/images/user/user-02.jpg',
-    },
-    products: 1,
-    total: 850000,
-    status: 'processing',
-    paymentStatus: 'paid',
-    paymentMethod: 'Banking',
-    createdAt: '2024-03-14',
-  },
-  {
-    id: '3',
-    orderNumber: 'ORD-2024-003',
-    customer: {
-      name: 'Lê Văn C',
-      email: 'levanc@email.com',
-      avatar: '/images/user/user-03.jpg',
-    },
-    products: 5,
-    total: 3200000,
-    status: 'shipping',
-    paymentStatus: 'paid',
-    paymentMethod: 'Credit Card',
-    createdAt: '2024-03-14',
-  },
-  {
-    id: '4',
-    orderNumber: 'ORD-2024-004',
-    customer: {
-      name: 'Phạm Thị D',
-      email: 'phamthid@email.com',
-      avatar: '/images/user/user-04.jpg',
-    },
-    products: 2,
-    total: 1650000,
-    status: 'pending',
-    paymentStatus: 'unpaid',
-    paymentMethod: 'COD',
-    createdAt: '2024-03-13',
-  },
-  {
-    id: '5',
-    orderNumber: 'ORD-2024-005',
-    customer: {
-      name: 'Hoàng Văn E',
-      email: 'hoangvane@email.com',
-      avatar: '/images/user/user-05.jpg',
-    },
-    products: 4,
-    total: 2100000,
-    status: 'completed',
-    paymentStatus: 'paid',
-    paymentMethod: 'E-Wallet',
-    createdAt: '2024-03-13',
-  },
-  {
-    id: '6',
-    orderNumber: 'ORD-2024-006',
-    customer: {
-      name: 'Vũ Thị F',
-      email: 'vuthif@email.com',
-      avatar: '/images/user/user-06.jpg',
-    },
-    products: 1,
-    total: 450000,
-    status: 'cancelled',
-    paymentStatus: 'refunded',
-    paymentMethod: 'Banking',
-    createdAt: '2024-03-12',
-  },
-  {
-    id: '7',
-    orderNumber: 'ORD-2024-007',
-    customer: {
-      name: 'Đặng Văn G',
-      email: 'dangvang@email.com',
-      avatar: '/images/user/user-07.jpg',
-    },
-    products: 2,
-    total: 980000,
-    status: 'processing',
-    paymentStatus: 'paid',
-    paymentMethod: 'Credit Card',
-    createdAt: '2024-03-12',
-  },
-  {
-    id: '8',
-    orderNumber: 'ORD-2024-008',
-    customer: {
-      name: 'Bùi Thị H',
-      email: 'buithih@email.com',
-      avatar: '/images/user/user-08.jpg',
-    },
-    products: 6,
-    total: 4500000,
-    status: 'shipping',
-    paymentStatus: 'paid',
-    paymentMethod: 'Banking',
-    createdAt: '2024-03-11',
-  },
-  {
-    id: '9',
-    orderNumber: 'ORD-2024-009',
-    customer: {
-      name: 'Ngô Văn I',
-      email: 'ngovani@email.com',
-      avatar: '/images/user/user-09.jpg',
-    },
-    products: 3,
-    total: 1750000,
-    status: 'completed',
-    paymentStatus: 'paid',
-    paymentMethod: 'COD',
-    createdAt: '2024-03-11',
-  },
-  {
-    id: '10',
-    orderNumber: 'ORD-2024-010',
-    customer: {
-      name: 'Dương Thị K',
-      email: 'duongthik@email.com',
-      avatar: '/images/user/user-10.jpg',
-    },
-    products: 2,
-    total: 1200000,
-    status: 'pending',
-    paymentStatus: 'unpaid',
-    paymentMethod: 'COD',
-    createdAt: '2024-03-10',
-  },
-];
+import { getAllOrders, OrderListItem } from '@/services/orderService';
 
 export default function OrderTable() {
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // Filter logic
-  const filteredOrders = orderData.filter((order) => {
-    const matchesSearch =
-      order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.email.toLowerCase().includes(searchTerm.toLowerCase());
+  useEffect(() => {
+    fetchOrders();
+  }, [currentPage, statusFilter, paymentStatusFilter]);
 
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPage === 0) {
+        fetchOrders();
+      } else {
+        setCurrentPage(0);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-    const matchesPaymentStatus =
-      paymentStatusFilter === 'all' || order.paymentStatus === paymentStatusFilter;
-
-    return matchesSearch && matchesStatus && matchesPaymentStatus;
-  });
-
-  const getStatusBadgeColor = (status: string): 'success' | 'error' | 'warning' | 'info' => {
-    switch (status) {
-      case 'completed':
-        return 'success';
-      case 'cancelled':
-        return 'error';
-      case 'pending':
-        return 'warning';
-      case 'processing':
-      case 'shipping':
-        return 'info';
-      default:
-        return 'warning';
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllOrders(
+        currentPage,
+        10,
+        searchTerm || undefined,
+        paymentStatusFilter !== 'all' ? paymentStatusFilter : undefined,
+        statusFilter !== 'all' ? statusFilter : undefined
+      );
+      setOrders(data.content);
+      setTotalPages(data.totalPages);
+      setTotalItems(data.totalItems);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusText = (status: string): string => {
-    switch (status) {
-      case 'completed':
-        return 'Hoàn thành';
-      case 'cancelled':
-        return 'Đã hủy';
-      case 'pending':
-        return 'Chờ xử lý';
-      case 'processing':
-        return 'Đang xử lý';
-      case 'shipping':
-        return 'Đang giao';
-      default:
-        return status;
-    }
+  const getStatusBadgeColor = (status: string): 'success' | 'error' | 'warning' | 'info' => {
+    const upperStatus = status.toUpperCase();
+    if (upperStatus.includes('DELIVERED') || upperStatus.includes('COMPLETE')) return 'success';
+    if (upperStatus.includes('CANCEL')) return 'error';
+    if (upperStatus.includes('PENDING')) return 'warning';
+    return 'info';
   };
 
   const getPaymentStatusBadgeColor = (status: string): 'success' | 'error' | 'warning' => {
-    switch (status) {
-      case 'paid':
-        return 'success';
-      case 'unpaid':
-        return 'warning';
-      case 'refunded':
-        return 'error';
-      default:
-        return 'warning';
-    }
-  };
-
-  const getPaymentStatusText = (status: string): string => {
-    switch (status) {
-      case 'paid':
-        return 'Đã thanh toán';
-      case 'unpaid':
-        return 'Chưa thanh toán';
-      case 'refunded':
-        return 'Đã hoàn tiền';
-      default:
-        return status;
-    }
+    const upperStatus = status.toUpperCase();
+    if (upperStatus.includes('PAID') || upperStatus.includes('COMPLETE')) return 'success';
+    if (upperStatus.includes('REFUND')) return 'error';
+    return 'warning';
   };
 
   const formatCurrency = (amount: number): string => {
@@ -267,6 +80,19 @@ export default function OrderTable() {
       day: '2-digit',
     });
   };
+
+  if (loading && orders.length === 0) {
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] p-8">
+        <div className="flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+            <p className="mt-2 text-sm text-gray-500">Đang tải đơn hàng...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
@@ -311,49 +137,39 @@ export default function OrderTable() {
             </svg>
           </div>
 
-          {/* Right side: filters + export */}
+          {/* Right side: filters */}
           <div className="flex flex-wrap items-center justify-end gap-3">
-            {/* Status Filter */}
+            {/* Shipping Status Filter */}
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(0);
+              }}
               className="focus:border-brand-500 focus:ring-brand-500/20 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:ring-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               <option value="all">Tất cả trạng thái</option>
-              <option value="pending">Chờ xử lý</option>
-              <option value="processing">Đang xử lý</option>
-              <option value="shipping">Đang giao</option>
-              <option value="completed">Hoàn thành</option>
-              <option value="cancelled">Đã hủy</option>
+              <option value="PENDING">Chờ xử lý</option>
+              <option value="PROCESSING">Đang xử lý</option>
+              <option value="SHIPPED">Đang giao</option>
+              <option value="DELIVERED">Đã giao</option>
+              <option value="CANCELLED">Đã hủy</option>
             </select>
 
             {/* Payment Status Filter */}
             <select
               value={paymentStatusFilter}
-              onChange={(e) => setPaymentStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setPaymentStatusFilter(e.target.value);
+                setCurrentPage(0);
+              }}
               className="focus:border-brand-500 focus:ring-brand-500/20 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:ring-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               <option value="all">Thanh toán</option>
-              <option value="paid">Đã thanh toán</option>
-              <option value="unpaid">Chưa thanh toán</option>
-              <option value="refunded">Đã hoàn tiền</option>
+              <option value="PENDING">Chưa thanh toán</option>
+              <option value="PAID">Đã thanh toán</option>
+              <option value="REFUNDED">Đã hoàn tiền</option>
             </select>
-
-            {/* Export Button */}
-            <Link
-              href="/orders/export"
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium whitespace-nowrap text-gray-700 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              Xuất Excel
-            </Link>
           </div>
         </div>
       </div>
@@ -364,15 +180,6 @@ export default function OrderTable() {
           {/* Table Header */}
           <TableHeader className="bg-gray-50 dark:bg-gray-800/50">
             <TableRow className="border-b border-gray-200 dark:border-gray-800">
-              <TableCell
-                isHeader
-                className="w-12 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400"
-              >
-                <input
-                  type="checkbox"
-                  className="text-brand-600 focus:ring-brand-500 h-4 w-4 rounded border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800"
-                />
-              </TableCell>
               <TableCell
                 isHeader
                 className="py-3 text-xs font-medium text-gray-500 dark:text-gray-400"
@@ -387,12 +194,6 @@ export default function OrderTable() {
               </TableCell>
               <TableCell
                 isHeader
-                className="py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400"
-              >
-                Sản phẩm
-              </TableCell>
-              <TableCell
-                isHeader
                 className="py-3 text-xs font-medium text-gray-500 dark:text-gray-400"
               >
                 Tổng tiền
@@ -401,7 +202,7 @@ export default function OrderTable() {
                 isHeader
                 className="py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400"
               >
-                Trạng thái
+                Trạng thái giao hàng
               </TableCell>
               <TableCell
                 isHeader
@@ -426,83 +227,51 @@ export default function OrderTable() {
 
           {/* Table Body */}
           <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {filteredOrders.map((order) => (
+            {orders.map((order) => (
               <TableRow
-                key={order.id}
+                key={order.orderId}
                 className="transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.02]"
               >
                 <TableCell className="py-3 text-center">
-                  <input
-                    type="checkbox"
-                    className="text-brand-600 focus:ring-brand-500 h-4 w-4 rounded border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800"
-                  />
-                </TableCell>
-                <TableCell className="py-3">
                   <Link
-                    href={`/orders/${order.id}`}
+                    href={`/orders/${order.orderId}`}
                     className="text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium"
                   >
-                    {order.orderNumber}
+                    #ORD{order.orderId}
                   </Link>
                 </TableCell>
-                <TableCell className="py-3">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={order.customer.avatar}
-                      alt={order.customer.name}
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {order.customer.name}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {order.customer.email}
-                      </p>
-                    </div>
+                <TableCell className="py-3 flex justify-center">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {order.userName || 'N/A'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {order.userEmail || 'N/A'}
+                    </p>
                   </div>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-white/90">
-                    <svg
-                      className="h-4 w-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                      />
-                    </svg>
-                    {order.products}
-                  </span>
-                </TableCell>
-                <TableCell className="py-3">
                   <span className="font-semibold text-gray-900 dark:text-white">
-                    {formatCurrency(order.total)}
+                    {formatCurrency(order.totalAmount)}
                   </span>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{order.paymentMethod}</p>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <Badge color={getStatusBadgeColor(order.status)}>
-                    {getStatusText(order.status)}
+                  <Badge color={getStatusBadgeColor(order.currentShippingStatus.statusCode)}>
+                    {order.currentShippingStatus.statusName}
                   </Badge>
                 </TableCell>
                 <TableCell className="py-3 text-center">
-                  <Badge color={getPaymentStatusBadgeColor(order.paymentStatus)} size="sm">
-                    {getPaymentStatusText(order.paymentStatus)}
+                  <Badge color={getPaymentStatusBadgeColor(order.currentPaymentStatus.statusCode)} size="sm">
+                    {order.currentPaymentStatus.statusName}
                   </Badge>
                 </TableCell>
                 <TableCell className="py-3 text-center text-sm text-gray-600 dark:text-gray-400">
-                  {formatDate(order.createdAt)}
+                  {formatDate(order.orderDate)}
                 </TableCell>
                 <TableCell className="py-3">
                   <div className="flex items-center justify-center gap-2">
                     <Link
-                      href={`/orders/${order.id}`}
+                      href={`/orders/${order.orderId}`}
                       className="hover:text-brand-600 dark:hover:text-brand-400 inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
                       title="Xem chi tiết"
                     >
@@ -526,43 +295,6 @@ export default function OrderTable() {
                         />
                       </svg>
                     </Link>
-                    <Link
-                      href={`/orders/${order.id}/edit`}
-                      className="hover:text-brand-600 dark:hover:text-brand-400 inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                      title="Chỉnh sửa"
-                    >
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      </svg>
-                    </Link>
-                    <button
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-gray-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                      title="Xóa"
-                    >
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -570,7 +302,7 @@ export default function OrderTable() {
           </TableBody>
         </Table>
 
-        {filteredOrders.length === 0 && (
+        {orders.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center py-12">
             <svg
               className="h-12 w-12 text-gray-400 dark:text-gray-600"
@@ -591,25 +323,53 @@ export default function OrderTable() {
       </div>
 
       {/* Pagination */}
-      {filteredOrders.length > 0 && (
+      {totalPages > 0 && (
         <div className="flex flex-col items-center justify-between gap-4 border-t border-gray-200 px-6 py-4 sm:flex-row dark:border-gray-800">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Hiển thị {filteredOrders.length} trong tổng {orderData.length} đơn hàng
+            Hiển thị {orders.length} trong tổng {totalItems} đơn hàng
           </p>
           <div className="flex items-center gap-2">
-            <button className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+              disabled={currentPage === 0 || loading}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]"
+            >
               Trước
             </button>
-            <button className="bg-brand-600 border-brand-600 hover:bg-brand-700 rounded-lg border px-3 py-2 text-sm font-medium text-white transition-colors">
-              1
-            </button>
-            <button className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]">
-              2
-            </button>
-            <button className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]">
-              3
-            </button>
-            <button className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]">
+            
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i;
+              } else if (currentPage < 3) {
+                pageNum = i;
+              } else if (currentPage > totalPages - 3) {
+                pageNum = totalPages - 5 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  disabled={loading}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    currentPage === pageNum
+                      ? 'bg-brand-600 border-brand-600 text-white'
+                      : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]'
+                  }`}
+                >
+                  {pageNum + 1}
+                </button>
+              );
+            })}
+            
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={currentPage === totalPages - 1 || loading}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]"
+            >
               Sau
             </button>
           </div>

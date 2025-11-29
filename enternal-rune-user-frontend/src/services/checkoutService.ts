@@ -110,3 +110,81 @@ export const createRefundRequest = async (
     }
 }
 
+// Tạo yêu cầu trả hàng
+export const createReturnRequest = async (
+    orderId: number,
+    userId: number,
+    reason: string,
+    imageUrl?: string
+): Promise<any> => {
+    try {
+        console.log('📦 Tạo yêu cầu trả hàng:', { orderId, userId, reason, imageUrl });
+        const response = await AxiosInstance.post('/return-requests', 
+            {
+                orderId,
+                reason,
+                imageUrl
+            },
+            {
+                params: { userId }
+            }
+        );
+        console.log('✅ Tạo yêu cầu trả hàng thành công:', response.data);
+        return response.data;
+    } catch (error: any) {
+        console.error('❌ Lỗi tạo yêu cầu trả hàng:', error);
+        if (error.response?.data?.message) {
+            throw new Error(error.response.data.message);
+        }
+        throw error;
+    }
+}
+
+// Tạo yêu cầu hủy đơn
+export const createCancelRequest = async (
+    orderId: number,
+    userId: number,
+    reason: string
+): Promise<any> => {
+    try {
+        console.log('🚫 Tạo yêu cầu hủy đơn:', { orderId, userId, reason });
+        const response = await AxiosInstance.post('/cancel-requests',
+            {
+                orderId,
+                reason
+            },
+            {
+                params: { userId }
+            }
+        );
+        console.log('✅ Tạo yêu cầu hủy đơn thành công:', response.data);
+        return response.data;
+    } catch (error: any) {
+        console.error('❌ Lỗi tạo yêu cầu hủy đơn:', error);
+        if (error.response?.data?.message) {
+            throw new Error(error.response.data.message);
+        }
+        throw error;
+    }
+}
+
+// Upload ảnh
+export const uploadImage = async (file: File): Promise<string> => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        // Sử dụng API upload có sẵn hoặc tạo mới
+        const response = await AxiosInstance.post('/upload/image', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        return response.data.imageUrl || response.data.url;
+    } catch (error: any) {
+        console.error('❌ Lỗi upload ảnh:', error);
+        throw new Error('Không thể tải ảnh lên. Vui lòng thử lại.');
+    }
+}
+
