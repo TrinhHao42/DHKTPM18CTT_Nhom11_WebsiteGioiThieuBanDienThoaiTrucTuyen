@@ -321,4 +321,9 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.save(product);
     }
 
+    @Override
+    public Product getProductById(Integer id) {
+        return productRepository.findById(id).orElse(null);
+    }
+
 }

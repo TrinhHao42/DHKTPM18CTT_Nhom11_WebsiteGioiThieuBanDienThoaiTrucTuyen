@@ -84,9 +84,9 @@ export default function ProductTable({
     switch (status) {
       case 'ACTIVE':
         return 'success';
-      case 'INACTIVE':
-        return 'warning';
       case 'OUT_OF_STOCK':
+        return 'warning';
+      case 'REMOVED':
         return 'error';
       default:
         return 'primary';
@@ -173,8 +173,8 @@ export default function ProductTable({
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="ACTIVE">Đang bán</option>
-            <option value="INACTIVE">Ngừng bán</option>
             <option value="OUT_OF_STOCK">Hết hàng</option>
+            <option value="REMOVED">Đã xóa</option>
           </select>
         </div>
       </form>

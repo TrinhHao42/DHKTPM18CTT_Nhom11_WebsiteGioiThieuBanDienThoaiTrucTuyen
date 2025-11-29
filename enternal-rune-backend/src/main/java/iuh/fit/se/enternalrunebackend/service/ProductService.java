@@ -41,4 +41,5 @@ public interface ProductService {
     public void deleteProduct(Integer id);
     public Product updateProduct(Integer productId, ProductRequest request);
 
+    Product getProductById(Integer id);
 }

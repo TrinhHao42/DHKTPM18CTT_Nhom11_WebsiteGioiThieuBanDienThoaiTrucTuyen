@@ -95,7 +95,7 @@ class ProductService {
   async add(formData: ProductFormData, imageFiles: File[]): Promise<string> {
     const token = this.getAuthToken();
     
-    // Tạo ProductRequest từ FormData
+    // Tạo ProductRequest từ FormData (images sẽ được gửi qua multipart)
     const productRequest: ProductRequest = {
       productName: formData.productName,
       productModel: formData.productModel,
@@ -104,6 +104,7 @@ class ProductService {
       productColor: formData.productColor,
       productDescription: formData.productDescription,
       brandId: formData.brandId,
+      images: [], // Ảnh được gửi qua multipart form-data
       productPrices: [{ ppPrice: formData.price }],
     };
 
@@ -136,7 +137,11 @@ class ProductService {
    * Cập nhật sản phẩm
    * PUT /products/dashboard/update/{id}
    */
-  async update(id: number, formData: ProductFormData): Promise<ProductResponse> {
+  async update(
+    id: number,
+    formData: ProductFormData,
+    existingImages: Array<{ imageName: string; imageData: string }>
+  ): Promise<ProductResponse> {
     // Tạo ProductRequest từ FormData
     const productRequest: ProductRequest = {
       productName: formData.productName,
@@ -146,9 +151,14 @@ class ProductService {
       productColor: formData.productColor,
       productDescription: formData.productDescription,
       brandId: formData.brandId,
+      images: existingImages.map((img) => ({
+        imageName: img.imageName,
+        imageData: img.imageData,
+      })),
       productPrices: [{ ppPrice: formData.price }],
     };
 
+    console.log("Updating product with data:", JSON.stringify(productRequest));
     const response = await fetch(
       `${API_BASE_URL}/products/dashboard/update/${id}`,
       {
@@ -164,25 +174,24 @@ class ProductService {
    * Xóa sản phẩm
    * DELETE /products/dashboard/delete/{id}
    */
-  async delete(id: number): Promise<string> {
-    const response = await fetch(
+  async delete(id: number): Promise<void> {
+    await fetch(
       `${API_BASE_URL}/products/dashboard/delete/${id}`,
       {
         method: "DELETE",
         headers: this.getAuthHeaders(),
       }
     );
-    return this.handleResponse<string>(response);
   }
 
   /**
    * Lấy chi tiết sản phẩm theo ID
-   * GET /products/{id}/active-price (tạm thời dùng endpoint này)
+   * GET /products/dashboard/{id}
    */
   async getById(id: number): Promise<ProductResponse | null> {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/products/${id}/active-price`,
+        `${API_BASE_URL}/products/dashboard/${id}`,
         {
           method: "GET",
           headers: this.getAuthHeaders(),
@@ -213,8 +222,8 @@ class ProductService {
   getStatusLabel(status: string): string {
     const statusMap: Record<string, string> = {
       ACTIVE: "Đang bán",
-      INACTIVE: "Ngừng bán",
       OUT_OF_STOCK: "Hết hàng",
+      REMOVED: "Đã xóa",
     };
     return statusMap[status] || status;
   }
@@ -230,8 +239,8 @@ class ProductService {
       "success" | "warning" | "danger" | "default"
     > = {
       ACTIVE: "success",
-      INACTIVE: "warning",
-      OUT_OF_STOCK: "danger",
+      OUT_OF_STOCK: "warning",
+      REMOVED: "danger",
     };
     return colorMap[status] || "default";
   }

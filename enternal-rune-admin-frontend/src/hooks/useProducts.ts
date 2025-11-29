@@ -38,7 +38,7 @@ interface UseProductsReturn {
   changePageSize: (size: number) => void;
   search: (keyword: string) => void;
   filterByBrand: (brand: string) => void;
-  filterByStatus: (status: "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK") => void;
+  filterByStatus: (status: "ACTIVE" | "OUT_OF_STOCK" | "REMOVED") => void;
   resetFilters: () => void;
 }
 
@@ -145,11 +145,15 @@ export function useProducts(
    * Cập nhật sản phẩm
    */
   const updateProduct = useCallback(
-    async (id: number, product: ProductFormData) => {
+    async (
+      id: number,
+      product: ProductFormData,
+      existingImages: Array<{ imageName: string; imageData: string }> = []
+    ) => {
       try {
         setLoading(true);
         setError(null);
-        await productService.update(id, product);
+        await productService.update(id, product, existingImages);
         // Refresh danh sách sau khi cập nhật
         await fetchProducts();
         await fetchStatistics();
@@ -229,7 +233,7 @@ export function useProducts(
    * Filter theo status
    */
   const filterByStatus = useCallback(
-    (status: "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK") => {
+    (status: "ACTIVE" | "OUT_OF_STOCK" | "REMOVED") => {
       fetchProducts({ page: 0, status });
     },
     [fetchProducts]
