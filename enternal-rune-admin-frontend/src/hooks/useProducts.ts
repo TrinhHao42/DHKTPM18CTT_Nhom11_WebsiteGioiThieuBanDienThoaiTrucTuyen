@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import productService, { ProductFormData } from "@/services/productService";
+import productService from "@/services/productService";
 import {
   ProductDashboardResponse,
   ProductDashboardListResponse,
   ProductFilterParams,
+  ProductFormData,
 } from "@/types/product";
 
 interface UseProductsReturn {
@@ -28,7 +29,7 @@ interface UseProductsReturn {
   // Actions
   fetchProducts: (params?: ProductFilterParams) => Promise<void>;
   fetchStatistics: () => Promise<void>;
-  addProduct: (product: ProductFormData) => Promise<void>;
+  addProduct: (product: ProductFormData, images: File[]) => Promise<void>;
   updateProduct: (id: number, product: ProductFormData) => Promise<void>;
   deleteProduct: (id: number) => Promise<void>;
   
@@ -122,11 +123,11 @@ export function useProducts(
    * Thêm sản phẩm mới
    */
   const addProduct = useCallback(
-    async (product: ProductFormData) => {
+    async (product: ProductFormData, images: File[]) => {
       try {
         setLoading(true);
         setError(null);
-        await productService.add(product);
+        await productService.add(product, images);
         // Refresh danh sách sau khi thêm
         await fetchProducts();
         await fetchStatistics();

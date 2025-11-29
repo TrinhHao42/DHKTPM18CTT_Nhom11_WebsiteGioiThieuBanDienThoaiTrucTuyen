@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import ProductForm from '@/components/products/ProductForm';
-import productService, { ProductFormData } from '@/services/productService';
-import { ProductDashboardListResponse } from '@/types/product';
+import productService from '@/services/productService';
+import { ProductDashboardListResponse, ProductFormData } from '@/types/product';
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -45,9 +45,10 @@ export default function EditProductPage() {
     }
   };
 
-  const handleSubmit = async (data: ProductFormData) => {
+  const handleSubmit = async (data: ProductFormData, _images: File[]) => {
     try {
       await productService.update(parseInt(id), data);
+      alert('Cập nhật sản phẩm thành công!');
       router.push('/products');
     } catch (error: any) {
       throw new Error(error.message || 'Không thể cập nhật sản phẩm');

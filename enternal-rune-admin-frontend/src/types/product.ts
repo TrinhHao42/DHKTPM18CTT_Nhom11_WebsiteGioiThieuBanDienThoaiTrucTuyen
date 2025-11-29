@@ -72,42 +72,33 @@ export interface ProductDashboardResponse {
 
 export type ProductStatus = "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK";
 
+export interface ProductPriceRequest {
+  ppPrice: number;
+}
+
 export interface ProductRequest {
-  prodName: string;
-  prodModel: string;
+  productName: string;
+  productModel: string;
   productStatus: ProductStatus;
-  prodVersion: string;
-  prodColor: string;
-  prodDescription: string;
-  prodRating?: number;
+  productVersion: string[];
+  productColor: string[];
+  productDescription: string;
   brandId: number;
-  images?: Array<{
-    imageName: string;
-    imageData: string;
-  }>;
-  productPrices?: Array<{
-    ppPrice: number;
-    ppPriceStatus: "ACTIVE" | "INACTIVE";
-    ppStartDate: string;
-    ppEndDate: string;
-    discountId?: number;
-  }>;
-  specifications?: {
-    screenSize: string;
-    displayTech: string;
-    rearCamera: string;
-    frontCamera: string;
-    chipset: string;
-    nfcTech: string;
-    ram: string;
-    storage: string;
-    battery: string;
-    th_sim: string;
-    os: string;
-    resolution: string;
-    displayFeatures: string;
-    cpuType: string;
-  };
+  productPrices: ProductPriceRequest[];
+}
+
+// Interface cho form UI
+export interface ProductFormData {
+  productId?: number;
+  productName: string;
+  productModel: string;
+  productStatus: ProductStatus;
+  productVersion: string[];
+  productColor: string[];
+  productDescription: string;
+  brandId: number;
+  price: number;
+  images?: File[];
 }
 
 export interface PageResponse<T> {

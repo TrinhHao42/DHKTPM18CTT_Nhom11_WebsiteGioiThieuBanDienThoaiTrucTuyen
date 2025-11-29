@@ -4,27 +4,25 @@ import {
   ProductDashboardListResponse,
   PageResponse,
   ProductFilterParams,
+  ProductRequest,
+  ProductFormData,
 } from "@/types/product";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-// Interface cho form data
-export interface  ProductFormData {
-  productId?: number;
-  productName: string;
-  model: string;
-  category: string;
-  price: number;
-  status: string;
-  imageUrl?: string;
-}
-
 class ProductService {
   /**
-   * Lấy authorization headers
+   * Lấy authorization headers (không có Content-Type cho multipart)
+   */
+  private getAuthToken(): string | null {
+    return localStorage.getItem("admin_token");
+  }
+
+  /**
+   * Lấy authorization headers cho JSON requests
    */
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem("admin_token");
+    const token = this.getAuthToken();
     return {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -92,29 +90,71 @@ class ProductService {
 
   /**
    * Thêm sản phẩm mới
-   * POST /products/dashboard/add
+   * POST /products/dashboard/add (multipart/form-data)
    */
-  async add(product: ProductFormData): Promise<string> {
+  async add(formData: ProductFormData, imageFiles: File[]): Promise<string> {
+    const token = this.getAuthToken();
+    
+    // Tạo ProductRequest từ FormData
+    const productRequest: ProductRequest = {
+      productName: formData.productName,
+      productModel: formData.productModel,
+      productStatus: formData.productStatus,
+      productVersion: formData.productVersion,
+      productColor: formData.productColor,
+      productDescription: formData.productDescription,
+      brandId: formData.brandId,
+      productPrices: [{ ppPrice: formData.price }],
+    };
+
+    // Tạo FormData cho multipart request
+    const multipartFormData = new FormData();
+    multipartFormData.append('product', JSON.stringify(productRequest));
+    
+    // Thêm các file ảnh
+    imageFiles.forEach((file) => {
+      multipartFormData.append('images', file);
+    });
+
     const response = await fetch(`${API_BASE_URL}/products/dashboard/add`, {
       method: "POST",
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(product),
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: multipartFormData,
     });
-    return this.handleResponse<string>(response);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+    
+    return response.text();
   }
 
   /**
    * Cập nhật sản phẩm
    * PUT /products/dashboard/update/{id}
    */
-  async update(id: number, product: ProductFormData): Promise<ProductResponse> {
-    console.log("Updating product:", id, product);
+  async update(id: number, formData: ProductFormData): Promise<ProductResponse> {
+    // Tạo ProductRequest từ FormData
+    const productRequest: ProductRequest = {
+      productName: formData.productName,
+      productModel: formData.productModel,
+      productStatus: formData.productStatus,
+      productVersion: formData.productVersion,
+      productColor: formData.productColor,
+      productDescription: formData.productDescription,
+      brandId: formData.brandId,
+      productPrices: [{ ppPrice: formData.price }],
+    };
+
     const response = await fetch(
       `${API_BASE_URL}/products/dashboard/update/${id}`,
       {
         method: "PUT",
         headers: this.getAuthHeaders(),
-        body: JSON.stringify(product),
+        body: JSON.stringify(productRequest),
       }
     );
     return this.handleResponse<ProductResponse>(response);

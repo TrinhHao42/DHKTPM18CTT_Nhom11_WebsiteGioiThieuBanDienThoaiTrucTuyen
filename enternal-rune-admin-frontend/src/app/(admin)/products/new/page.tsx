@@ -4,14 +4,15 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ProductForm from '@/components/products/ProductForm';
-import productService, { ProductFormData } from '@/services/productService';
+import productService from '@/services/productService';
+import { ProductFormData } from '@/types/product';
 
 export default function NewProductPage() {
   const router = useRouter();
 
-  const handleSubmit = async (data: ProductFormData) => {
+  const handleSubmit = async (data: ProductFormData, images: File[]) => {
     try {
-      await productService.add(data);
+      await productService.add(data, images);
       alert('Tạo sản phẩm thành công!');
       router.push('/products');
     } catch (error: any) {

@@ -96,11 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!data) {
         throw new Error("Đăng nhập không thành công");
       }
-
-      if (data.roles && !data.roles.includes("ROLE_ADMIN")) {
-        data.roles.push("ROLE_ADMIN");
-      }
-
+      
       // Lưu vào localStorage
       localStorage.setItem("admin_token", data.token);
       localStorage.setItem("admin_user", JSON.stringify(data.user));
