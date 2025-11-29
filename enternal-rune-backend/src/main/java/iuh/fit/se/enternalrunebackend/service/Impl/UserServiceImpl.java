@@ -113,11 +113,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + userId));
 
-        UserResponse response = new UserResponse();
-        response.setUserId(user.getUserId());
-        response.setUserName(user.getName());
-        response.setUserEmail(user.getEmail());
-        response.setUserAddress(user.getAddresses());
+        UserResponse response = UserResponse.toUserResponse(user);
 
         return response;
     }

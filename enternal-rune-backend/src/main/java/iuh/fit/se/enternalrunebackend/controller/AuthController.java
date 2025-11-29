@@ -97,12 +97,7 @@ public class AuthController {
 //        response.put("username", userDetails.getUsername());
         response.put("roles", roles);
 
-        UserResponse loginUser = new UserResponse();
-        loginUser.setUserId(user.getUserId());
-        loginUser.setUserEmail(user.getEmail());
-        loginUser.setUserName(user.getName());
-        // Safely get addresses, return empty list if null
-        loginUser.setUserAddress(user.getAddresses() != null ? user.getAddresses() : new java.util.ArrayList<>());
+        UserResponse loginUser = UserResponse.toUserResponse(user);
 
         response.put("user", loginUser);
         return response;

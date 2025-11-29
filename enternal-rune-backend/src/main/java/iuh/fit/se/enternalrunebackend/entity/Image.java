@@ -17,6 +17,7 @@ public class Image {
     @Column(name = "image_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer imageId;
+
     @Column(name = "image_name")
     String imageName;
     @Column(name="image_data",columnDefinition = "TEXT")
