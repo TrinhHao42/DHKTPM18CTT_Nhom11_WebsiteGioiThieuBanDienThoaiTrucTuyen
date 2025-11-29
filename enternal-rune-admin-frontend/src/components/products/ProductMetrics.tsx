@@ -74,55 +74,9 @@ export default function ProductMetrics({ statistics, loading }: ProductMetricsPr
       <MetricCard
         icon={<BoxIconLine className="text-gray-800 dark:text-white/90" />}
         title="Tổng sản phẩm"
-        value={statistics?.totalProducts.toLocaleString() || 0}
+        value={statistics?.totalProducts?.toLocaleString() || 0}
       />
       
-      <MetricCard
-        icon={
-          <svg
-            className="text-gray-800 size-6 dark:text-white/90"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        }
-        title="Đang bán"
-        value={statistics?.activeProducts.toLocaleString() || 0}
-      />
-
-      <MetricCard
-        icon={
-          <svg
-            className="text-gray-800 size-6 dark:text-white/90"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        }
-        title="Hết hàng"
-        value={statistics?.outOfStockProducts.toLocaleString() || 0}
-      />
-
       <MetricCard
         icon={
           <svg
@@ -149,8 +103,54 @@ export default function ProductMetrics({ statistics, loading }: ProductMetricsPr
             />
           </svg>
         }
-        title="Thương hiệu"
-        value={statistics?.totalBrands.toLocaleString() || 0}
+        title="Danh mục"
+        value={statistics?.totalCategories?.toLocaleString() || 0}
+      />
+
+      <MetricCard
+        icon={
+          <svg
+            className="text-gray-800 size-6 dark:text-white/90"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        }
+        title="Còn hàng"
+        value={statistics?.availableProducts?.toLocaleString() || 0}
+      />
+
+      <MetricCard
+        icon={
+          <svg
+            className="text-gray-800 size-6 dark:text-white/90"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        }
+        title="Hết hàng"
+        value={statistics?.outOfStockProducts?.toLocaleString() || 0}
       />
     </div>
   );

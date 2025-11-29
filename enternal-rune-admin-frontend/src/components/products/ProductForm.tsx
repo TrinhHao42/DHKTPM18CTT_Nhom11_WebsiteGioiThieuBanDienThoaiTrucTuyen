@@ -6,9 +6,19 @@ import { ProductRequest, ProductStatus } from '@/types/product';
 import { BrandResponse } from '@/types/brand';
 import brandService from '@/services/brandService';
 
+interface ProductFormData {
+  productId?: number;
+  productName: string;
+  model: string;
+  category: string;
+  price: number;
+  status: string;
+  imageUrl?: string;
+}
+
 interface ProductFormProps {
-  initialData?: Partial<ProductRequest> & { prodId?: number };
-  onSubmit: (data: ProductRequest) => Promise<void>;
+  initialData?: ProductFormData;
+  onSubmit: (data: ProductFormData) => Promise<void>;
   onDelete?: (id: number) => Promise<void>;
   isEdit?: boolean;
 }
@@ -24,15 +34,14 @@ export default function ProductForm({
   const [brands, setBrands] = useState<BrandResponse[]>([]);
   const [loadingBrands, setLoadingBrands] = useState(true);
   
-  const [formData, setFormData] = useState<ProductRequest>({
-    prodName: initialData?.prodName || '',
-    prodModel: initialData?.prodModel || '',
-    productStatus: initialData?.productStatus || 'ACTIVE',
-    prodVersion: initialData?.prodVersion || '',
-    prodColor: initialData?.prodColor || '',
-    prodDescription: initialData?.prodDescription || '',
-    prodRating: initialData?.prodRating || 0,
-    brandId: initialData?.brandId || 0,
+  const [formData, setFormData] = useState<ProductFormData>({
+    productId: initialData?.productId,
+    productName: initialData?.productName || '',
+    model: initialData?.model || '',
+    category: initialData?.category || '',
+    price: initialData?.price || 0,
+    status: initialData?.status || 'ACTIVE',
+    imageUrl: initialData?.imageUrl || '',
   });
 
   // Fetch brands khi component mount
@@ -60,7 +69,7 @@ export default function ProductForm({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'brandId' || name === 'prodRating' ? Number(value) : value,
+      [name]: name === 'price' ? Number(value) : value,
     }));
   };
 
@@ -71,14 +80,17 @@ export default function ProductForm({
 
     try {
       // Validation
-      if (!formData.prodName.trim()) {
+      if (!formData.productName.trim()) {
         throw new Error('Tên sản phẩm không được để trống');
       }
-      if (!formData.prodModel.trim()) {
+      if (!formData.model.trim()) {
         throw new Error('Model không được để trống');
       }
-      if (formData.brandId <= 0) {
-        throw new Error('Vui lòng chọn thương hiệu');
+      if (!formData.category.trim()) {
+        throw new Error('Vui lòng chọn danh mục');
+      }
+      if (formData.price <= 0) {
+        throw new Error('Giá phải lớn hơn 0');
       }
 
       await onSubmit(formData);
@@ -91,17 +103,17 @@ export default function ProductForm({
   };
 
   const handleDeleteClick = async () => {
-    if (!initialData?.prodId || !onDelete) return;
+    if (!initialData?.productId || !onDelete) return;
 
     if (
       confirm(
-        `Bạn có chắc chắn muốn xóa sản phẩm "${formData.prodName}"?\nHành động này không thể hoàn tác.`
+        `Bạn có chắc chắn muốn xóa sản phẩm "${formData.productName}"?\nHành động này không thể hoàn tác.`
       )
     ) {
       setLoading(true);
       setError(null);
       try {
-        await onDelete(initialData.prodId);
+        await onDelete(initialData.productId);
       } catch (err: any) {
         setError(err.message || 'Không thể xóa sản phẩm');
       } finally {
@@ -150,12 +162,12 @@ export default function ProductForm({
                 </label>
                 <input
                   type="text"
-                  name="prodName"
-                  value={formData.prodName}
+                  name="productName"
+                  value={formData.productName}
                   onChange={handleChange}
                   required
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                  placeholder="VD: iPhone 15 Pro Max"
+                  placeholder="VD: Samsung Galaxy A34 5G 8GB 128GB"
                 />
               </div>
 
@@ -166,31 +178,31 @@ export default function ProductForm({
                   </label>
                   <input
                     type="text"
-                    name="prodModel"
-                    value={formData.prodModel}
+                    name="model"
+                    value={formData.model}
                     onChange={handleChange}
                     required
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                    placeholder="VD: A2894"
+                    placeholder="VD: samsung-galaxy-a"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Thương hiệu <span className="text-error-600">*</span>
+                    Danh mục <span className="text-error-600">*</span>
                   </label>
                   <select
-                    name="brandId"
-                    value={formData.brandId}
+                    name="category"
+                    value={formData.category}
                     onChange={handleChange}
                     required
                     disabled={loadingBrands}
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                   >
-                    <option value={0}>
-                      {loadingBrands ? 'Đang tải...' : 'Chọn thương hiệu'}
+                    <option value="">
+                      {loadingBrands ? 'Đang tải...' : 'Chọn danh mục'}
                     </option>
                     {brands.map((brand) => (
-                      <option key={brand.brandId} value={brand.brandId}>
+                      <option key={brand.brandId} value={brand.brandName}>
                         {brand.brandName}
                       </option>
                     ))}
@@ -198,66 +210,33 @@ export default function ProductForm({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Phiên bản <span className="text-error-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="prodVersion"
-                    value={formData.prodVersion}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                    placeholder="VD: 256GB"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Màu sắc <span className="text-error-600">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="prodColor"
-                    value={formData.prodColor}
-                    onChange={handleChange}
-                    required
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                    placeholder="VD: Titan tự nhiên"
-                  />
-                </div>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Đánh giá (0-5)
+                  Giá <span className="text-error-600">*</span>
                 </label>
                 <input
                   type="number"
-                  name="prodRating"
-                  value={formData.prodRating}
+                  name="price"
+                  value={formData.price}
                   onChange={handleChange}
+                  required
                   min={0}
-                  max={5}
-                  step={0.1}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                  placeholder="4.5"
+                  placeholder="VD: 7090000"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Mô tả <span className="text-error-600">*</span>
+                  URL Hình ảnh
                 </label>
-                <textarea
-                  name="prodDescription"
-                  value={formData.prodDescription}
+                <input
+                  type="text"
+                  name="imageUrl"
+                  value={formData.imageUrl || ''}
                   onChange={handleChange}
-                  required
-                  rows={6}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                  placeholder="Nhập mô tả chi tiết về sản phẩm"
+                  placeholder="https://example.com/image.jpg"
                 />
               </div>
             </div>
@@ -272,8 +251,8 @@ export default function ProductForm({
               Trạng thái
             </h3>
             <select
-              name="productStatus"
-              value={formData.productStatus}
+              name="status"
+              value={formData.status}
               onChange={handleChange}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
             >
@@ -341,7 +320,7 @@ export default function ProductForm({
                 Hủy
               </Link>
 
-              {isEdit && onDelete && initialData?.prodId && (
+              {isEdit && onDelete && initialData?.productId && (
                 <button
                   type="button"
                   onClick={handleDeleteClick}

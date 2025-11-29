@@ -1,5 +1,4 @@
 import {
-  ProductRequest,
   ProductResponse,
   ProductDashboardResponse,
   ProductDashboardListResponse,
@@ -8,6 +7,17 @@ import {
 } from "@/types/product";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+// Interface cho form data
+export interface  ProductFormData {
+  productId?: number;
+  productName: string;
+  model: string;
+  category: string;
+  price: number;
+  status: string;
+  imageUrl?: string;
+}
 
 class ProductService {
   /**
@@ -84,7 +94,7 @@ class ProductService {
    * Thêm sản phẩm mới
    * POST /products/dashboard/add
    */
-  async add(product: ProductRequest): Promise<string> {
+  async add(product: ProductFormData): Promise<string> {
     const response = await fetch(`${API_BASE_URL}/products/dashboard/add`, {
       method: "POST",
       headers: this.getAuthHeaders(),
@@ -97,7 +107,8 @@ class ProductService {
    * Cập nhật sản phẩm
    * PUT /products/dashboard/update/{id}
    */
-  async update(id: number, product: ProductRequest): Promise<ProductResponse> {
+  async update(id: number, product: ProductFormData): Promise<ProductResponse> {
+    console.log("Updating product:", id, product);
     const response = await fetch(
       `${API_BASE_URL}/products/dashboard/update/${id}`,
       {

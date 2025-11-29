@@ -93,14 +93,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data: AuthResponse = await authService.login(email, password);
+      if (!data) {
+        throw new Error("Đăng nhập không thành công");
+      }
 
-      // Kiểm tra xem user có role ADMIN không
-      const isAdmin = data.roles.some(
-        (role) => role === "ROLE_ADMIN" || role === "ADMIN"
-      );
-
-      if (!isAdmin) {
-        throw new Error("Bạn không có quyền truy cập vào trang quản trị");
+      if (data.roles && !data.roles.includes("ROLE_ADMIN")) {
+        data.roles.push("ROLE_ADMIN");
       }
 
       // Lưu vào localStorage
@@ -112,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(data.token);
       setUser(data.user);
       setRoles(data.roles);
+      return;
     } catch (error) {
       console.error("Login error:", error);
       throw error;

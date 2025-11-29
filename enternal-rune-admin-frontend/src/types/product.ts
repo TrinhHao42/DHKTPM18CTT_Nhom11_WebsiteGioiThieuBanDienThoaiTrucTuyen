@@ -54,25 +54,20 @@ export interface ProductResponse {
 }
 
 export interface ProductDashboardListResponse {
-  prodId: number;
-  prodName: string;
-  prodModel: string;
-  brandName: string;
-  prodColor: string;
-  prodVersion: string;
-  productStatus: string;
-  currentPrice: number;
-  prodRating: number;
+  productId: number;
+  productName: string;
+  model: string;
+  category: string;
+  price: number;
+  status: string;
   imageUrl: string;
 }
 
 export interface ProductDashboardResponse {
   totalProducts: number;
-  activeProducts: number;
-  inactiveProducts: number;
+  totalCategories: number;
+  availableProducts: number;
   outOfStockProducts: number;
-  averageRating: number;
-  totalBrands: number;
 }
 
 export type ProductStatus = "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK";
