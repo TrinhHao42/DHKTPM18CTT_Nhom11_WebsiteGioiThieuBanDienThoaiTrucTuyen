@@ -1,14 +1,8 @@
 package iuh.fit.se.enternalrunebackend.controller;
 
-import com.nimbusds.openid.connect.sdk.Prompt;
-import iuh.fit.se.enternalrunebackend.service.ChatService;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.google.genai.GoogleGenAiChatModel;
+import iuh.fit.se.enternalrunebackend.service.serviceClass.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
-
-import java.util.Map;
 
 @RestController
 public class ChatController {

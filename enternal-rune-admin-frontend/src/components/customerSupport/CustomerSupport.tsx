@@ -194,6 +194,24 @@ export default function CustomerSupport() {
     });
   };
 
+  const handleSendImage = async (file: File, caption?: string) => {
+    if (!selectedConversation) return;
+
+    try {
+      // Upload image - backend sẽ tự broadcast qua WebSocket
+      await chatService.uploadImageMessage(
+        selectedConversation.id,
+        agentId,
+        'AGENT',
+        file,
+        caption
+      );
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      throw error; // Re-throw để ChatModal xử lý
+    }
+  };
+
   const handleCompleteConversation = async () => {
     if (!selectedConversation) return;
 
@@ -389,6 +407,7 @@ export default function CustomerSupport() {
             customerEmail={userDisplay.email}
             messages={messages}
             onSendMessage={handleSendMessage}
+            onSendImage={handleSendImage}
             onCompleteConversation={handleCompleteConversation}
             onReopenConversation={handleReopenConversation}
             agentId={agentId}
