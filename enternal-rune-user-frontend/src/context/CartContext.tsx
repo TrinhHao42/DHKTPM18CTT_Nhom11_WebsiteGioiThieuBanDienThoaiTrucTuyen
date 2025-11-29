@@ -19,7 +19,7 @@ type CartActionsType = {
   addCartItem: (
     product: Product,
     quantity?: number,
-    options?: { color?: string; storage?: string; version?: string }
+    options?: { color?: string; storage?: string; version?: string; imageId?: number }
   ) => Promise<void>;
   removeCartItem: (itemId: number) => Promise<void>;
   updateCartItemQuantity: (itemId: number, quantity: number) => Promise<void>;
@@ -73,7 +73,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const addCartItem = async (
     product: Product,
     quantity: number = 1,
-    options?: { color?: string; storage?: string; version?: string }
+    options?: { color?: string; storage?: string; version?: string; imageId?: number }
   ) => {
     if (!user?.userId) {
       const msg = "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng";

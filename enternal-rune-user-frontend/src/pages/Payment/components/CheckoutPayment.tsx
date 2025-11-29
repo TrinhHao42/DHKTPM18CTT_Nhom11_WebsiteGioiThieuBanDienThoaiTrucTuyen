@@ -1,100 +1,69 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 import { PaymentStatus } from "@/types/enums/PaymentStatus";
-import { CreateOrderResponse, getOrderPaymentStatus, getQrCodeSepay } from "@/services/checkoutService";
+import { CreateOrderResponse, getOrderPaymentStatus } from "@/services/checkoutService";
 
 interface QRPaymentProps {
     order: CreateOrderResponse
     onPaymentSuccess: () => void;
 }
 
-const QRPayment = ({ order, onPaymentSuccess }: QRPaymentProps) => {
-    const [qrCode, setQrCode] = useState("")
+const CheckoutPayment = ({ order, onPaymentSuccess }: QRPaymentProps) => {
     const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>(PaymentStatus.PENDING)
 
     useEffect(() => {
-        const getQrCode = async (amount: number, description: string) => {
-            try {
-                const res = await getQrCodeSepay(amount, description)
-
-                setQrCode(URL.createObjectURL(res))
-            } catch (error) {
-                console.error("Error fetching QR code:", error)
-            }
-        }
-
-        getQrCode(order.totalAmount, `Thanh toan ORD${order.orderId}`)
-
         const intervalId = setInterval(async () => {
             try {
                 const statusRes = await getOrderPaymentStatus(order.orderId)
                 
-                setPaymentStatus(statusRes)
+                setPaymentStatus(statusRes as PaymentStatus)
                 
-                // Nếu thanh toán thành công, gọi callback
                 if (statusRes === PaymentStatus.PAID) {
                     clearInterval(intervalId)
                     setTimeout(() => {
                         onPaymentSuccess()
-                    }, 2000) // Đợi 2s để user thấy thông báo thành công
+                    }, 1500)
                 }
             } catch (error) {
                 console.error("Error checking payment status:", error)
             }
         }, 2000)
 
-        return () => {
-            if (intervalId) clearInterval(intervalId)
-        }
+        return () => clearInterval(intervalId)
     }, [order, onPaymentSuccess])
 
     return (
         <div className="w-full max-w-md mx-auto flex flex-col items-center">
+
             {paymentStatus === PaymentStatus.PENDING ? (
                 <>
                     <h2 className="text-2xl font-bold text-gray-800 mb-2 tracking-tight text-center">
-                        Quét mã để thanh toán
+                        Đang xử lý thanh toán
                     </h2>
+
                     <p className="text-gray-500 text-center mb-6">
-                        Vui lòng sử dụng ứng dụng ngân hàng hoặc ví điện tử để quét mã QR bên dưới
+                        Vui lòng đợi trong giây lát...
                     </p>
 
-                    <div className="relative flex items-center justify-center mb-6">
-                        <div className="rounded-xl flex items-center justify-center relative">
-                            {qrCode ? (
-                                <Image
-                                    src={qrCode}
-                                    alt="QR Code"
-                                    width={250}
-                                    height={250}
-                                    className="rounded-lg"
-                                />
-                            ) : (
-                                <div className="relative">
-                                    <div className="w-[250px] h-[250px] bg-gray-100 rounded-lg flex items-center justify-center">
-                                        <div className="w-16 h-16 border-8 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-lg"></div>
-                            <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-lg"></div>
-                            <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-lg"></div>
-                            <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-lg"></div>
-                        </div>
+                    <div className="w-[120px] h-[120px] flex items-center justify-center mb-6">
+                        <div className="w-20 h-20 border-8 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                     </div>
+
                     <div className="flex gap-2 items-center justify-center mb-2">
-                        <span className="font-medium text-gray-700">Số tiền cần thanh toán:</span>
+                        <span className="font-medium text-gray-700">Số tiền thanh toán:</span>
                         <span className="font-bold text-blue-600">
-                            {order.totalAmount.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}
+                            {order.totalAmount.toLocaleString('vi-VN', { 
+                                style: 'currency', 
+                                currency: 'VND' 
+                            })}
                         </span>
                     </div>
 
                     <div className="flex items-center justify-center w-full">
-                        <span className="text-yellow-700 font-semibold animate-pulse">⏳ Đang chờ thanh toán...</span>
-                        <div className="ml-2 w-4 h-4 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-yellow-700 font-semibold animate-pulse">
+                            ⏳ Đang chờ thanh toán...
+                        </span>
                     </div>
                 </>
             ) : (
@@ -103,7 +72,6 @@ const QRPayment = ({ order, onPaymentSuccess }: QRPaymentProps) => {
                         <svg className="w-16 h-16 text-green-500" viewBox="0 0 52 52" fill="none">
                             <circle cx="26" cy="26" r="25" stroke="currentColor" strokeWidth="2" className="opacity-20" />
                             <path
-                                className="checkmark"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="4"
@@ -127,6 +95,7 @@ const QRPayment = ({ order, onPaymentSuccess }: QRPaymentProps) => {
                 </div>
             )}
 
+            {/* Animation CSS */}
             <style jsx>{`
                 @keyframes draw {
                     to {
@@ -151,4 +120,4 @@ const QRPayment = ({ order, onPaymentSuccess }: QRPaymentProps) => {
     )
 }
 
-export default QRPayment
+export default CheckoutPayment

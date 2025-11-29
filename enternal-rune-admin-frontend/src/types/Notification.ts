@@ -1,4 +1,13 @@
 export type Notification = {
+    type: string;
+    userId: number;
+    userName: string;
+    message: string;
+    timestamp: string;
+}
+
+// Display format for UI (transformed from backend notification)
+export type DisplayNotification = {
     user: {
         id: string;
         name: string;
@@ -6,5 +15,4 @@ export type Notification = {
     },
     message: string;
     time: string;
-    status: "online" | "offline" | "error";
 }

@@ -8,6 +8,7 @@ import { ProductsProvider } from "@/context/ProductsContext";
 import { CartProvider } from "@/context/CartContext";
 import { CheckoutProvider } from "@/context/CheckoutContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { WebSocketProvider } from "@/context/WebSocketContext";
 import ToasterProvider from "@/components/ToasterProvider";
 
 const geistSans = Geist({
@@ -37,17 +38,19 @@ export default function RootLayout({
       >
         <CheckoutProvider>
           <AuthProvider>
-            <CartProvider>
-              <ProductsProvider>
-                <div className="flex flex-col min-h-screen">
-                  <Navbar />
-                  {children}
-                  <Footer />
-                </div>
-                <FloatChatButton />
-                <ToasterProvider />
-              </ProductsProvider>
-            </CartProvider>
+            <WebSocketProvider>
+              <CartProvider>
+                <ProductsProvider>
+                  <div className="flex flex-col min-h-screen">
+                    <Navbar />
+                    {children}
+                    <Footer />
+                  </div>
+                  <FloatChatButton />
+                  <ToasterProvider />
+                </ProductsProvider>
+              </CartProvider>
+            </WebSocketProvider>
           </AuthProvider>
         </CheckoutProvider>
       </body>

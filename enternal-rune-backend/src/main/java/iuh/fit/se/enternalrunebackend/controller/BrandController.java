@@ -63,6 +63,4 @@ public class BrandController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
         }
     }
-
-
 }

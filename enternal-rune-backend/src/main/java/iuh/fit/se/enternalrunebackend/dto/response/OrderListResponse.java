@@ -1,28 +1,28 @@
 package iuh.fit.se.enternalrunebackend.dto.response;
-import iuh.fit.se.enternalrunebackend.entity.User;
-import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
-import iuh.fit.se.enternalrunebackend.entity.enums.ShippingStatus;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.bson.codecs.BigDecimalCodec;
+
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@AllArgsConstructor
-@NoArgsConstructor
+/**
+ * Order List Response DTO
+ * Used for displaying orders in a list/table view (simplified info)
+ */
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class OrderListResponse {
-    private int orderId;
+    private Integer orderId;
+    private LocalDate orderDate;
+    private BigDecimal totalAmount;
+    private Integer totalProducts;
     private String userName;
     private String userEmail;
-    private Integer totalProduct;
-    private BigDecimal totalAmount;
-    private PaymentStatus status;
-    private ShippingStatus shippingStatus;
-    private LocalDate orderDate;
+
+    private OrderStatusInfo currentPaymentStatus;
+    private OrderStatusInfo currentShippingStatus;
 }
 

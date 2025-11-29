@@ -2,7 +2,6 @@ package iuh.fit.se.enternalrunebackend.entity;
 
 import iuh.fit.se.enternalrunebackend.entity.enums.OrderRefundStatus;
 import iuh.fit.se.enternalrunebackend.entity.enums.OrderRefundType;
-import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -19,8 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OrderRefundRequest {
-
+public class OrderRefund {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "or_id")
@@ -40,10 +38,6 @@ public class OrderRefundRequest {
     @Column(name = "or_create_date", nullable = false)
     LocalDate orCreateDate;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "or_payment", nullable = false)
-    PaymentStatus orPayment;
-
     @Column(name = "or_refund_amount")
     double orRefundAmount;
 
@@ -51,11 +45,31 @@ public class OrderRefundRequest {
     @JoinColumn(name = "order_id", nullable = false)
     Order order;
 
+    @OneToMany(mappedBy = "orderRefund", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("createdAt DESC")
+    List<OrderRefundPaymentHistory> refundPaymentStatusHistories = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     User orHandleBy;
 
     @OneToOne(mappedBy = "orderRefundRequest", cascade = CascadeType.ALL)
     Transaction refundTransaction;
+
+    // Helper methods to get current payment status
+    @Transient
+    public PaymentStatus getCurrentPaymentStatus() {
+        return refundPaymentStatusHistories.isEmpty() ? null : refundPaymentStatusHistories.getFirst().getPaymentStatus();
+    }
+
+    // Helper method to add new payment status with timestamp
+    public void addPaymentStatus(PaymentStatus status, String note) {
+        OrderRefundPaymentHistory history = OrderRefundPaymentHistory.builder()
+                .orderRefund(this)
+                .paymentStatus(status)
+                .note(note)
+                .build();
+        refundPaymentStatusHistories.addFirst(history);
+    }
 }
 

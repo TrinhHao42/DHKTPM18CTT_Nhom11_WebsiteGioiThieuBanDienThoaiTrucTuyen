@@ -11,6 +11,9 @@ public class Endpoints {
             "/brands/names",
             "/notifications",
             "/api/dashboard/**",
+            "/orders/admin/**",
+            "/return-requests",
+            "/cancel-requests",
             // ==== CHAT HISTORY (user xem lại) ====
             "/api/conversations/**",
             "/api/messages/**",
@@ -27,12 +30,7 @@ public class Endpoints {
             "/account/login",
             "/account/register",
             "/api/auth/**",
-            "/api/users/*/address",
-            "/addresses/**",
-            "/payment/**",
             "/ai/generate",
-            "/notifications",
-
             // ==== TẠO CONVERSATION CHAT, TEST WS ====
             "/api/messages/**",
             "/api/conversations/**",

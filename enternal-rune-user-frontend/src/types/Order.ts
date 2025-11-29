@@ -1,16 +1,49 @@
-import { Address } from "@/types/Address"
-import { OrderDetail } from "@/types/OrderDetail"
-import { User } from "@/types/User"
-import { PaymentStatus } from "@/types/enums/PaymentStatus"
-import { ShippingStatus } from "@/types/enums/ShippingStatus"
+import { Address } from "./Address"
+import { OrderDetail } from "./OrderDetail"
+import { User } from "./User"
 
 export type Order = {
     orderId: number
     orderUser: User
-    orderDate: Date
-    orderTotalAmount: number  // Backend trả về orderTotalAmount
+    orderDate: string
+    orderTotalAmount: number
     orderShippingAddress: Address
-    orderPaymentStatus: PaymentStatus
-    orderShippingStatus: ShippingStatus
-    orderDetails: OrderDetail[]  // Backend trả về orderDetails
+
+    currentPaymentStatus: {
+        statusId: number
+        statusCode: string
+        statusName: string
+        description: string
+        createdAt: string | null
+        note: string | null
+    }
+
+    currentShippingStatus: {
+        statusId: number
+        statusCode: string
+        statusName: string
+        description: string
+        createdAt: string | null
+        note: string | null
+    }
+
+    paymentStatusHistory: {
+        statusId: number
+        statusCode: string
+        statusName: string
+        description: string
+        createdAt: string
+        note: string
+    }[]
+
+    shippingStatusHistory: {
+        statusId: number
+        statusCode: string
+        statusName: string
+        description: string
+        createdAt: string
+        note: string
+    }[]
+
+    orderDetails: OrderDetail[]
 }
