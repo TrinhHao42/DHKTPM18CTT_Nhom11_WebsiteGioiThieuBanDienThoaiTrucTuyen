@@ -70,7 +70,7 @@ public class SecurityConfig {
                     CorsConfiguration corsConfig = new CorsConfiguration();
                     // Use allowedOriginPatterns instead of allowedOrigins when allowCredentials is true
                     corsConfig.setAllowedOriginPatterns(Arrays.asList(userUrl, adminUrl));
-                    corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                     corsConfig.setAllowedHeaders(Arrays.asList("*"));
                     corsConfig.setAllowCredentials(true);
                     return corsConfig;
