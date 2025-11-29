@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import BrandForm from '@/components/brands/BrandForm';
 import brandService from '@/services/brandService';
-import { BrandRequest, BrandDashboardListResponse } from '@/types/brand';
+import { BrandRequest, BrandDashboardListResponse, BrandFormData } from '@/types/brand';
 
 export default function EditBrandPage() {
   const router = useRouter();
@@ -148,6 +148,15 @@ export default function EditBrandPage() {
     );
   }
 
+  // Prepare initial data for form
+  const initialFormData: Partial<BrandFormData> = {
+    brandId: brand.brandId,
+    brandName: brand.brandName,
+    brandLogoUrl: brand.brandLogoUrl || '',
+    brandDescription: '', // API dashboard list doesn't return description
+    brandStatus: brand.brandStatus || 'ACTIVE',
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -177,14 +186,14 @@ export default function EditBrandPage() {
             </h1>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Cập nhật thông tin thương hiệu #{brand.brandId}
+            Cập nhật thông tin thương hiệu: {brand.brandName}
           </p>
         </div>
       </div>
 
       {/* Form Content */}
       <BrandForm
-        initialData={{ brandId: brand.brandId, brandName: brand.brandName }}
+        initialData={initialFormData}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
         isEdit={true}

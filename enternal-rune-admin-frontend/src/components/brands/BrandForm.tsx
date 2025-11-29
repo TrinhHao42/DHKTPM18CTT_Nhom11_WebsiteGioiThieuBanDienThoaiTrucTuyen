@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { BrandRequest } from '@/types/brand';
+import Image from 'next/image';
+import { BrandRequest, BrandFormData } from '@/types/brand';
 
 interface BrandFormProps {
-  initialData?: Partial<BrandRequest> & { brandId?: number };
+  initialData?: Partial<BrandFormData>;
   onSubmit: (data: BrandRequest) => Promise<void>;
   onDelete?: (id: number) => Promise<void>;
   isEdit?: boolean;
@@ -20,11 +21,15 @@ export default function BrandForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState<BrandRequest>({
+  const [formData, setFormData] = useState<BrandFormData>({
+    brandId: initialData?.brandId,
     brandName: initialData?.brandName || '',
+    brandLogoUrl: initialData?.brandLogoUrl || '',
+    brandDescription: initialData?.brandDescription || '',
+    brandStatus: initialData?.brandStatus || 'ACTIVE',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -42,7 +47,14 @@ export default function BrandForm({
         throw new Error('Tên thương hiệu không được để trống');
       }
 
-      await onSubmit(formData);
+      const brandRequest: BrandRequest = {
+        brandName: formData.brandName,
+        brandLogoUrl: formData.brandLogoUrl,
+        brandDescription: formData.brandDescription,
+        brandStatus: formData.brandStatus,
+      };
+
+      await onSubmit(brandRequest);
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra');
       console.error('Form submit error:', err);
@@ -104,6 +116,7 @@ export default function BrandForm({
               Thông tin thương hiệu
             </h3>
             <div className="space-y-4">
+              {/* Brand Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Tên thương hiệu <span className="text-error-600">*</span>
@@ -120,6 +133,68 @@ export default function BrandForm({
                 <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                   Nhập tên thương hiệu chính xác, tránh trùng lặp
                 </p>
+              </div>
+
+              {/* Brand Logo URL */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  URL Logo thương hiệu
+                </label>
+                <input
+                  type="url"
+                  name="brandLogoUrl"
+                  value={formData.brandLogoUrl}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                  placeholder="https://example.com/logo.png"
+                />
+                {formData.brandLogoUrl && (
+                  <div className="mt-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Xem trước:</p>
+                    <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                      <Image
+                        src={formData.brandLogoUrl}
+                        alt="Logo preview"
+                        fill
+                        className="object-contain p-2"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Brand Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Mô tả thương hiệu
+                </label>
+                <textarea
+                  name="brandDescription"
+                  value={formData.brandDescription}
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                  placeholder="Nhập mô tả về thương hiệu..."
+                />
+              </div>
+
+              {/* Brand Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Trạng thái
+                </label>
+                <select
+                  name="brandStatus"
+                  value={formData.brandStatus}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                >
+                  <option value="ACTIVE">Hoạt động</option>
+                  <option value="INACTIVE">Không hoạt động</option>
+                </select>
               </div>
             </div>
           </div>

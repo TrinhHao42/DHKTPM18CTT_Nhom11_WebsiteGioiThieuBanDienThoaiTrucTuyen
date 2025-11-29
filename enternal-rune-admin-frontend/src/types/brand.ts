@@ -6,13 +6,26 @@ export interface BrandResponse {
 }
 
 export interface BrandDashboardListResponse {
-  brandId: number;
+  brandId?: number;
+  brandLogoUrl: string;
   brandName: string;
   productCount: number;
+  brandStatus: string;
 }
 
 export interface BrandRequest {
   brandName: string;
+  brandLogoUrl: string;
+  brandDescription: string;
+  brandStatus: string;
+}
+
+export interface BrandFormData {
+  brandId?: number;
+  brandName: string;
+  brandLogoUrl: string;
+  brandDescription: string;
+  brandStatus: string;
 }
 
 export interface BrandPageResponse {

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { BrandDashboardListResponse } from '@/types/brand';
 
@@ -38,6 +39,19 @@ export default function BrandTable({
     if (confirm(`Bạn có chắc muốn xóa thương hiệu "${name}"?\nĐiều này có thể ảnh hưởng đến các sản phẩm liên quan.`)) {
       onDelete(id);
     }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
+      true: { bg: 'bg-success-100 dark:bg-success-900/30', text: 'text-success-700 dark:text-success-400', label: 'Hoạt động' },
+      false: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-700 dark:text-gray-400', label: 'Không hoạt động' },
+    };
+    const config = statusConfig[status] || statusConfig.INACTIVE;
+    return (
+      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}>
+        {config.label}
+      </span>
+    );
   };
 
   // Generate page numbers
@@ -145,19 +159,19 @@ export default function BrandTable({
                 isHeader
                 className="py-3 text-start text-xs font-medium text-gray-500 dark:text-gray-400"
               >
-                ID
-              </TableCell>
-              <TableCell
-                isHeader
-                className="py-3 text-start text-xs font-medium text-gray-500 dark:text-gray-400"
-              >
-                Tên thương hiệu
+                Thương hiệu
               </TableCell>
               <TableCell
                 isHeader
                 className="py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400"
               >
                 Số lượng sản phẩm
+              </TableCell>
+              <TableCell
+                isHeader
+                className="py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400"
+              >
+                Trạng thái
               </TableCell>
               <TableCell
                 isHeader
@@ -177,13 +191,16 @@ export default function BrandTable({
                     <div className="h-4 w-4 bg-gray-200 rounded dark:bg-gray-700 animate-pulse"></div>
                   </TableCell>
                   <TableCell className="py-3">
-                    <div className="h-4 bg-gray-200 rounded dark:bg-gray-700 w-12 animate-pulse"></div>
-                  </TableCell>
-                  <TableCell className="py-3">
-                    <div className="h-4 bg-gray-200 rounded dark:bg-gray-700 w-32 animate-pulse"></div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-gray-200 rounded-lg dark:bg-gray-700 animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded dark:bg-gray-700 w-32 animate-pulse"></div>
+                    </div>
                   </TableCell>
                   <TableCell className="py-3 text-center">
                     <div className="h-4 bg-gray-200 rounded dark:bg-gray-700 w-16 mx-auto animate-pulse"></div>
+                  </TableCell>
+                  <TableCell className="py-3 text-center">
+                    <div className="h-6 bg-gray-200 rounded-full dark:bg-gray-700 w-20 mx-auto animate-pulse"></div>
                   </TableCell>
                   <TableCell className="py-3">
                     <div className="flex items-center justify-center gap-2">
@@ -194,9 +211,9 @@ export default function BrandTable({
                 </TableRow>
               ))
             ) : brands.length > 0 && (
-              brands.map((brand) => (
+              brands.map((brand, index) => (
                 <TableRow
-                  key={brand.brandId}
+                  key={brand.brandId || index}
                   className="hover:bg-gray-50 dark:hover:bg-white/[0.02]"
                 >
                   <TableCell className="py-3 pl-6">
@@ -205,13 +222,28 @@ export default function BrandTable({
                       className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-brand-600 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800"
                     />
                   </TableCell>
-                  <TableCell className="py-3 text-sm text-gray-500 dark:text-gray-400">
-                    #{brand.brandId}
-                  </TableCell>
                   <TableCell className="py-3">
-                    <p className="text-sm font-medium text-gray-800 dark:text-white/90">
-                      {brand.brandName}
-                    </p>
+                    <div className="flex items-center gap-3">
+                      {brand.brandLogoUrl ? (
+                        <div className="relative h-10 w-10 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
+                          <Image
+                            src={brand.brandLogoUrl}
+                            alt={brand.brandName}
+                            fill
+                            className="object-contain p-1"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
+                          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      )}
+                      <p className="text-sm font-medium text-gray-800 dark:text-white/90">
+                        {brand.brandName}
+                      </p>
+                    </div>
                   </TableCell>
                   <TableCell className="py-3 text-center">
                     <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-800 dark:text-white/90">
@@ -231,46 +263,53 @@ export default function BrandTable({
                       {brand.productCount}
                     </span>
                   </TableCell>
+                  <TableCell className="py-3 text-center">
+                    {getStatusBadge(brand.brandStatus)}
+                  </TableCell>
                   <TableCell className="py-3">
                     <div className="flex items-center justify-center gap-2">
-                      <Link
-                        href={`/brands/${brand.brandId}/edit`}
-                        className="p-2 text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400"
-                        title="Chỉnh sửa"
-                      >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteClick(brand.brandId, brand.brandName)}
-                        className="p-2 text-gray-500 hover:text-error-600 dark:text-gray-400 dark:hover:text-error-400"
-                        title="Xóa"
-                      >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
+                      {brand.brandId && (
+                        <>
+                          <Link
+                            href={`/brands/${brand.brandId}/edit`}
+                            className="p-2 text-gray-500 hover:text-brand-600 dark:text-gray-400 dark:hover:text-brand-400"
+                            title="Chỉnh sửa"
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
+                            </svg>
+                          </Link>
+                          <button
+                            onClick={() => handleDeleteClick(brand.brandId!, brand.brandName)}
+                            className="p-2 text-gray-500 hover:text-error-600 dark:text-gray-400 dark:hover:text-error-400"
+                            title="Xóa"
+                          >
+                            <svg
+                              className="h-4 w-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
