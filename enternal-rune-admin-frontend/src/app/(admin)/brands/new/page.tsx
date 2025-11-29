@@ -3,20 +3,20 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import ProductForm from '@/components/products/ProductForm';
-import productService from '@/services/productService';
-import { ProductFormData } from '@/types/product';
+import BrandForm from '@/components/brands/BrandForm';
+import brandService from '@/services/brandService';
+import { BrandRequest } from '@/types/brand';
 
-export default function NewProductPage() {
+export default function NewBrandPage() {
   const router = useRouter();
 
-  const handleSubmit = async (data: ProductFormData, images: File[]) => {
+  const handleSubmit = async (data: BrandRequest) => {
     try {
-      await productService.add(data, images);
-      alert('Tạo sản phẩm thành công!');
-      router.push('/products');
+      await brandService.add(data);
+      alert('Tạo thương hiệu thành công!');
+      router.push('/brands');
     } catch (error: any) {
-      throw new Error(error.message || 'Không thể tạo sản phẩm');
+      throw new Error(error.message || 'Không thể tạo thương hiệu');
     }
   };
 
@@ -27,7 +27,7 @@ export default function NewProductPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Link
-              href="/products"
+              href="/brands"
               className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
               <svg
@@ -45,17 +45,17 @@ export default function NewProductPage() {
               </svg>
             </Link>
             <h1 className="text-title-md font-bold text-gray-800 dark:text-white/90">
-              Thêm sản phẩm mới
+              Thêm thương hiệu mới
             </h1>
           </div>
-          <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-            Điền thông tin để thêm sản phẩm mới vào hệ thống
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Điền thông tin để thêm thương hiệu mới vào hệ thống
           </p>
         </div>
       </div>
 
       {/* Form Content */}
-      <ProductForm onSubmit={handleSubmit} isEdit={false} />
+      <BrandForm onSubmit={handleSubmit} isEdit={false} />
     </div>
   );
 }

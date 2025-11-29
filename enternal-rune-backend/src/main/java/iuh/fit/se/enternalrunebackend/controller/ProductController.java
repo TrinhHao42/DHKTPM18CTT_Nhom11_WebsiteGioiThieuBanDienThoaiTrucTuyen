@@ -1,5 +1,6 @@
 package iuh.fit.se.enternalrunebackend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import iuh.fit.se.enternalrunebackend.dto.request.ProductRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.*;
 import iuh.fit.se.enternalrunebackend.entity.Product;
@@ -17,9 +18,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -142,11 +146,19 @@ public class ProductController {
     specsDto
     );
     }
-    @PostMapping("/dashboard/add")
-    public ResponseEntity<String> addProduct(@RequestBody ProductRequest request){
-        productService.addProduct(request);
+    @PostMapping(value = "/dashboard/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> addProduct(
+            @RequestPart("product") String productJson,
+            @RequestPart("images") List<MultipartFile> images
+    ) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        ProductRequest productRequest = mapper.readValue(productJson, ProductRequest.class);
+
+        productService.addProduct(productRequest, images);
         return ResponseEntity.ok("Product created successfully");
     }
+
+
     @DeleteMapping("/dashboard/delete/{id}")
     public ResponseEntity<String> deleteProduct(@PathVariable Integer id){
         productService.deleteProduct(id);

@@ -47,18 +47,16 @@ public class BrandServiceImpl implements iuh.fit.se.enternalrunebackend.service.
         List<BrandDashboardListResponse> dtoList = brandPage.getContent()
                 .stream()
                 .map(b -> new BrandDashboardListResponse(
+                        b.getBrandId(),
                         b.getBrandLogoUrl(),
                         b.getBrandName(),
                         productRepository.countByBrandId(b.getBrandId()), // lấy tổng product
                         b.getBrandStatus()
                 ))
                 .toList();
-
         return new PageImpl<>(dtoList, pageable, brandPage.getTotalElements());
     }
-
-
-
+    
     @Override
     public void addBrand(BrandRequest brandRequest) {
         Optional<Brand> existingBrand = brandRepository.findByBrandName(brandRequest.getBrandName());

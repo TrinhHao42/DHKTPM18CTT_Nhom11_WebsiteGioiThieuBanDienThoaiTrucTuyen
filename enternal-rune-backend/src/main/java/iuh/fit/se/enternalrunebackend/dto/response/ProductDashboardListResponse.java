@@ -8,6 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProductDashboardListResponse {
+    private int productId;
     private String imageUrl;
     private String productName;
     private String model;
