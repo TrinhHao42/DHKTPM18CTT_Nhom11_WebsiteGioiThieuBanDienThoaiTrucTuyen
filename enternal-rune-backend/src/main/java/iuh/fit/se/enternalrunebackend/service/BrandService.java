@@ -3,6 +3,7 @@ package iuh.fit.se.enternalrunebackend.service;
 import iuh.fit.se.enternalrunebackend.dto.request.BrandRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.BrandDashboardListResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.BrandResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.BrandStatisticResponse;
 import iuh.fit.se.enternalrunebackend.entity.Brand;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,5 +18,6 @@ public interface BrandService {
     void  addBrand(BrandRequest brandRequest);
     void deleteBrandById(Integer id);
     void updateBrand(Integer id,BrandRequest brandRequest);
-
+    BrandStatisticResponse getBrandStatistics();
+    Brand getBrandById(Integer id);
 }

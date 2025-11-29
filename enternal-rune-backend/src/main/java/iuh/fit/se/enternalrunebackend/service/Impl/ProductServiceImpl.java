@@ -265,10 +265,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Product updateProduct(Integer productId, ProductRequest request) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product không tồn tại"));
-
+    public Product updateProduct(Integer productId, ProductRequest request,List<MultipartFile> newFiles) throws IOException {
+        /*Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product không tồn tại"));*/
+        Product product = getProductById(productId);
         // Cập nhật những field cần thiết
         if (request.getProductName() != null)
             product.setProdName(request.getProductName());
@@ -302,7 +302,18 @@ public class ProductServiceImpl implements ProductService {
             }
             product.setImages(images);
         }
+        if (newFiles != null && !newFiles.isEmpty()) {
+            for (MultipartFile file : newFiles) {
+                String url = imageService.upload(file.getBytes(), file.getOriginalFilename());
 
+                Image img = new Image();
+                img.setImageName(file.getOriginalFilename());
+                img.setImageData(url);
+
+                imageRepository.save(img);
+                product.getImages().add(img);
+            }
+        }
         // ProductPrice: xóa cũ + thêm mới nếu có
         if (request.getProductPrices() != null) {
             productPriceRepository.deleteAll(product.getProductPrices());
@@ -321,4 +332,8 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.save(product);
     }
 
+    @Override
+    public Product getProductById(Integer id) {
+        return productRepository.findById(id).orElse(null);
+    }
 }
