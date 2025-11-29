@@ -5,6 +5,7 @@ import iuh.fit.se.enternalrunebackend.repository.RoleRepository;
 import iuh.fit.se.enternalrunebackend.repository.UserRepository;
 import iuh.fit.se.enternalrunebackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -34,9 +35,18 @@ public class SecurityConfig {
     @Lazy
     private JwtFilter jwtFilter;
 
-    @Autowired private UserRepository userRepository;
-    @Autowired private RoleRepository roleRepository;
-    @Autowired private OAuth2SuccessHandler oAuth2SuccessHandler;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
+    private OAuth2SuccessHandler oAuth2SuccessHandler;
+
+    @Value("${frontend.user}")
+    private String userUrl;
+
+    @Value("${frontend.admin}")
+    private String adminUrl;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -58,8 +68,9 @@ public class SecurityConfig {
                 // CORS
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
-                    corsConfig.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "http://localhost:3001"));
-                    corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+                    // Use allowedOriginPatterns instead of allowedOrigins when allowCredentials is true
+                    corsConfig.setAllowedOriginPatterns(Arrays.asList(userUrl, adminUrl));
+                    corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                     corsConfig.setAllowedHeaders(Arrays.asList("*"));
                     corsConfig.setAllowCredentials(true);
                     return corsConfig;
@@ -76,7 +87,7 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/assistance/**").permitAll()
                         // Auth / OAuth public
-                        .requestMatchers("/oauth/**","/login/**","/oauth2/**","/api/oauth/**").permitAll()
+                        .requestMatchers("/oauth/**", "/login/**", "/oauth2/**", "/api/oauth/**").permitAll()
                         // Các endpoint public khác bạn khai báo trong Endpoints
                         .requestMatchers(HttpMethod.GET, Endpoints.PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.POST, Endpoints.PUBLIC_POST_ENDPOINTS).permitAll()

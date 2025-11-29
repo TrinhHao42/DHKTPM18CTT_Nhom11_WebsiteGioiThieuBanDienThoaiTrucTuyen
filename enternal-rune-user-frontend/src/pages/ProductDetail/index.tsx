@@ -10,6 +10,8 @@ import { renderBestSellers } from '../Home/components/ProductList'
 import { ProductService } from '@/services/productService'
 import ProductRating from '@/components/ProductRating'
 import { useComments } from '@/hooks/useComments'
+import { Image } from '@/types/Image'
+import { select } from 'motion/react-client'
 
 const RelatedProducts = () => {
   const [items, setItems] = useState<Product[]>([])
@@ -35,11 +37,12 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedColor, setSelectedColor] = useState<string>('')
+  const [selectedImage, setSelectedImage] = useState<Image | undefined>(undefined)
 
   // Fetch comment data for the product and share it with ProductRating
-  const { commentsData, setCommentsData, loading: commentsLoading, loadingMore: commentsLoadingMore, loadMoreComments, refreshComments } = useComments({ 
+  const { commentsData, setCommentsData, loading: commentsLoading, loadingMore: commentsLoadingMore, loadMoreComments, refreshComments } = useComments({
     productId: params?.id as string,
-    initialData: undefined 
+    initialData: undefined
   })
 
   useEffect(() => {
@@ -60,6 +63,7 @@ export default function ProductDetail() {
         // Set initial selected color
         if (p?.prodColor && p.prodColor.length > 0) {
           setSelectedColor(p.prodColor[0])
+          setSelectedImage(p.images[0])
         }
       })
       .catch(err => {
@@ -103,6 +107,12 @@ export default function ProductDetail() {
         </div>
       </div>
     )
+  }
+
+  const handleColorChange = (color: string) => {
+    setSelectedColor(color)
+    const colorIndex = product.prodColor.indexOf(color)
+    setSelectedImage(product.images[colorIndex])
   }
 
   const images = product?.images?.map(img => img.imageData) || ['/images/iphone.png']
@@ -169,7 +179,8 @@ export default function ProductDetail() {
         <ProductInfoPanel
           product={product}
           selectedColor={selectedColor}
-          onColorChange={setSelectedColor}
+          selectedImage={selectedImage}
+          onColorChange={handleColorChange}
           commentData={commentsData || undefined}
         />
       </div>
@@ -185,7 +196,7 @@ export default function ProductDetail() {
           <p className="text-gray-500 mt-4">Đang tải thông tin sản phẩm...</p>
         </div>
       )}
-      
+
       {/* Product Rating & Comments */}
       <div className="mt-12">
         <ProductRating
@@ -198,7 +209,7 @@ export default function ProductDetail() {
           externalRefreshComments={refreshComments}
         />
       </div>
-      
+
       <RelatedProducts />
     </div>
   )

@@ -9,20 +9,17 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="order_detail")
+@Table(name = "order_detail")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="od_id")
+    @Column(name = "od_id")
     int odId;
     @Column(name = "quantity")
     int odQuantity;
     @Column(name = "total_price")
-     double odTotalPrice;
-    @ManyToOne
-    @JoinColumn(name = "pp_id", nullable = false)
-    ProductPrice odPrice;
+    double odTotalPrice;
     @ManyToOne
     @JoinColumn(name = "product_variant_id", nullable = false)
     ProductVariant odProductVariant;

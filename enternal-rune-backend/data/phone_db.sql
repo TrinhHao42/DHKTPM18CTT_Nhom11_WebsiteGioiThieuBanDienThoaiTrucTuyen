@@ -1,3 +1,21 @@
+INSERT INTO payment_statuses (status_code, status_name, description) VALUES
+                                                                         ('PENDING', 'Chờ thanh toán', 'Đơn hàng đang chờ thanh toán'),
+                                                                         ('PAID', 'Đã thanh toán', 'Đơn hàng đã được thanh toán thành công'),
+                                                                         ('FAILED', 'Thanh toán thất bại', 'Giao dịch thanh toán thất bại'),
+                                                                         ('REFUNDED', 'Đã hoàn tiền', 'Đã hoàn tiền cho khách hàng'),
+                                                                         ('EXPIRED', 'Hết hạn', 'Đơn hàng đã hết hạn thanh toán');
+
+    INSERT INTO shipping_statuses (status_code, status_name, description) VALUES
+    ('PENDING', 'Chờ xử lý', 'Đơn hàng đang chờ được xử lý'),
+    ('PROCESSING', 'Đang xử lý', 'Đơn hàng đang được chuẩn bị'),
+    ('SHIPPED', 'Đã giao cho vận chuyển', 'Đơn hàng đã được giao cho đơn vị vận chuyển'),
+    ('IN_TRANSIT', 'Đang vận chuyển', 'Đơn hàng đang trên đường giao đến khách hàng'),
+    ('DELIVERED', 'Đã giao hàng', 'Đơn hàng đã được giao thành công'),
+    ('FAILED_DELIVERY', 'Giao hàng thất bại', 'Không thể giao hàng đến khách hàng'),
+    ('RETURNED', 'Đã trả hàng', 'Hàng đã được trả lại'),
+    ('CANCELLED', 'Đã hủy', 'Đơn hàng đã bị hủy');
+
+
 INSERT INTO brands (brand_id, brand_name, brand_description, brand_status) VALUES
 (1, 'iPhone', 'iPhone là dòng smartphone cao cấp do Apple phát triển, được ra mắt lần đầu vào năm 2007 với tuyên ngôn ''reinvent the phone'' (tái định nghĩa điện thoại). Kể từ đó, iPhone đã trở thành biểu tượng của sự đổi mới trong thiết kế, trải nghiệm người dùng và hệ sinh thái khép kín. Với iOS là hệ điều hành riêng, iPhone mang lại trải nghiệm mượt mà, đồng bộ cao với các thiết bị Apple khác và hệ sinh thái App Store mạnh mẽ.', true),
 (2, 'ZTE', 'ZTE là tập đoàn công nghệ đa quốc gia Trung Quốc, hoạt động mạnh trong lĩnh vực thiết bị viễn thông và thiết bị thông minh. ZTE có lợi thế về khả năng tích hợp phần cứng, mạng và giải pháp công nghệ, đặc biệt trong các sản phẩm hỗ trợ 5G và IoT.', true),
@@ -41,3 +59,15 @@ INSERT INTO addresses (address_id, street_name, ward_name, city_name, country_na
                                                                                         (19, '368 Tôn Đản', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam'),
 
                                                                                         (20, '56 Khánh Hội', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam');
+INSERT INTO roles (role_id,role_name) VALUES
+(1,'ROLE_ADMIN'),
+(2,'ROLE_USER'),
+(3,'ROLE_STAFF')
+
+INSERT INTO users (user_id, name, email, password, auth_provider, activate_id, user_active)
+VALUES
+(1, 'Admin', 'admin@gmail.com','$2a$10$/4Qgqo2DnrPiOroG4OK6beG1QN/zGN6fMp8RdTya9c6m/heUeBzIO','LOCAL', NULL, FALSE);
+
+
+INSERT INTO user_role(user_id,role_id) VALUES
+(1,1)

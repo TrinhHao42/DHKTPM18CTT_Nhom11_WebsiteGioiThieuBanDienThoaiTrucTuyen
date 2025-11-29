@@ -57,7 +57,7 @@ public class User {
     List<Address> addresses;
 
     @OneToMany(mappedBy = "orHandleBy", cascade = CascadeType.ALL)
-    List<OrderRefundRequest> orderRefundRequests;
+    List<OrderRefund> orderRefundRequests;
 
     @OneToMany(mappedBy = "orderUser", cascade = CascadeType.ALL)
     List<Order> orders;

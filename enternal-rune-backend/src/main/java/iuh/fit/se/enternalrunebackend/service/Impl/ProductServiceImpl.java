@@ -208,8 +208,8 @@ public class ProductServiceImpl implements ProductService {
             ProductDashboardListResponse dto = new ProductDashboardListResponse();
 
             List<Image> images = product.getImages();
+            dto.setProductId(product.getProdId());
             dto.setImageUrl(!images.isEmpty() ? images.get(0).getImageData() : null);
-
             dto.setProductName(product.getProdName());
             dto.setModel(product.getProdModel());
             dto.setCategory(product.getProdBrand() != null ? product.getProdBrand().getBrandName() : "Unknown");

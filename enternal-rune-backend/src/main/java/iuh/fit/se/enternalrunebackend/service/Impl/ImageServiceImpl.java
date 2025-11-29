@@ -41,7 +41,6 @@ public class ImageServiceImpl implements ImageService {
                 )
         );
 
-
         return uploadResult.get("secure_url").toString();
     }
 

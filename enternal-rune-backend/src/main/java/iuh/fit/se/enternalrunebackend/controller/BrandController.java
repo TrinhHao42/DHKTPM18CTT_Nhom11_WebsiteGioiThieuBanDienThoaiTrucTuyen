@@ -3,6 +3,8 @@ package iuh.fit.se.enternalrunebackend.controller;
 import iuh.fit.se.enternalrunebackend.dto.request.BrandRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.BrandDashboardListResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.BrandResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.BrandStatisticResponse;
+import iuh.fit.se.enternalrunebackend.entity.Brand;
 import iuh.fit.se.enternalrunebackend.entity.Message;
 import iuh.fit.se.enternalrunebackend.service.BrandService;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +65,12 @@ public class BrandController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
         }
     }
-
-
+    @GetMapping("/dashboard/statistics")
+    public BrandStatisticResponse getStatistics() {
+        return brandService.getBrandStatistics();
+    }
+    @GetMapping("/dashboard/{id}")
+    public Brand getBrandById(@PathVariable Integer id) {
+        return brandService.getBrandById(id);
+    }
 }

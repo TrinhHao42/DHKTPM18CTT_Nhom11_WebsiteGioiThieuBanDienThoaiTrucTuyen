@@ -17,9 +17,6 @@ public class ProductVariant {
     @Column(name = "product_variant_id")
     Long prodvId;
 
-    @ManyToOne
-    Product prodvProduct;
-
     String prodvName;
 
     String prodvModel;

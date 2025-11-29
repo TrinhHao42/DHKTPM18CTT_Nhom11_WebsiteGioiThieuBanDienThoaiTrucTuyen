@@ -3,7 +3,6 @@ import { Mail, User as UserIcon, Calendar, Edit2 } from 'lucide-react'
 import { User } from '@/types/User'
 
 export const ProfileInfo: React.FC<{ user: User }> = ({ user }) => {
-  const memberSince = new Date().getFullYear() - 1 // Mock data
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
@@ -43,17 +42,6 @@ export const ProfileInfo: React.FC<{ user: User }> = ({ user }) => {
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
               Đã xác thực
             </span>
-          </div>
-        </div>
-
-        {/* Member Since */}
-        <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-          <div className="p-2 bg-purple-100 rounded-lg">
-            <Calendar className="w-5 h-5 text-purple-600" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm text-gray-500 mb-1">Thành viên từ</p>
-            <p className="text-base font-semibold text-gray-900">{memberSince}</p>
           </div>
         </div>
       </div>

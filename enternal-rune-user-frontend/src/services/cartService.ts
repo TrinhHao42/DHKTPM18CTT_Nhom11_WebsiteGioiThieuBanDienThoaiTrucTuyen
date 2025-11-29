@@ -13,6 +13,7 @@ interface AddToCartDTO {
   color?: string      // Màu sắc (optional)
   storage?: string    // Dung lượng (optional)
   version?: string    // Phiên bản (optional)
+  imageId?: number    // Image ID (optional)
 }
 
 // DTO update cart item
@@ -47,13 +48,13 @@ export class CartService {
    * @param userId - ID người dùng
    * @param productId - ID sản phẩm (Product ID, không phải ProductVariant ID)
    * @param quantity - Số lượng
-   * @param options - Tùy chọn: { color?: string, storage?: string, version?: string }
+   * @param options - Tùy chọn: { color?: string, storage?: string, version?: string, imageId?: number }
    */
   static async addToCart(
     userId: number,
     productId: number,
     quantity: number = 1,
-    options?: { color?: string; storage?: string; version?: string }
+    options?: { color?: string; storage?: string; version?: string; imageId?: number }
   ): Promise<CartResponse> {
     try {
       const request: AddToCartDTO = { 
@@ -62,6 +63,7 @@ export class CartService {
         color: options?.color,
         storage: options?.storage,
         version: options?.version,
+        imageId: options?.imageId,
       }
       
       const response = await AxiosInstance.post<CartResponse>(`/cart/add/${userId}`, request)

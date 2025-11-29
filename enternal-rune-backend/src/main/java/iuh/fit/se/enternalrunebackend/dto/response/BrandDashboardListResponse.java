@@ -8,11 +8,10 @@ import lombok.*;
 @Getter
 @Setter
 public class BrandDashboardListResponse {
-    private int id;
+    private int brandId;
     private String brandLogoUrl;
     private String brandName;
+    private String description;
     private Long productCount;
     private String brandStatus;
-
-
 }

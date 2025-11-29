@@ -1,10 +1,9 @@
 package iuh.fit.se.enternalrunebackend.dto.response;
 
 import iuh.fit.se.enternalrunebackend.entity.Address;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import iuh.fit.se.enternalrunebackend.entity.User;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
@@ -12,9 +11,23 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
 public class UserResponse {
-    private Long userId;
-    private String userName;
-    private String userEmail;
-    private List<Address> userAddress;
+    Long userId;
+    String userName;
+    String userEmail;
+    List<AddressResponse> userAddress;
+
+    public static UserResponse toUserResponse(User user) {
+        return UserResponse.builder()
+                .userId(user.getUserId())
+                .userName(user.getName())
+                .userEmail(user.getEmail())
+                .userAddress(user.getAddresses().stream()
+                        .map(address -> AddressResponse.toAddressResponse(address))
+                        .toList()
+                )
+                .build();
+    }
 }

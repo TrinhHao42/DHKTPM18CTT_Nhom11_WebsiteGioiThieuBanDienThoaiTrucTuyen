@@ -2,20 +2,16 @@
 
 import Image from "next/image";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
-import { Notification } from "@/types/Notification";
+import { DisplayNotification } from "@/types/Notification";
 
 interface Props {
-  item: Notification;
+  item: DisplayNotification;
   onClick: () => void;
 }
 
 export function NotificationRow({ item, onClick }: Props) {
-  const statusColor =
-    item.status === "online"
-      ? "bg-success-500"
-      : item.status === "error"
-      ? "bg-error-500"
-      : "bg-gray-400";
+  // Default to success status for order notifications
+  const statusColor = "bg-success-500";
 
   return (
     <DropdownItem
@@ -26,7 +22,7 @@ export function NotificationRow({ item, onClick }: Props) {
         <Image
           width={40}
           height={40}
-          src={item.user.avatar}
+          src={item.user.avatar || "/images/user/owner.jpg"}
           alt={item.user.name}
           className="w-full overflow-hidden rounded-full"
         />

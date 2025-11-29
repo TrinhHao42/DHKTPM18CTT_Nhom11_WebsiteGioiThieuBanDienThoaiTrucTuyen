@@ -41,9 +41,6 @@ export const ProfileHeader: React.FC<{ user: User }> = ({ user }) => {
               <UserIcon className="w-4 h-4" />
               <span className="text-sm font-medium">{user.userEmail}</span>
             </div>
-            <div className="px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-lg">
-              <span className="text-sm font-medium">ID: #{user.userId}</span>
-            </div>
           </div>
         </div>
       </div>
