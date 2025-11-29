@@ -58,7 +58,7 @@ export default function EditProductPage() {
   const handleDelete = async (productId: number) => {
     try {
       await productService.delete(productId);
-      alert('Xóa sản phẩm thành công!');
+      // alert('Xóa sản phẩm thành công!');
       router.push('/products');
     } catch (error: any) {
       throw new Error(error.message || 'Không thể xóa sản phẩm');

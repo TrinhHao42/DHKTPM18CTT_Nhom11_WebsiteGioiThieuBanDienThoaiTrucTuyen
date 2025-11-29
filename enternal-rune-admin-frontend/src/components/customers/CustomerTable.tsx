@@ -2,9 +2,8 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../ui/table';
 import Badge from '../ui/badge/Badge';
-import Image from 'next/image';
 import Link from 'next/link';
-import { UserDashboardResponse } from '@/types/customer';
+import { UserDashboardResponse, AuthProvider } from '@/types/customer';
 
 interface CustomerTableProps {
   customers: UserDashboardResponse[];
@@ -65,7 +64,14 @@ export default function CustomerTable({
     return activated ? 'Đã kích hoạt' : 'Chưa kích hoạt';
   };
 
-  const defaultAvatar = '/images/user/user-01.jpg';
+  const getAuthProviderBadge = (provider: AuthProvider) => {
+    const config: Record<AuthProvider, { color: 'primary' | 'success' | 'warning' | 'error' | 'light'; label: string }> = {
+      LOCAL: { color: 'light', label: 'Local' },
+      GOOGLE: { color: 'primary', label: 'Google' },
+      FACEBOOK: { color: 'warning', label: 'Facebook' },
+    };
+    return config[provider] || config.LOCAL;
+  };
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-4 pt-4 pb-3 sm:px-6 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -163,29 +169,29 @@ export default function CustomerTable({
                 isHeader
                 className="text-theme-xs py-3 text-start font-medium text-gray-500 dark:text-gray-400"
               >
-                Liên hệ
+                Email
               </TableCell>
               <TableCell
                 isHeader
-                className="text-theme-xs py-3 text-start font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs py-3 text-center font-medium text-gray-500 dark:text-gray-400"
+              >
+                Đăng ký qua
+              </TableCell>
+              <TableCell
+                isHeader
+                className="text-theme-xs py-3 text-center font-medium text-gray-500 dark:text-gray-400"
               >
                 Tổng đơn
               </TableCell>
               <TableCell
                 isHeader
-                className="text-theme-xs py-3 text-start font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs py-3 text-end font-medium text-gray-500 dark:text-gray-400"
               >
                 Tổng chi tiêu
               </TableCell>
               <TableCell
                 isHeader
-                className="text-theme-xs py-3 text-start font-medium text-gray-500 dark:text-gray-400"
-              >
-                Ngày tham gia
-              </TableCell>
-              <TableCell
-                isHeader
-                className="text-theme-xs py-3 text-start font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs py-3 text-center font-medium text-gray-500 dark:text-gray-400"
               >
                 Trạng thái
               </TableCell>
@@ -208,25 +214,22 @@ export default function CustomerTable({
                     <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                   </TableCell>
                   <TableCell className="py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse" />
-                      <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                    </div>
+                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                   </TableCell>
                   <TableCell className="py-3">
                     <div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                   </TableCell>
-                  <TableCell className="py-3">
-                    <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <TableCell className="py-3 text-center">
+                    <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded mx-auto animate-pulse" />
                   </TableCell>
-                  <TableCell className="py-3">
-                    <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <TableCell className="py-3 text-center">
+                    <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded mx-auto animate-pulse" />
                   </TableCell>
-                  <TableCell className="py-3">
-                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <TableCell className="py-3 text-end">
+                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded ml-auto animate-pulse" />
                   </TableCell>
-                  <TableCell className="py-3">
-                    <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  <TableCell className="py-3 text-center">
+                    <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded mx-auto animate-pulse" />
                   </TableCell>
                   <TableCell className="py-3">
                     <div className="flex items-center justify-center gap-2">
@@ -237,111 +240,96 @@ export default function CustomerTable({
                 </TableRow>
               ))
             ) : customers.length > 0 ? (
-              customers.map((customer) => (
-                <TableRow
-                  key={customer.id}
-                  className="hover:bg-gray-50 dark:hover:bg-white/[0.02]"
-                >
-                  <TableCell className="py-3">
-                    <input
-                      type="checkbox"
-                      className="text-brand-600 focus:ring-brand-500 h-4 w-4 rounded border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800"
-                    />
-                  </TableCell>
-                  <TableCell className="py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 overflow-hidden rounded-full">
-                        <Image
-                          width={40}
-                          height={40}
-                          src={customer.avatarUrl || defaultAvatar}
-                          className="h-10 w-10 object-cover"
-                          alt={customer.fullName}
-                        />
-                      </div>
-                      <div>
-                        <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                          {customer.fullName}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3">
-                    <div>
+              customers.map((customer) => {
+                const providerBadge = getAuthProviderBadge(customer.authProvider);
+                return (
+                  <TableRow
+                    key={customer.id}
+                    className="hover:bg-gray-50 dark:hover:bg-white/[0.02]"
+                  >
+                    <TableCell className="py-3">
+                      <input
+                        type="checkbox"
+                        className="text-brand-600 focus:ring-brand-500 h-4 w-4 rounded border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800"
+                      />
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                        {customer.name}
+                      </p>
+                    </TableCell>
+                    <TableCell className="py-3">
                       <p className="text-theme-sm text-gray-800 dark:text-white/90">
                         {customer.email}
                       </p>
-                      {customer.phoneNumber && (
-                        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                          {customer.phoneNumber}
-                        </p>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-theme-sm py-3 text-gray-500 dark:text-gray-400">
-                    {customer.totalOrders}
-                  </TableCell>
-                  <TableCell className="text-theme-sm py-3 font-medium text-gray-800 dark:text-white/90">
-                    {customer.totalSpent.toLocaleString('vi-VN')} ₫
-                  </TableCell>
-                  <TableCell className="text-theme-sm py-3 text-gray-500 dark:text-gray-400">
-                    {new Date(customer.joinDate).toLocaleDateString('vi-VN')}
-                  </TableCell>
-                  <TableCell className="py-3">
-                    <Badge size="sm" color={getStatusBadgeColor(customer.activated)}>
-                      {getStatusText(customer.activated)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-3">
-                    <div className="flex items-center justify-center gap-2">
-                      <Link
-                        href={`/customers/${customer.id}`}
-                        className="hover:text-brand-600 dark:hover:text-brand-400 p-2 text-gray-500 dark:text-gray-400"
-                        title="Xem chi tiết"
-                      >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                    </TableCell>
+                    <TableCell className="py-3 text-center">
+                      <Badge size="sm" color={providerBadge.color}>
+                        {providerBadge.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-theme-sm py-3 text-center text-gray-500 dark:text-gray-400">
+                      {customer.totalOrder}
+                    </TableCell>
+                    <TableCell className="text-theme-sm py-3 text-end font-medium text-gray-800 dark:text-white/90">
+                      {customer.totalPrice?.toLocaleString('vi-VN')} ₫
+                    </TableCell>
+                    <TableCell className="py-3 text-center">
+                      <Badge size="sm" color={getStatusBadgeColor(customer.activate)}>
+                        {getStatusText(customer.activate)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <Link
+                          href={`/customers/${customer.id}`}
+                          className="hover:text-brand-600 dark:hover:text-brand-400 p-2 text-gray-500 dark:text-gray-400"
+                          title="Xem chi tiết"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteClick(customer.id)}
-                        className="hover:text-error-600 dark:hover:text-error-400 p-2 text-gray-500 dark:text-gray-400"
-                        title="Xóa"
-                      >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteClick(customer.id)}
+                          className="hover:text-error-600 dark:hover:text-error-400 p-2 text-gray-500 dark:text-gray-400"
+                          title="Xóa"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : null}
           </TableBody>
         </Table>

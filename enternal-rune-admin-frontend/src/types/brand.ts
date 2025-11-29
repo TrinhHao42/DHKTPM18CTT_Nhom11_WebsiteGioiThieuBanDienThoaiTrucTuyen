@@ -6,7 +6,7 @@ export interface BrandResponse {
 }
 
 export interface BrandDashboardListResponse {
-  brandId?: number;
+  brandId: number;
   brandLogoUrl: string;
   brandName: string;
   productCount: number;
