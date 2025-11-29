@@ -48,7 +48,7 @@ const navItems: NavItem[] = [
     name: "Sản phẩm",
     subItems: [
       { name: "Danh sách sản phẩm", path: "/products", pro: false },
-      { name: "Danh mục", path: "/categories", pro: false },
+      { name: "Thương hiệu", path: "/brands", pro: false },
       { name: "Đánh giá & phản hồi", path: "/reviews", pro: false },
     ],
   },
