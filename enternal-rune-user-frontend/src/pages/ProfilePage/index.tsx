@@ -19,7 +19,6 @@ export default function ProfilePage() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
 
-  // Redirect nếu chưa đăng nhập
   React.useEffect(() => {
     if (!user) {
       router.push('/LoginScreen')
@@ -60,7 +59,6 @@ export default function ProfilePage() {
 
   const handleEditAddress = (address: Address) => {
     toast.info('Chức năng chỉnh sửa địa chỉ đang được phát triển')
-    // TODO: Implement edit address modal
   }
 
   const handleDeleteAddress = async (addressId: string) => {
@@ -97,7 +95,7 @@ export default function ProfilePage() {
         {/* Stats */}
         <div className="mb-8">
           <ProfileStats
-            totalOrders={0} // TODO: Fetch từ API
+            totalOrders={0}
             totalAddresses={user.userAddress.length}
             memberSince={memberSince.toString()}
           />

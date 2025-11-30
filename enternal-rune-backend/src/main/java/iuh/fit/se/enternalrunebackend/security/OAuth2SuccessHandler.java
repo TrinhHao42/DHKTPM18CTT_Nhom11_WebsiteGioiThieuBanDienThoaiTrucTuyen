@@ -1,6 +1,7 @@
 package iuh.fit.se.enternalrunebackend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import iuh.fit.se.enternalrunebackend.dto.response.AddressResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.UserResponse;
 import iuh.fit.se.enternalrunebackend.entity.Role;
 import iuh.fit.se.enternalrunebackend.entity.User;
@@ -81,7 +82,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         loginUser.setUserEmail(user.getEmail());
         loginUser.setUserName(user.getName());
         // Safely get addresses, return empty list if null
-        loginUser.setUserAddress(user.getAddresses() != null ? user.getAddresses() : new ArrayList<>());
+        loginUser.setUserAddress(
+                Optional.ofNullable(user.getAddresses())
+                        .orElse(List.of())
+                        .stream()
+                        .map(AddressResponse::toAddressResponse)
+                        .toList()
+        );
+
 
         ObjectMapper mapper = new ObjectMapper();
         String userJson = mapper.writeValueAsString(loginUser);

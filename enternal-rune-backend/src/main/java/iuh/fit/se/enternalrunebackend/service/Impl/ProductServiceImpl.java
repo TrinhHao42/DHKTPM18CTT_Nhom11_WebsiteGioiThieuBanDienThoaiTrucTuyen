@@ -9,11 +9,13 @@ import iuh.fit.se.enternalrunebackend.entity.*;
 import iuh.fit.se.enternalrunebackend.entity.enums.PriceStatus;
 import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
 import iuh.fit.se.enternalrunebackend.repository.*;
+import iuh.fit.se.enternalrunebackend.service.ImageService;
 import iuh.fit.se.enternalrunebackend.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.LocalDate;
 
 import jakarta.persistence.criteria.Join;
@@ -22,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +43,7 @@ public class ProductServiceImpl implements ProductService {
     private ProductPriceRepository productPriceRepository;
     @Autowired
     private DiscountRepository discountRepository;
-
+    private final ImageService imageService;
     @Override
     public List<Product> getAllProductsWithActivePrice() {
         return productRepository.findAllWithActivePrice();
@@ -205,8 +208,8 @@ public class ProductServiceImpl implements ProductService {
             ProductDashboardListResponse dto = new ProductDashboardListResponse();
 
             List<Image> images = product.getImages();
+            dto.setProductId(product.getProdId());
             dto.setImageUrl(!images.isEmpty() ? images.get(0).getImageData() : null);
-
             dto.setProductName(product.getProdName());
             dto.setModel(product.getProdModel());
             dto.setCategory(product.getProdBrand() != null ? product.getProdBrand().getBrandName() : "Unknown");
@@ -223,7 +226,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void addProduct(ProductRequest productRequest) {
+    public void addProduct(ProductRequest productRequest,List<MultipartFile> files) throws IOException{
         Product product = new Product();
         product.setProdName(productRequest.getProductName());
         product.setProdModel(productRequest.getProductModel());
@@ -235,13 +238,16 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new RuntimeException("Thương hiệu không tồn tại"));
         product.setProdBrand(brand);
 
-        List<Image> images = productRequest.getImages().stream().map(ir -> {
+        // Upload ảnh lên Cloudinary và lưu URL
+        List<Image> imageEntities = new ArrayList<>();
+        for (MultipartFile file : files) {
+            String imageUrl = imageService.upload(file.getBytes(), file.getOriginalFilename());
             Image img = new Image();
-            img.setImageName(ir.getImageName());
-            img.setImageData(ir.getImageData());
-            return img;
-        }).toList();
-        product.setImages(images);
+            img.setImageName(file.getOriginalFilename());
+            img.setImageData(imageUrl);
+            imageEntities.add(img);
+        }
+        product.setImages(imageEntities);
         List<ProductPrice> prices = productRequest.getProductPrices().stream().map(pr -> {
             ProductPrice pp = new ProductPrice();
             pp.setPpPrice(pr.getPpPrice());
@@ -259,10 +265,10 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Product updateProduct(Integer productId, ProductRequest request) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product không tồn tại"));
-
+    public Product updateProduct(Integer productId, ProductRequest request,List<MultipartFile> newFiles) throws IOException {
+        /*Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product không tồn tại"));*/
+        Product product = getProductById(productId);
         // Cập nhật những field cần thiết
         if (request.getProductName() != null)
             product.setProdName(request.getProductName());
@@ -296,7 +302,18 @@ public class ProductServiceImpl implements ProductService {
             }
             product.setImages(images);
         }
+        if (newFiles != null && !newFiles.isEmpty()) {
+            for (MultipartFile file : newFiles) {
+                String url = imageService.upload(file.getBytes(), file.getOriginalFilename());
 
+                Image img = new Image();
+                img.setImageName(file.getOriginalFilename());
+                img.setImageData(url);
+
+                imageRepository.save(img);
+                product.getImages().add(img);
+            }
+        }
         // ProductPrice: xóa cũ + thêm mới nếu có
         if (request.getProductPrices() != null) {
             productPriceRepository.deleteAll(product.getProductPrices());
@@ -315,4 +332,8 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.save(product);
     }
 
+    @Override
+    public Product getProductById(Integer id) {
+        return productRepository.findById(id).orElse(null);
+    }
 }

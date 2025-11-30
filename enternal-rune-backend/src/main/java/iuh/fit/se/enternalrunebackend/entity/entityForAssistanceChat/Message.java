@@ -22,7 +22,7 @@ public class Message {
     private Role senderRole;  // CUSTOMER / AGENT / BOT
     private String content;     // nội dung text
 
-    private String type;        // TEXT / IMAGE / FILE (tạm TEXT trước)
+    private String type;        // TEXT / IMAGE
 
     private Instant createdAt;
 }

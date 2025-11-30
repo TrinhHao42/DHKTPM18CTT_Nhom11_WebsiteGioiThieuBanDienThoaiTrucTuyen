@@ -7,6 +7,8 @@ import { colors } from '@/lib/color'
 import { useCart } from '@/context/CartContext'
 import { useToast } from '@/hooks/useToast'
 import { CommentsPageResponse } from '@/types/Comment'
+import { Image } from '@/types/Image'
+import { number } from 'yup'
 
 // Type definition for umami analytics
 declare global {
@@ -20,11 +22,12 @@ declare global {
 interface ProductInfoPanelProps {
     product: Product
     selectedColor?: string
+    selectedImage?: Image
     onColorChange?: (color: string) => void
     commentData?: CommentsPageResponse
 }
 
-export default function ProductInfoPanel({ product, selectedColor, onColorChange, commentData }: ProductInfoPanelProps) {
+export default function ProductInfoPanel({ product, selectedColor, selectedImage, onColorChange, commentData }: ProductInfoPanelProps) {
     const { addCartItem } = useCart()
     const toast = useToast()
     const [quantity, setQuantity] = useState(1)
@@ -53,14 +56,14 @@ export default function ProductInfoPanel({ product, selectedColor, onColorChange
     const handleAddToCart = async () => {
         setIsAdding(true)
         try {
-            // Truyền product + quantity + options (color, storage)
             await addCartItem(
-                product, 
+                product,
                 quantity,
                 {
                     color: selectedColor,
                     storage: selectedStorage,
-                    version: undefined
+                    version: undefined,
+                    imageId: Number(selectedImage?.imageId)
                 }
             )
             
@@ -193,7 +196,9 @@ export default function ProductInfoPanel({ product, selectedColor, onColorChange
                         return (
                             <button
                                 key={color}
-                                onClick={() => onColorChange?.(color)}
+                                onClick={() => { 
+                                    onColorChange?.(color) 
+                                }}
                                 className={`relative w-16 h-16 rounded-2xl border-4 transition-all duration-300 hover:scale-105 ${selectedColor === color
                                     ? 'border-blue-500 shadow-lg scale-110'
                                     : 'border-gray-200 hover:border-blue-300 hover:shadow-md'

@@ -1,13 +1,13 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
 
+import iuh.fit.se.enternalrunebackend.dto.notification.OrderNotification;
 import iuh.fit.se.enternalrunebackend.dto.request.CreateOrderRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.OrderItemRequest;
-import iuh.fit.se.enternalrunebackend.dto.request.OrderStatusUpdateRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.*;
+import iuh.fit.se.enternalrunebackend.dto.response.OrderStatusInfo;
 import iuh.fit.se.enternalrunebackend.entity.*;
-import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
-import iuh.fit.se.enternalrunebackend.entity.enums.ShippingStatus;
 import iuh.fit.se.enternalrunebackend.repository.*;
+import iuh.fit.se.enternalrunebackend.service.NotificationService;
 import iuh.fit.se.enternalrunebackend.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,6 +39,17 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private DiscountRepository discountRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private OrderRefundRepository orderRefundRequestRepository;
+
+    @Autowired
+    private PaymentStatusRepository paymentStatusRepository;
+
+    @Autowired
+    private ShippingStatusRepository shippingStatusRepository;
 
     @Override
     public DashboardSummaryResponse getSummaryForMonth(int year, int month) {
@@ -110,18 +122,28 @@ public class OrderServiceImpl implements OrderService {
                     .orElse(null);
         }
 
-        // 5. Tạo Order
+        // 5. Lấy initial statuses
+        PaymentStatus pendingPaymentStatus = paymentStatusRepository.findByStatusCode("PENDING")
+                .orElseThrow(() -> new RuntimeException("Payment status PENDING not found"));
+        ShippingStatus processingShippingStatus = shippingStatusRepository.findByStatusCode("PROCESSING")
+                .orElseThrow(() -> new RuntimeException("Shipping status PROCESSING not found"));
+
+        // 6. Tạo Order
         Order order = Order.builder()
                 .orderDate(LocalDate.now())
-                .orderPaymentStatus(PaymentStatus.PENDING)
-                .orderShippingStatus(ShippingStatus.PROCESSING)
                 .orderUser(user)
                 .orderShippingAddress(address)
                 .discount(discount)
                 .orderDetails(new ArrayList<>())
+                .paymentStatusHistories(new ArrayList<>())
+                .shippingStatusHistories(new ArrayList<>())
                 .build();
 
-        // 6. Tạo OrderDetails và tính tổng tiền
+        // Add initial statuses with note
+        order.addPaymentStatus(pendingPaymentStatus, "Tạo đơn hàng");
+        order.addShippingStatus(processingShippingStatus, "Đơn hàng đang được xử lý");
+
+        // 7. Tạo OrderDetails và tính tổng tiền
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest item : request.getOrderItems()) {
@@ -143,14 +165,13 @@ public class OrderServiceImpl implements OrderService {
             OrderDetail orderDetail = new OrderDetail();
             orderDetail.setOdQuantity(item.getQuantity());
             orderDetail.setOdTotalPrice(itemTotal);
-            orderDetail.setOdPrice(productPrice);
             orderDetail.setOdProductVariant(productVariant);
             orderDetail.setOrder(order);
 
             order.getOrderDetails().add(orderDetail);
         }
 
-        // 7. Áp dụng discount nếu có
+        // 8. Áp dụng discount nếu có
         if (discount != null) {
             // Kiểm tra discount còn hiệu lực không
             LocalDate now = LocalDate.now();
@@ -185,24 +206,28 @@ public class OrderServiceImpl implements OrderService {
             }
         }
 
-        // 8. Set tổng tiền cho order
+        // 9. Set tổng tiền cho order
         order.setOrderTotalAmount(totalAmount);
 
-        // 9. Lưu order (cascade sẽ lưu OrderDetails)
+        // 10. Lưu order (cascade sẽ lưu OrderDetails)
         Order savedOrder = orderRepository.save(order);
 
+        // 11. Gửi notification tới admin
+        try {
+            OrderNotification notification = OrderNotification.builder()
+                    .type("NEW_ORDER")
+                    .userId(user.getUserId())
+                    .userName(user.getName())
+                    .message("đã đặt một đơn hàng mới")
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            notificationService.sendOrderNotificationToAdmin(notification);
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
         return savedOrder;
-    }
-
-    @Override
-    public PaymentStatus getOrderPaymentStatus(int orderId) {
-        return orderRepository.getOrderPaymentStatus(orderId);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Order> getOrdersByUserId(Long userId) {
-        return orderRepository.findOrdersByCustomerId(userId);
     }
 
     @Override
@@ -210,7 +235,7 @@ public class OrderServiceImpl implements OrderService {
     public Page<OrderResponse> getOrdersByUserIdPaginated(Long userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
         Page<Order> orderPage = orderRepository.findOrdersByCustomerIdWithDetails(userId, pageable);
-        
+
         return orderPage.map(this::convertToOrderResponse);
     }
 
@@ -218,90 +243,110 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(int orderId) {
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
         return convertToOrderResponse(order);
     }
 
     private OrderResponse convertToOrderResponse(Order order) {
         // Map Address
         AddressResponse addressInfo = new AddressResponse(
-            order.getOrderShippingAddress().getAddressId(),
-            order.getOrderShippingAddress().getStreetName(),
-            order.getOrderShippingAddress().getWardName(),
-            order.getOrderShippingAddress().getCityName(),
-            order.getOrderShippingAddress().getCountryName()
+                order.getOrderShippingAddress().getAddressId(),
+                order.getOrderShippingAddress().getStreetName(),
+                order.getOrderShippingAddress().getWardName(),
+                order.getOrderShippingAddress().getCityName(),
+                order.getOrderShippingAddress().getCountryName()
         );
 
         // Map User
-        OrderResponse.UserInfo userInfo = new OrderResponse.UserInfo(
-            order.getOrderUser().getUserId(),
-            order.getOrderUser().getName(),
-            order.getOrderUser().getEmail()
-        );
+        OrderResponse.OrderUserInfo userInfo = OrderResponse.OrderUserInfo.builder()
+                .userName(order.getOrderUser().getName())
+                .userEmail(order.getOrderUser().getEmail())
+                .build();
+
+        // Map Payment Status History
+        List<OrderStatusInfo> paymentHistory = order.getPaymentStatusHistories().stream()
+                .map(history -> OrderStatusInfo.builder()
+                        .statusId(history.getPaymentStatus().getStatusId())
+                        .statusCode(history.getPaymentStatus().getStatusCode())
+                        .statusName(history.getPaymentStatus().getStatusName())
+                        .description(history.getPaymentStatus().getDescription())
+                        .createdAt(history.getCreatedAt())
+                        .note(history.getNote())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Map Shipping Status History
+        List<OrderStatusInfo> shippingHistory = order.getShippingStatusHistories().stream()
+                .map(history -> OrderStatusInfo.builder()
+                        .statusId(history.getShippingStatus().getStatusId())
+                        .statusCode(history.getShippingStatus().getStatusCode())
+                        .statusName(history.getShippingStatus().getStatusName())
+                        .description(history.getShippingStatus().getDescription())
+                        .createdAt(history.getCreatedAt())
+                        .note(history.getNote())
+                        .build())
+                .collect(Collectors.toList());
 
         // Map OrderDetails with ProductVariant
-        List<OrderResponse.OrderDetailInfo> orderDetailInfos = order.getOrderDetails().stream()
-            .map(detail -> {
-                ProductVariant variant = detail.getOdProductVariant();
-                
-                // Get image URL
-                String imageUrl = null;
-                if (variant.getProdvImg() != null && variant.getProdvImg().getImageData() != null) {
-                    imageUrl = variant.getProdvImg().getImageData();
-                }
-                
-                // Map ProductVariant info
-                OrderResponse.ProductVariantInfo variantInfo = new OrderResponse.ProductVariantInfo(
-                    variant.getProdvId(),
-                    variant.getProdvName(),
-                    variant.getProdvModel(),
-                    variant.getProdvVersion(),
-                    variant.getProdvColor(),
-                    imageUrl,
-                    variant.getProdvProduct() != null ? variant.getProdvProduct().getProdId() : 0,
-                    variant.getProdvProduct() != null ? variant.getProdvProduct().getProdName() : ""
-                );
+        List<OrderDetailResponse> orderDetailInfos = order.getOrderDetails().stream()
+                .map(detail -> {
+                    ProductVariant variant = detail.getOdProductVariant();
 
-                // Get price
-                double price = 0;
-                if (detail.getOdPrice() != null) {
-                    price = detail.getOdPrice().getPpPrice();
-                }
+                    // Get image URL
+                    String imageUrl = null;
+                    if (variant.getProdvImg() != null && variant.getProdvImg().getImageData() != null) {
+                        imageUrl = variant.getProdvImg().getImageData();
+                    }
 
-                return new OrderResponse.OrderDetailInfo(
-                    detail.getOdId(),
-                    detail.getOdQuantity(),
-                    detail.getOdTotalPrice(),
-                    variantInfo,
-                    price
-                );
-            })
-            .collect(Collectors.toList());
+                    // Map ProductVariant info
+                    ProductVariantResponse variantInfo = ProductVariantResponse.toProductVariantResponse(variant);
+
+                    return new OrderDetailResponse(
+                            detail.getOdId(),
+                            detail.getOdQuantity(),
+                            detail.getOdTotalPrice(),
+                            variantInfo
+                    );
+                })
+                .collect(Collectors.toList());
+
+        // Get current statuses
+        PaymentStatus currentPayment = order.getCurrentPaymentStatus();
+        ShippingStatus currentShipping = order.getCurrentShippingStatus();
 
         return OrderResponse.builder()
-            .orderId(order.getOrderId())
-            .orderDate(order.getOrderDate())
-            .orderTotalAmount(order.getOrderTotalAmount())
-            .orderPaymentStatus(order.getOrderPaymentStatus())
-            .orderShippingStatus(order.getOrderShippingStatus())
-            .orderShippingAddress(addressInfo)
-            .orderUser(userInfo)
-            .orderDetails(orderDetailInfos)
-            .build();
+                .orderId(order.getOrderId())
+                .orderDate(order.getOrderDate())
+                .orderTotalAmount(order.getOrderTotalAmount())
+                .currentPaymentStatus(currentPayment != null ? OrderStatusInfo.builder()
+                        .statusId(currentPayment.getStatusId())
+                        .statusCode(currentPayment.getStatusCode())
+                        .statusName(currentPayment.getStatusName())
+                        .description(currentPayment.getDescription())
+                        .build() : null)
+                .currentShippingStatus(currentShipping != null ? OrderStatusInfo.builder()
+                        .statusId(currentShipping.getStatusId())
+                        .statusCode(currentShipping.getStatusCode())
+                        .statusName(currentShipping.getStatusName())
+                        .description(currentShipping.getDescription())
+                        .build() : null)
+                .paymentStatusHistory(paymentHistory)
+                .shippingStatusHistory(shippingHistory)
+                .orderShippingAddress(addressInfo)
+                .orderUser(userInfo)
+                .orderDetails(orderDetailInfos)
+                .build();
     }
-
-
-
 
     @Override
     @Transactional(readOnly = true)
     public Page<OrderListResponse> getOrderList(
             String keyword,
-            PaymentStatus paymentStatus,
-            ShippingStatus shippingStatus,
+            String paymentStatusCode,
+            String shippingStatusCode,
             Pageable pageable
     ) {
-        Page<Order> ordersPage = orderRepository.searchOrders(keyword, paymentStatus, shippingStatus, pageable);
+        Page<Order> ordersPage = orderRepository.searchOrders(keyword, paymentStatusCode, shippingStatusCode, pageable);
 
         List<OrderListResponse> dtoList = ordersPage.getContent().stream().map(order -> {
             int totalProduct = order.getOrderDetails()
@@ -309,35 +354,34 @@ public class OrderServiceImpl implements OrderService {
                     .mapToInt(OrderDetail::getOdQuantity)
                     .sum();
 
-            return new OrderListResponse(
-                    order.getOrderId(),
-                    order.getOrderUser().getName(),
-                    order.getOrderUser().getEmail(),
-                    totalProduct,
-                    order.getOrderTotalAmount(),
-                    order.getOrderPaymentStatus(),
-                    order.getOrderShippingStatus(),
-                    order.getOrderDate()
-            );
-        }).toList();
+            PaymentStatus currentPayment = order.getCurrentPaymentStatus();
+            ShippingStatus currentShipping = order.getCurrentShippingStatus();
 
+            return OrderListResponse.builder()
+                    .orderId(order.getOrderId())
+                    .orderDate(order.getOrderDate())
+                    .totalAmount(order.getOrderTotalAmount())
+                    .totalProducts(totalProduct)
+                    .userName(order.getOrderUser().getName())
+                    .userEmail(order.getOrderUser().getEmail())
+                    .currentPaymentStatus(currentPayment != null ? new OrderStatusInfo(currentPayment.getStatusCode(), currentPayment.getStatusName()) : null)
+                    .currentShippingStatus(currentShipping != null ? new OrderStatusInfo(currentShipping.getStatusCode(), currentShipping.getStatusName()) : null)
+                    .build();
+        }).toList();
         return new PageImpl<>(dtoList, pageable, ordersPage.getTotalElements());
     }
-
-
 
     @Override
     @Transactional(readOnly = true)
     public OrderStatisticsResponse getOrderStatistics() {
-
         long totalOrders = orderRepository.count();
 
         BigDecimal totalRevenue = orderRepository.getTotalRevenue();
         if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
 
-        long completedOrders = orderRepository.countByOrderShippingStatus(ShippingStatus.DELIVERED);
+        long completedOrders = orderRepository.countByCurrentShippingStatus("DELIVERED");
 
-        long processingOrders = orderRepository.countByOrderShippingStatus(ShippingStatus.PROCESSING);
+        long processingOrders = orderRepository.countProcessingOrders();
 
         return new OrderStatisticsResponse(
                 totalOrders,
@@ -346,75 +390,84 @@ public class OrderServiceImpl implements OrderService {
                 processingOrders
         );
     }
-    @Override
-    @Transactional
-    public OrderListResponse updateOrderStatus(int orderId, OrderStatusUpdateRequest request) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        if (request.getPaymentStatus() != null) {
-            order.setOrderPaymentStatus(request.getPaymentStatus());
-        }
-        if (request.getShippingStatus() != null) {
-            order.setOrderShippingStatus(request.getShippingStatus());
-        }
-        orderRepository.save(order);
-        int totalProduct = order.getOrderDetails()
-                .stream()
-                .mapToInt(OrderDetail::getOdQuantity)
-                .sum();
-        return new OrderListResponse(
-                order.getOrderId(),
-                order.getOrderUser().getName(),
-                order.getOrderUser().getEmail(),
-                totalProduct,
-                order.getOrderTotalAmount(),
-                order.getOrderPaymentStatus(),
-                order.getOrderShippingStatus(),
-                order.getOrderDate()
-        );
-    }
 
     @Override
     public void deleteById(int id) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-        if (order.getOrderShippingStatus() == ShippingStatus.DELIVERED ||
-                order.getOrderPaymentStatus() == PaymentStatus.PAID) {
-            throw new RuntimeException("Cannot delete completed or paid order");
-        }
-        orderRepository.delete(order);
     }
+
     @Override
     @Transactional(readOnly = true)
-    public OrderDetailResponse getOrderDetail(int orderId) {
+    public OrderResponse getOrderDetail(int orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        List<OrderDetailResponse.ProductDetail> products = order.getOrderDetails().stream()
-                .map(od -> {
-                    ProductVariant pv = od.getOdProductVariant();
-                    return new OrderDetailResponse.ProductDetail(
-                            pv.getProdvId(),
-                            pv.getProdvName(),
-                            pv.getProdvModel(),
-                            pv.getProdvVersion(),
-                            pv.getProdvColor(),
-                            pv.getProdvPrice() != null ? pv.getProdvPrice().getPpPrice() : 0.0,
-                            pv.getProdvImg() != null ? pv.getProdvImg().getImageData() : null,
-                            od.getOdQuantity()
-                    );
-                }).toList();
+        List<OrderDetailResponse> orderDetails = order.getOrderDetails().stream()
+                .map(od -> OrderDetailResponse.builder()
+                        .orderId(od.getOrder().getOrderId())
+                        .quantity(od.getOdQuantity())
+                        .totalPrice(od.getOdTotalPrice())
+                        .productVariantResponse(ProductVariantResponse.toProductVariantResponse(od.getOdProductVariant()))
+                        .build()
+                )
+                .toList();
 
-        return new OrderDetailResponse(
-                order.getOrderId(),
-                order.getOrderUser().getName(),
-                order.getOrderUser().getEmail(),
-                order.getOrderPaymentStatus(),
-                order.getOrderShippingStatus(),
-                order.getOrderDate(),
-                order.getOrderTotalAmount(),
-                products
-        );
+        PaymentStatus currentPayment = order.getCurrentPaymentStatus();
+        ShippingStatus currentShipping = order.getCurrentShippingStatus();
+
+        return OrderResponse.builder()
+                .orderId(order.getOrderId())
+                .orderDate(order.getOrderDate())
+                .orderTotalAmount(order.getOrderTotalAmount())
+                .orderUser(new OrderResponse.OrderUserInfo(order.getOrderUser().getName(), order.getOrderUser().getEmail()))
+                .currentPaymentStatus(currentPayment != null ? new OrderStatusInfo(currentPayment.getStatusCode(), currentPayment.getStatusName()) : null)
+                .currentShippingStatus(currentShipping != null ? new OrderStatusInfo(currentShipping.getStatusCode(), currentShipping.getStatusName()) : null)
+                .orderDetails(orderDetails)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public Order cancelOrder(int orderId, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        // Kiểm tra quyền của user
+        if (!order.getOrderUser().getUserId().equals(userId)) {
+            throw new RuntimeException("Bạn không có quyền hủy đơn hàng này!");
+        }
+
+        // Kiểm tra trạng thái đơn hàng
+        ShippingStatus currentShippingStatus = order.getCurrentShippingStatus();
+        if (currentShippingStatus == null || !"PROCESSING".equals(currentShippingStatus.getStatusCode())) {
+            throw new RuntimeException("Chỉ có thể hủy đơn hàng đang xử lý!");
+        }
+
+        PaymentStatus currentPaymentStatus = order.getCurrentPaymentStatus();
+        if (currentPaymentStatus != null && "PAID".equals(currentPaymentStatus.getStatusCode())) {
+            throw new RuntimeException("Không thể hủy đơn hàng đã thanh toán. Vui lòng tạo yêu cầu hoàn tiền!");
+        }
+
+        // Cập nhật trạng thái
+        ShippingStatus cancelledStatus = shippingStatusRepository.findByStatusCode("CANCELLED")
+                .orElseThrow(() -> new RuntimeException("Shipping status CANCELLED not found"));
+        order.addShippingStatus(cancelledStatus, "Đơn hàng bị hủy bởi khách hàng");
+        Order savedOrder = orderRepository.save(order);
+
+        // Gửi notification tới admin
+        try {
+            OrderNotification notification = OrderNotification.builder()
+                    .type("CANCEL_ORDER")
+                    .userId(order.getOrderUser().getUserId())
+                    .userName(order.getOrderUser().getName())
+                    .message("đã hủy đơn hàng")
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            notificationService.sendOrderNotificationToAdmin(notification);
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
+        return savedOrder;
     }
 }

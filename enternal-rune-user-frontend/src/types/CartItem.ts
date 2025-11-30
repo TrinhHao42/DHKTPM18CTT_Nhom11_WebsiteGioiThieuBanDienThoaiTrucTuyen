@@ -16,7 +16,7 @@ export type ProductVariantDTO = {
 export type CartItem = {
     cartItemId: number;
     quantity: number;
-    productVariant: ProductVariantDTO;
+    productVariantResponse: ProductVariantDTO;
 }
 
 // Cart Response

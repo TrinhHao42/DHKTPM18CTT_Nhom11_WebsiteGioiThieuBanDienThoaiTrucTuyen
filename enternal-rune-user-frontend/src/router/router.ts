@@ -1,6 +1,4 @@
 
-// Centralized API route definitions used across the frontend
-// Keep these in one place so endpoints are easy to change and search for.
 export const API_ROUTES = {
 	PRODUCTS_TOP_BRAND: '/products/top-brand',
 	PRODUCTS_LATEST: '/products/latest',

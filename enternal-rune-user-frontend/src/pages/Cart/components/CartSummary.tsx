@@ -16,7 +16,7 @@ const CartSummary = React.memo(({ choosedItems }: { choosedItems: CartItem[] }) 
 
     const totalPrice = useMemo(() => 
         choosedItems.reduce((total, item) =>
-            total + (item.productVariant.price * item.quantity), 0
+            total + (item.productVariantResponse.price * item.quantity), 0
         ), [choosedItems]
     );
 
