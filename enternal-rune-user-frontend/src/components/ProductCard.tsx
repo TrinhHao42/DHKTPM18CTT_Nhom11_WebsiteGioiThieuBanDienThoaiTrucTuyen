@@ -3,11 +3,14 @@ import { Product } from '@/types/Product';
 import { Star, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
+import BuyNowModal from './BuyNowModal';
 
 
 export default function ProductCard({ product }: { product: Product }) {
     const currentPrice = product.productPrices?.[0]?.ppPrice || 0;
     const originalPrice = currentPrice * 1.15;
+    const [showBuyNowModal, setShowBuyNowModal] = useState(false);
 
     const handleProductClick = (e: React.MouseEvent) => {
         // Prevent navigation if clicking on buttons or links
@@ -16,6 +19,18 @@ export default function ProductCard({ product }: { product: Product }) {
             return;
         }
         window.location.href = `/products/${product.prodId}`;
+    };
+
+    const handleBuyNowClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        
+        // Since product doesn't have productVariant array, we need to create variant data from available info
+        if (!product.prodColor || product.prodColor.length === 0) {
+            console.error('No color variants available for this product');
+            return;
+        }
+
+        setShowBuyNowModal(true);
     };
 
     return (
@@ -97,7 +112,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
                 <div className="flex gap-2">
                     <button
-                        onClick={handleProductClick}
+                        onClick={handleBuyNowClick}
                         className="cursor-pointer flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-3 rounded-xl font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2 group/btn">
                         <ShoppingCart className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span>Mua ngay</span>
@@ -116,6 +131,27 @@ export default function ProductCard({ product }: { product: Product }) {
                     <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Bảo hành 12 tháng</span>
                 </div>
             </div>
+
+            {/* Buy Now Modal */}
+            {showBuyNowModal && (
+                <BuyNowModal
+                    isOpen={showBuyNowModal}
+                    onClose={() => setShowBuyNowModal(false)}
+                    product={{
+                        variantId: 0,
+                        variantName: `${product.prodName}`,
+                        price: currentPrice,
+                        imageUrl: product.images[0]?.imageData,
+                        stock: 100
+                    }}
+                    productId={Number(product.prodId)}
+                    availableColors={product.prodColor || []}
+                    availableStorages={['64GB', '128GB', '256GB', '512GB', '1TB']}
+                    availableImages={product.images || []}
+                    defaultColor={product.prodColor?.[0]}
+                    defaultStorage="256GB"
+                />
+            )}
         </div>
     );
 }

@@ -8,7 +8,7 @@ public class DotenvConfig {
     static {
         io.github.cdimascio.dotenv.Dotenv dotenv =
                 io.github.cdimascio.dotenv.Dotenv.configure()
-                        .filename(".local.env") // Sửa từ ..local.env thành .local.env
+                        .filename(".local.env") // tên file của anh
                         .ignoreIfMalformed()
                         .ignoreIfMissing()
                         .load();

@@ -29,7 +29,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/products")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Cho phép gọi từ frontend (React, v.v.)
 public class ProductController {
 
     private final ProductService productService;

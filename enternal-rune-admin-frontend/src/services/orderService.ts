@@ -35,16 +35,16 @@ export interface OrderDetail {
     statusName: string;
   };
   orderUser: {
-    userId: number;
-    name: string;
-    email: string;
+    userId?: number;
+    userName: string;
+    userEmail: string;
   };
   orderShippingAddress: {
     streetName: string;
     wardName: string;
     cityName: string;
     countryName: string;
-  };
+  } | null;
   orderDetails: Array<{
     quantity: number;
     totalPrice: number;
@@ -97,5 +97,34 @@ export const getOrderDetail = async (orderId: number): Promise<OrderDetail> => {
   } catch (error: any) {
     console.error('Error fetching order detail:', error);
     throw error;
+  }
+};
+
+// Cập nhật trạng thái giao hàng
+export const updateShippingStatus = async (orderId: number, statusCode: string): Promise<void> => {
+  try {
+    await axiosInstance.put(`/orders/admin/${orderId}/shipping-status`, null, {
+      params: { statusCode }
+    });
+  } catch (error: any) {
+    console.error('Error updating shipping status:', error);
+    throw error;
+  }
+};
+
+// Lấy danh sách trạng thái giao hàng có thể chuyển đổi
+export const getAvailableShippingStatuses = async (): Promise<Array<{code: string, name: string}>> => {
+  try {
+    const response = await axiosInstance.get('/shipping-status');
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching shipping statuses:', error);
+    return [
+      { code: 'PENDING', name: 'Chờ xử lý' },
+      { code: 'PROCESSING', name: 'Đang xử lý' },
+      { code: 'SHIPPED', name: 'Đang giao' },
+      { code: 'DELIVERED', name: 'Đã giao' },
+      { code: 'CANCELLED', name: 'Đã hủy' }
+    ];
   }
 };
