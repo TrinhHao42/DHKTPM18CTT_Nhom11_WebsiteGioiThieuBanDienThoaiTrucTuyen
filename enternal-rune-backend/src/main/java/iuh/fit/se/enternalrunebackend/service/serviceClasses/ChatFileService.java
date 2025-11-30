@@ -6,6 +6,7 @@ import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Message;
 import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Role;
 import iuh.fit.se.enternalrunebackend.repository.repositoriesForAssistanceChat.MessageRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,12 +16,22 @@ import java.time.Instant;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class ChatFileService {
 
-    private final Cloudinary cloudinary;
+    private final Cloudinary cloudinaryForAssistanceChat;
     private final MessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
+
+    // Constructor injection với @Qualifier để chỉ định bean cụ thể
+    public ChatFileService(
+            @Qualifier("cloudinaryForAssistanceChat") Cloudinary cloudinaryForAssistanceChat,
+            MessageRepository messageRepository,
+            SimpMessagingTemplate messagingTemplate
+    ) {
+        this.cloudinaryForAssistanceChat = cloudinaryForAssistanceChat;
+        this.messageRepository = messageRepository;
+        this.messagingTemplate = messagingTemplate;
+    }
 
     public Message uploadImageAndBroadcast(
             String conversationId,
@@ -30,8 +41,8 @@ public class ChatFileService {
             MultipartFile file
     ) throws IOException {
 
-        // 1. Upload file lên Cloudinary
-        Map uploadResult = cloudinary.uploader().upload(
+        // 1. Upload file lên Cloudinary (sử dụng cloudinary riêng cho assistance chat)
+        Map uploadResult = cloudinaryForAssistanceChat.uploader().upload(
                 file.getBytes(),
                 ObjectUtils.asMap(
                         "folder", "chat-images/" + conversationId,

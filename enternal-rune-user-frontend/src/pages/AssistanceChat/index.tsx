@@ -473,7 +473,7 @@ const AssistanceChat = () => {
           </div>
         )}
         
-        <div className="flex items-end gap-3">
+        <div className="flex items-center gap-3">
           <input
             type="file"
             ref={fileInputRef}
@@ -483,27 +483,28 @@ const AssistanceChat = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 mb-1"
+            className="flex-shrink-0 w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-xl transition-colors text-gray-600 border border-gray-300"
             disabled={isUploading}
+            title="Đính kèm hình ảnh"
           >
             <ImageIcon className="w-5 h-5" />
           </button>
-          <div className="flex-1 relative">
+          <div className="flex-1 relative h-12">
             <textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={selectedImage ? "Thêm chú thích cho ảnh (tùy chọn)..." : "Nhập tin nhắn của bạn..."}
               rows={1}
-              className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none max-h-32"
-              style={{ minHeight: '48px' }}
+              className="w-full h-12 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none leading-tight"
               disabled={isUploading}
             />
           </div>
           <button
             onClick={selectedImage ? handleSendImage : handleSendMessage}
             disabled={(selectedImage ? false : !inputMessage.trim()) || isUploading}
-            className="p-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full transition-all active:scale-95 mb-1 relative"
+            className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl transition-all active:scale-95"
+            title="Gửi tin nhắn"
           >
             {isUploading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -512,11 +513,7 @@ const AssistanceChat = () => {
             )}
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          {selectedImage
-            ? 'Nhấn nút gửi để gửi ảnh'
-            : 'Nhấn Enter để gửi, Shift + Enter để xuống dòng'}
-        </p>
+      
       </div>
       </div>
     </div>

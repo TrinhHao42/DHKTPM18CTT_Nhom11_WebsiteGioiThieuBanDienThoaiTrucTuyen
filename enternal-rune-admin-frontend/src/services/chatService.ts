@@ -199,6 +199,13 @@ class ChatService {
     return response.json();
   }
 
+  async getUnreadCounts(agentId: string): Promise<Map<string, number>> {
+    const response = await fetch(`${BACKEND_URL}/api/conversations/unread-counts?agentId=${agentId}`);
+    if (!response.ok) throw new Error('Failed to fetch unread counts');
+    const data = await response.json();
+    return new Map(Object.entries(data));
+  }
+
   async uploadImageMessage(
     conversationId: string,
     senderId: string,

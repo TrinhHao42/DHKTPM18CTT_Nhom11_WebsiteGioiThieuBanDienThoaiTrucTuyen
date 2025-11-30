@@ -18,7 +18,6 @@ public class Endpoints {
             "/api/products/*/comments",
             "/api/products/*/comments/*/replies",
             "/api/products/*/rating-distribution",
-            "/api/products/*/average-rating"
             "/api/products/*/average-rating",
             "/api/chat/**"
     };
