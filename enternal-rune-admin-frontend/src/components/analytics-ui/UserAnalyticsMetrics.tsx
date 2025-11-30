@@ -128,6 +128,11 @@ export default function UserAnalyticsMetrics({ websiteId }: UserAnalyticsMetrics
   const defaultTrend = { value: "0%", isPositive: true };
 
   console.log('Analytics metrics data:', metrics); // Debug log
+  console.log('Trend data:', {
+    totalUsersTrend: metrics?.totalUsersTrend,
+    newUsersTrend: metrics?.newUsersTrend,
+    sessionTimeTrend: metrics?.sessionTimeTrend,
+  }); // Debug trend data
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
@@ -177,7 +182,7 @@ export default function UserAnalyticsMetrics({ websiteId }: UserAnalyticsMetrics
         }
         title="Lượt xem trang"
         value={formatNumber(metrics?.totalPageViews)}
-        trend={defaultTrend}
+        trend={safeTrend(metrics?.totalUsersTrend) || defaultTrend}
         bgColor="bg-gray-100 dark:bg-gray-800"
       />
 
@@ -199,7 +204,7 @@ export default function UserAnalyticsMetrics({ websiteId }: UserAnalyticsMetrics
         }
         title="Khách truy cập"
         value={formatNumber(metrics?.uniqueVisitors)}
-        trend={defaultTrend}
+        trend={safeTrend(metrics?.newUsersTrend) || defaultTrend}
         bgColor="bg-gray-100 dark:bg-gray-800"
       />
 
@@ -221,7 +226,7 @@ export default function UserAnalyticsMetrics({ websiteId }: UserAnalyticsMetrics
         }
         title="Thời gian TB/phiên"
         value={formatAvgSessionTime(metrics?.averageSessionDuration)}
-        trend={defaultTrend}
+        trend={safeTrend(metrics?.sessionTimeTrend) || defaultTrend}
         bgColor="bg-gray-100 dark:bg-gray-800"
       />
     </div>

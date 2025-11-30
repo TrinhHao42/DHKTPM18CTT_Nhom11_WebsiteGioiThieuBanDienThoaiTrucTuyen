@@ -7,12 +7,13 @@
   
   // Configuration
   const CONFIG = {
-    apiUrl: 'http://localhost:3001/api/analytics/track',
+    apiUrl: 'https://6jh6gpx1-3001.asse.devtunnels.ms/api/analytics/track',
     websiteId: 'cmic2k2820000ml8mu0miqhlm', // Default website ID
     sessionTimeout: 30 * 60 * 1000, // 30 minutes
     debug: true,
     maxRetries: 3,
-    retryDelay: 1000
+    retryDelay: 1000,
+    autoTrack: true // Auto-track page views like Umami
   };
   
   // Override config from script attributes
@@ -25,6 +26,49 @@
   
   // Expose CONFIG globally for debugging
   window.CONFIG = CONFIG;
+  
+  // Event name translation helper
+  // NOTE: This mapping is synced from src/utils/eventNames.ts
+  function getEventDisplayName(eventName) {
+    const eventMap = {
+      // Page events
+      'pageview': 'Xem trang',
+      'page_unload': 'Rời khỏi trang',
+      'page_engagement': 'Tương tác với trang',
+      'page_hidden': 'Ẩn trang',
+      'page_visible': 'Hiển thị trang',
+      'title_change': 'Đổi tiêu đề',
+
+      // Click events
+      'click': 'Nhấp chuột',
+      'button': 'Nhấp nút',
+      'external_link': 'Link ngoài',
+      'internal_link': 'Link nội bộ',
+      'email_link': 'Link email',
+      'phone_link': 'Link điện thoại',
+
+      // Form events
+      'form_submit': 'Gửi form',
+
+      // User events
+      'user_identify': 'Nhận dạng người dùng',
+
+      // Interaction events
+      'interaction_click': 'Tương tác nhấp',
+      'interaction_hover': 'Tương tác hover',
+      'interaction_focus': 'Tương tác focus',
+
+      // Custom events (common ones)
+      'add_to_cart': 'Thêm vào giỏ hàng',
+      'buy_now': 'Mua ngay',
+      'search': 'Tìm kiếm',
+      'download': 'Tải xuống',
+      'video_play': 'Phát video',
+      'video_pause': 'Tạm dừng video'
+    };
+
+    return eventMap[eventName] || eventName;
+  }
   
   // Utility functions
   function generateId() {
@@ -202,7 +246,7 @@
         const event = this.queue.shift();
         try {
           await this.sendEvent(event);
-        } catch (error) {
+        } catch {
           // Re-queue failed event (with retry limit)
           if (!event._retries || event._retries < CONFIG.maxRetries) {
             event._retries = (event._retries || 0) + 1;
@@ -240,14 +284,11 @@
       this.eventQueue = new EventQueue();
       this.initialized = false;
       this.pageStartTime = Date.now();
-      this.interactions = 0;
-      this.scrollDepth = 0;
-      this.maxScrollDepth = 0;
+  this.interactions = 0;
       
       // Bind methods
-      this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
-      this.handleBeforeUnload = this.handleBeforeUnload.bind(this);
-      this.handleScroll = this.handleScroll.bind(this);
+  this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
+  this.handleBeforeUnload = this.handleBeforeUnload.bind(this);
       this.handleClick = this.handleClick.bind(this);
       this.handleSubmit = this.handleSubmit.bind(this);
     }
@@ -291,14 +332,12 @@
         type: 'pageview',
         timeOnPage: timeOnPage,
         interactions: this.interactions,
-        maxScrollDepth: this.maxScrollDepth,
         ...customData
       });
       
-      // Reset page metrics
-      this.pageStartTime = Date.now();
-      this.interactions = 0;
-      this.maxScrollDepth = 0;
+  // Reset page metrics
+  this.pageStartTime = Date.now();
+  this.interactions = 0;
     }
     
     // Track custom event
@@ -330,24 +369,7 @@
       await this.trackEvent(`interaction_${action}`, elementData);
     }
     
-    // Handle scroll tracking
-    handleScroll() {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const scrollPercent = Math.round((scrollTop / docHeight) * 100);
-      
-      this.scrollDepth = scrollPercent;
-      this.maxScrollDepth = Math.max(this.maxScrollDepth, scrollPercent);
-      
-      // Track scroll milestones
-      if (scrollPercent > 0 && scrollPercent % 25 === 0 && !this[`scrollTracked${scrollPercent}`]) {
-        this[`scrollTracked${scrollPercent}`] = true;
-        this.trackEvent('scroll_milestone', { 
-          percentage: scrollPercent,
-          depth: scrollTop
-        });
-      }
-    }
+  // Scroll tracking removed: function deleted to stop scroll tracking
     
     // Handle click events
     handleClick(event) {
@@ -399,7 +421,6 @@
           type: 'page_unload',
           timeOnPage,
           interactions: this.interactions,
-          maxScrollDepth: this.maxScrollDepth,
           ...this.session.getSessionData(),
           websiteId: CONFIG.websiteId,
           timestamp: Date.now(),
@@ -413,90 +434,160 @@
       }
     }
     
-    // Setup automatic event tracking
+    // Setup automatic event tracking (như Umami)
     setupAutoTracking() {
-      // Click tracking
-      document.addEventListener('click', this.handleClick, true);
+      // Auto-track all clicks (buttons, links, etc.)
+      document.addEventListener('click', (event) => {
+        const target = event.target.closest('a, button, [role="button"], [onclick]');
+        if (target) {
+          const elementData = {
+            tag: target.tagName.toLowerCase(),
+            id: target.id || null,
+            class: target.className || null,
+            text: (target.textContent || target.innerText || '').trim().substring(0, 50),
+            href: target.href || null,
+            type: target.type || null
+          };
+          
+          // Determine click type
+          let clickType = 'click';
+          if (target.tagName === 'A') {
+            if (target.href && target.href.startsWith('http') && !target.href.includes(window.location.hostname)) {
+              clickType = 'external_link';
+            } else if (target.href && target.href.startsWith('mailto:')) {
+              clickType = 'email_link';
+            } else if (target.href && target.href.startsWith('tel:')) {
+              clickType = 'phone_link';
+            } else {
+              clickType = 'internal_link';
+            }
+          } else if (target.tagName === 'BUTTON' || target.type === 'submit') {
+            clickType = 'button';
+          }
+          
+          this.trackEvent(clickType, elementData);
+          this.interactions++;
+        }
+      }, true);
       
-      // Form submission tracking
-      document.addEventListener('submit', this.handleSubmit, true);
+      // Auto-track form submissions
+      document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (form.tagName === 'FORM') {
+          const formData = {
+            id: form.id || null,
+            name: form.name || null,
+            action: form.action || window.location.href,
+            method: (form.method || 'GET').toUpperCase(),
+            fieldCount: form.querySelectorAll('input, select, textarea').length
+          };
+          
+          this.trackEvent('form_submit', formData);
+          this.interactions++;
+        }
+      }, true);
       
-      // Scroll tracking (throttled)
-      let scrollTimer = null;
-      document.addEventListener('scroll', () => {
-        if (scrollTimer) clearTimeout(scrollTimer);
-        scrollTimer = setTimeout(this.handleScroll, 100);
-      }, { passive: true });
+      // Auto-scroll tracking is disabled per request; removed to reduce noise and overhead
       
       // Page visibility tracking
       document.addEventListener('visibilitychange', this.handleVisibilityChange);
       
-      // Page unload tracking
+      // Page exit tracking
       window.addEventListener('beforeunload', this.handleBeforeUnload);
       window.addEventListener('pagehide', this.handleBeforeUnload);
       
       // Session renewal on activity
-      ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
-        document.addEventListener(event, () => {
-          if (this.session.isExpired()) {
-            this.session.renewSession();
-            this.log('Session renewed due to activity');
-          }
+      let activityTimer = null;
+  ['mousedown', 'mousemove', 'keypress', 'touchstart', 'click'].forEach(eventType => {
+        document.addEventListener(eventType, () => {
+          if (activityTimer) clearTimeout(activityTimer);
+          activityTimer = setTimeout(() => {
+            if (this.session.isExpired()) {
+              this.session.renewSession();
+              this.log('🔄 Session renewed due to activity');
+            }
+          }, 100);
         }, { passive: true });
       });
+      
+  this.log('✅ Auto-tracking enabled: clicks, forms, page changes');
     }
     
-    // Track SPA route changes
-    setupSPATracking() {
-      let currentPath = window.location.pathname;
+    // Auto-track URL changes (như Umami)
+    setupAutoPageTracking() {
+      let currentUrl = window.location.href;
+      let currentTitle = document.title;
       
-      // Method 1: MutationObserver for DOM changes
-      const observer = new MutationObserver(() => {
-        if (currentPath !== window.location.pathname) {
-          this.log('SPA navigation detected:', currentPath, '->', window.location.pathname);
-          currentPath = window.location.pathname;
-          this.trackPageView();
+      const trackUrlChange = () => {
+        const newUrl = window.location.href;
+        const newTitle = document.title;
+        
+        if (newUrl !== currentUrl) {
+          this.log('🔄 URL changed:', currentUrl, '->', newUrl);
+          currentUrl = newUrl;
+          currentTitle = newTitle;
+          
+          // Track as new page view
+          this.trackPageView({
+            previousUrl: currentUrl,
+            navigationMethod: 'url_change'
+          });
+        } else if (newTitle !== currentTitle) {
+          this.log('📝 Title changed:', currentTitle, '->', newTitle);
+          currentTitle = newTitle;
+          
+          // Track title change as page update
+          this.trackEvent('title_change', {
+            newTitle: newTitle,
+            oldTitle: currentTitle
+          });
         }
-      });
+      };
       
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-      
-      // Method 2: History API override
+      // 1. History API overrides (SPA navigation)
       const originalPushState = history.pushState;
       const originalReplaceState = history.replaceState;
       
       history.pushState = function(...args) {
         originalPushState.apply(history, args);
-        setTimeout(() => {
-          if (currentPath !== window.location.pathname) {
-            currentPath = window.location.pathname;
-            window.analyticsTracker.trackPageView();
-          }
-        }, 0);
+        setTimeout(trackUrlChange, 0);
       };
       
       history.replaceState = function(...args) {
         originalReplaceState.apply(history, args);
-        setTimeout(() => {
-          if (currentPath !== window.location.pathname) {
-            currentPath = window.location.pathname;
-            window.analyticsTracker.trackPageView();
-          }
-        }, 0);
+        setTimeout(trackUrlChange, 0);
       };
       
-      // Method 3: PopState event
+      // 2. PopState event (back/forward buttons)
       window.addEventListener('popstate', () => {
-        setTimeout(() => {
-          if (currentPath !== window.location.pathname) {
-            currentPath = window.location.pathname;
-            this.trackPageView();
-          }
-        }, 0);
+        setTimeout(trackUrlChange, 0);
       });
+      
+      // 3. Hash changes
+      window.addEventListener('hashchange', () => {
+        setTimeout(trackUrlChange, 0);
+      });
+      
+      // 4. Monitor title changes (for dynamic SPAs)
+      const titleObserver = new MutationObserver(() => {
+        setTimeout(trackUrlChange, 0);
+      });
+      
+      const titleElement = document.querySelector('title');
+      if (titleElement) {
+        titleObserver.observe(titleElement, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        });
+      }
+      
+      // 5. Fallback: Poll for URL changes (for edge cases)
+      if (CONFIG.autoTrack) {
+        setInterval(() => {
+          trackUrlChange();
+        }, 1000); // Check every second
+      }
     }
     
     // Initialize tracking
@@ -512,8 +603,8 @@
       // Setup automatic tracking
       this.setupAutoTracking();
       
-      // Setup SPA tracking
-      this.setupSPATracking();
+      // Setup auto page tracking (như Umami)
+      this.setupAutoPageTracking();
       
       this.log('Analytics tracker initialized successfully');
       this.log('Website ID:', CONFIG.websiteId);
@@ -557,17 +648,43 @@
     }
   }
   
-  // Expose global tracking functions for convenience
-  window.trackEvent = function(eventName, eventData) {
-    if (window.analyticsTracker) {
-      return window.analyticsTracker.trackEvent(eventName, eventData);
-    }
+  // Expose Umami-style API
+  window.umami = {
+    track: function(eventName, eventData = {}) {
+      if (window.analyticsTracker) {
+        return window.analyticsTracker.trackEvent(eventName, eventData);
+      } else {
+        console.warn('Analytics not loaded yet. Event queued:', eventName, eventData);
+      }
+    },
+    
+    page: function(customData = {}) {
+      if (window.analyticsTracker) {
+        return window.analyticsTracker.trackPageView(customData);
+      }
+    },
+    
+    identify: function(userId, properties = {}) {
+      if (window.analyticsTracker) {
+        return window.analyticsTracker.identify(userId, properties);
+      }
+    },
+    
+    // Get tracking info
+    get config() {
+      return CONFIG;
+    },
+    
+    get session() {
+      return window.analyticsTracker ? window.analyticsTracker.session.getSessionData() : null;
+    },
+    
+    // Get user-friendly event name
+    getEventDisplayName: getEventDisplayName
   };
   
-  window.trackPageView = function(customData) {
-    if (window.analyticsTracker) {
-      return window.analyticsTracker.trackPageView(customData);
-    }
-  };
+  // Legacy API (backward compatibility)
+  window.trackEvent = window.umami.track;
+  window.trackPageView = window.umami.page;
   
 })();

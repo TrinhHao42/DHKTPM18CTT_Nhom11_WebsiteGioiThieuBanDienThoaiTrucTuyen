@@ -18,7 +18,7 @@ public class Endpoints {
             "/api/products/*/comments",
             "/api/products/*/comments/*/replies",
             "/api/products/*/rating-distribution",
-            "/api/products/*/average-rating",
+            "/api/products/*/average-rating"
     };
 
     // POST không cần đăng nhập
@@ -47,7 +47,9 @@ public class Endpoints {
 
     // DELETE không cần đăng nhập
     public static final String[] PUBLIC_DELETE_ENDPOINTS = {
-            "/api/discounts/**"
+            "/cart/**",
+            "/api/discounts/**",
+            "/api/products/comments/images/**"  // Allow deleting comment images
     };
 
     // Admin GET

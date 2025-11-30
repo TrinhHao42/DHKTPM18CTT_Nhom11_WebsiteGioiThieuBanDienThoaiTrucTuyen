@@ -11,6 +11,15 @@ import { Image } from '@/types/Image'
 import { number } from 'yup'
 import BuyNowModal from '@/components/BuyNowModal'
 
+// Type definition for umami analytics
+declare global {
+    interface Window {
+        umami?: {
+            track: (eventName: string, eventData: Record<string, unknown>) => void;
+        }
+    }
+}
+
 interface ProductInfoPanelProps {
     product: Product
     selectedColor?: string
@@ -25,15 +34,24 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
     const [quantity, setQuantity] = useState(1)
     const [isAdding, setIsAdding] = useState(false)
     const [showBuyNowModal, setShowBuyNowModal] = useState(false)
-    const storageOptions = ['256GB', '512GB', '1TB']
-    const [selectedStorage, setSelectedStorage] = useState(storageOptions[1])
+    const storageOptions = product.prodVersion || ['256GB', '512GB', '1TB'] // Fallback to mock data if no API data
+    const [selectedStorage, setSelectedStorage] = useState(storageOptions[0] || '512GB')
     const protectionPlans = [
         { duration: '2 years', price: 129000 },
         { duration: '3 years', price: 199000 }
     ]
     const [selectedPlan, setSelectedPlan] = useState<string>('')
     const basePrice = product.productPrices?.[0]?.ppPrice || 0
-    const storagePrice = selectedStorage === '256GB' ? -100 : selectedStorage === '1TB' ? 200 : 0
+    // Calculate storage price based on index or specific mapping
+    const getStoragePrice = (storage: string) => {
+        const storageIndex = storageOptions.indexOf(storage)
+        // You can customize this logic based on your business rules
+        if (storageIndex === 0) return 0 // First option as base price
+        if (storageIndex === 1) return 100 // Second option +100
+        if (storageIndex === 2) return 200 // Third option +200
+        return 0 // Default
+    }
+    const storagePrice = getStoragePrice(selectedStorage)
     const currentPrice = basePrice + storagePrice
     const currentPlanPrice = protectionPlans.find(p => p.duration === selectedPlan)?.price || 0
     // price per single unit (base + storage + selected plan)
@@ -59,6 +77,23 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
                     imageId: Number(selectedImage?.imageId)
                 }
             )
+
+            // Track add to cart event
+            if (typeof window !== 'undefined' && window.umami) {
+                window.umami.track('add_to_cart', {
+                    product_id: product.prodId,
+                    product_name: product.prodName,
+                    product_brand: product.prodBrand || 'Unknown',
+                    product_price: unitPrice,
+                    quantity: quantity,
+                    selected_color: selectedColor,
+                    selected_storage: selectedStorage,
+                    selected_protection_plan: selectedPlan,
+                    total_price: totalPrice,
+                    currency: 'VND'
+                })
+            }
+
             toast.success(`✅ Đã thêm "${product.prodName}" vào giỏ hàng!`)
         } catch (error) {
             console.error('Failed to add to cart:', error)
@@ -98,8 +133,8 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
     }
 
     const renderRating = () => {
-        const averageRating = commentData?.averageRating || product.prodRating
         const totalRatings = commentData?.totalRatings || 0
+        const averageRating = totalRatings > 0 ? (commentData?.averageRating || product.prodRating) : 0
 
         return (
             <div className="flex items-center gap-3">
@@ -107,7 +142,7 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
                     {[1, 2, 3, 4, 5].map((i) => (
                         <Star
                             key={i}
-                            className={`w-5 h-5 ${i <= Math.floor(averageRating)
+                            className={`w-5 h-5 ${totalRatings > 0 && i <= Math.floor(averageRating)
                                 ? 'text-yellow-400 fill-yellow-400'
                                 : 'text-gray-200 fill-gray-200'
                                 }`}
@@ -152,9 +187,9 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
             {renderPrice()}
             <div>
                 <h3 className="text-md font-semibold text-gray-900 mb-3">Bộ nhớ</h3>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap">
                     {storageOptions.map((storage) => {
-                        const storagePrice = storage === '256GB' ? basePrice - 100 : storage === '1TB' ? basePrice + 200 : basePrice
+                        const storagePrice = basePrice + getStoragePrice(storage)
                         return (
                             <button
                                 key={storage}
@@ -182,8 +217,8 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
                         return (
                             <button
                                 key={color}
-                                onClick={() => { 
-                                    onColorChange?.(color) 
+                                onClick={() => {
+                                    onColorChange?.(color)
                                 }}
                                 className={`relative w-16 h-16 rounded-2xl border-4 transition-all duration-300 hover:scale-105 ${selectedColor === color
                                     ? 'border-blue-500 shadow-lg scale-110'
@@ -284,6 +319,23 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
                 <button
                     onClick={handleBuyNow}
                     className="cursor-pointer bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-2xl font-semibold text-md shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-3 group hover:scale-102"
+                    // onClick={() => {
+                    //     // Track buy now event
+                    //     if (typeof window !== 'undefined' && window.umami) {
+                    //         window.umami.track('buy_now', {
+                    //             product_id: product.prodId,
+                    //             product_name: product.prodName,
+                    //             product_brand: product.prodBrand || 'Unknown',
+                    //             product_price: unitPrice,
+                    //             quantity: quantity,
+                    //             selected_color: selectedColor,
+                    //             selected_storage: selectedStorage,
+                    //             selected_protection_plan: selectedPlan,
+                    //             total_price: totalPrice,
+                    //             currency: 'VND'
+                    //         })
+                    //     }
+                    // }}
                 >
                     Mua ngay - {formatPrice(totalPrice)}
                 </button>

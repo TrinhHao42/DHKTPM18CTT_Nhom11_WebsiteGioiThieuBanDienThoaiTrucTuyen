@@ -68,8 +68,13 @@ public class SecurityConfig {
                 // CORS
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
-                    // Use allowedOriginPatterns instead of allowedOrigins when allowCredentials is true
-                    corsConfig.setAllowedOriginPatterns(Arrays.asList(userUrl, adminUrl));
+                    // Use allowedOriginPatterns for flexibility with localhost ports
+                    corsConfig.setAllowedOriginPatterns(Arrays.asList(
+                        "http://localhost:3000",  // User frontend
+                        "http://localhost:3001",  // Admin frontend  
+                        userUrl,                  // Environment variable
+                        adminUrl                  // Environment variable
+                    ));
                     corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                     corsConfig.setAllowedHeaders(Arrays.asList("*"));
                     corsConfig.setAllowCredentials(true);

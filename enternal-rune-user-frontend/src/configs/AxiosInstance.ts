@@ -20,6 +20,13 @@ AxiosInstance.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`
       }
     }
+    
+    // Handle multipart/form-data requests
+    if (config.data instanceof FormData) {
+      // Remove Content-Type header to let Axios set multipart/form-data with boundary
+      delete config.headers['Content-Type']
+    }
+    
     return config
   },
   (error) => {
@@ -35,7 +42,6 @@ AxiosInstance.interceptors.response.use(
     if (error.response?.status === 401) {
       // Token expired hoặc invalid
       if (typeof window !== 'undefined') {
-        console.warn('⚠️ Token expired or invalid, redirecting to login...')
         localStorage.removeItem('token')
         localStorage.removeItem('user')
         window.location.href = '/LoginScreen'

@@ -117,11 +117,19 @@ export default function UserSourcesChart({ websiteId }: UserSourcesChartProps) {
       <div className="mt-6 space-y-3">
         {sources.map((sourceData: { source: string; count: number; percentage: number }) => {
           const icons: { [key: string]: string } = {
-            'organic search': '🔍',
-            'direct': '🌐',
-            'social media': '📱',
-            'referral': '🔗',
-            'email': '✉️',
+            'truy cập trực tiếp': '🌐',
+            'tìm kiếm tự nhiên': '🔍',
+            'tìm kiếm có trả phí': '💰',
+            'mạng xã hội': '📱',
+            'website khác': '🔗',
+            'email marketing': '✉️',
+            'email': '�',
+            'google': '🔍',
+            'facebook': '📘',
+            'twitter': '🐦',
+            'instagram': '📷',
+            'linkedin': '�',
+            'youtube': '📺',
             'default': '📊'
           };
 

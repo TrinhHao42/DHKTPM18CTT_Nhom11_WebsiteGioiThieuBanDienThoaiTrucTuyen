@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>External Site Tracking Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      background: #f0f0f0;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🌐 External Website Tracking Test</h1>
+
+  <div class="status" id="status">
+    ⏳ Loading analytics...
+  </div>
+
+  <p>This is a test page to verify tracking works from external domains.</p>
+
+  <h2>Manual Tracking Test:</h2>
+  <button>Button 1</button>
+  <button class="secondary">Button 2</button>
+  <button onclick="manualEvent()">Manual Custom Event</button>
+  <button onclick="checkStatus()">Check Status</button>
+  <button onclick="showEventNames()">Show Event Name Examples</button>
+
+  <h2>Navigation Tests:</h2>
+  <a href="#section1">Go to Section 1</a> |
+  <a href="#section2">Go to Section 2</a> |
+  <a href="?test=1">Add Query Param</a> |
+  <a href="https://google.com" target="_blank">External Link</a>
+
+  <div id="section1" style="margin-top: 500px; padding: 20px; background: #e9ecef;">
+    <h3>Section 1</h3>
+    <p>This section tests scroll tracking and navigation.</p>
+  </div>
+
+  <div id="section2" style="margin-top: 300px; padding: 20px; background: #f8f9fa;">
+    <h3>Section 2</h3>
+    <p>Another section for navigation testing.</p>
+  </div>
+
+  <!-- Load Universal Analytics Script -->
+  <!-- <script async src="https://6jh6gpx1-3001.asse.devtunnels.ms/tracking.js" data-website-id="cmic2k2820000ml8mu0miqhlm"
+    data-api-url="https://6jh6gpx1-3001.asse.devtunnels.ms/api/analytics/track"></script> -->
+
+  <script src="/tracking.js" data-website-id="cmic2k2820000ml8mu0miqhlm"
+    data-api-url="http://localhost:3001/api/analytics/track" data-debug="true">
+    </script>
+
+  <script>
+    // Manual custom event (sử dụng như Umami)
+    function manualEvent() {
+      if (window.umami) {
+        window.umami.track('purchase_intent', {
+          product: 'Test Product',
+          value: 99.99,
+          currency: 'USD',
+          method: 'button_click'
+        });
+        updateStatus('✅ Custom purchase_intent event sent!');
+      } else {
+        updateStatus('❌ Analytics not loaded yet');
+      }
+    }
+
+    function checkStatus() {
+      if (window.umami && window.umami.session) {
+        const session = window.umami.session;
+        const autoTrackingEnabled = (window.CONFIG && window.CONFIG.autoTrack) ? 'Enabled' : 'Disabled';
+        updateStatus(`✅ Analytics Active! Session: ${session.sessionId.substring(0, 8)}... | Auto-tracking: ${autoTrackingEnabled} | Event names: Friendly display`);
+      } else {
+        updateStatus('⏳ Loading analytics...');
+      }
+    }
+
+    function updateStatus(message) {
+      document.getElementById('status').innerHTML = message.replace(/\n/g, '<br>');
+      console.log(message);
+    }
+
+    function showEventNames() {
+      if (window.umami && window.umami.getEventDisplayName) {
+        const examples = [
+          'page_unload', 'external_link', 'form_submit', 'button', 'purchase_intent'
+        ];
+        
+        const friendlyNames = examples.map(name => 
+          `${name} → ${window.umami.getEventDisplayName(name)}`
+        ).join('\n');
+        
+        updateStatus(`📋 Event Name Examples:\n${friendlyNames}`);
+      } else {
+        updateStatus('❌ Event name translation not available yet');
+      }
+    }
+
+  // Auto repeating status checks disabled; run once on load
+  checkStatus();
+  </script>
+</body>
+
+</html>

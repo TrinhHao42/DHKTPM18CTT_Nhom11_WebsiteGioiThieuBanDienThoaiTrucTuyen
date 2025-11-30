@@ -44,8 +44,7 @@ export class ProductService {
   if (maybePage && Array.isArray(maybePage.content)) return maybePage.content!
 
   return []
-    } catch (error) {
-      console.error('Error fetching filtered products:', error)
+    } catch {
       throw new Error('Không thể tải danh sách sản phẩm. Vui lòng thử lại.')
     }
   }
@@ -60,8 +59,7 @@ export class ProductService {
       const response = await AxiosInstance.get<Product>(url)
       // response.data should be a single Product object
       return response.data as Product
-    } catch (error) {
-      console.error('Error fetching product by id:', error)
+    } catch {
       return null
     }
   }
