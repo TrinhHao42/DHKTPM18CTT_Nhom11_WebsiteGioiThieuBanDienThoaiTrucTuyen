@@ -8,7 +8,7 @@ import iuh.fit.se.enternalrunebackend.entity.*;
 import iuh.fit.se.enternalrunebackend.entity.enums.CommentStatus;
 import iuh.fit.se.enternalrunebackend.repository.*;
 import iuh.fit.se.enternalrunebackend.service.CommentService;
-import iuh.fit.se.enternalrunebackend.util.FileStorageUtil;
+import iuh.fit.se.enternalrunebackend.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -35,7 +35,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final CommentImageRepository commentImageRepository;
     private final ProductRepository productRepository;
-    private final FileStorageUtil fileStorageUtil;
+    private final ImageService imageService;
     
     // Business rules constants
     private static final int RATE_LIMIT_SECONDS = 10;
@@ -45,8 +45,6 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public CommentPageResponse getComments(Integer productId, int page, int size) {
-        log.info("Getting comments for product {} - page: {}, size: {}", productId, page, size);
-        
         Pageable pageable = PageRequest.of(page, size);
         Page<Comment> commentPage = commentRepository.findByProductIdOrderByCmDateDesc(productId, pageable);
         
@@ -83,10 +81,6 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public CommentResponse createComment(Integer productId, CreateCommentRequest request, 
                                        MultipartFile[] images, Optional<User> currentUser, String ipAddress) {
-        String commentType = request.getParentCommentId() != null ? "REPLY" : "ROOT_COMMENT";
-        log.info("Creating {} for product {} from IP {}, parentId: {}", 
-                commentType, productId, ipAddress, request.getParentCommentId());
-        
         // Validate request
         validateCommentRequest(request, images);
         
@@ -130,15 +124,10 @@ public class CommentServiceImpl implements CommentService {
             Comment parentComment = commentRepository.findById(request.getParentCommentId())
                     .orElseThrow(() -> new IllegalArgumentException("Parent comment not found: " + request.getParentCommentId()));
             comment.setComment(parentComment);
-            log.info("Creating reply to comment ID: {} for product: {}", request.getParentCommentId(), productId);
         }
         
         // Save comment
         Comment savedComment = commentRepository.save(comment);
-        log.info("Comment saved with ID: {}, isReply: {}, parentId: {}", 
-                savedComment.getCmId(), 
-                savedComment.getComment() != null,
-                savedComment.getComment() != null ? savedComment.getComment().getCmId() : null);
         
         // Handle image uploads
         List<CommentImage> commentImages = new ArrayList<>();
@@ -151,7 +140,6 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.saveAndFlush(savedComment);
         
         CommentResponse response = mapToCommentResponse(savedComment, productId);
-        log.info("Reply creation completed. Response ID: {}, ParentID: {}", response.getId(), response.getParentCommentId());
         
         return response;
     }
@@ -199,6 +187,42 @@ public class CommentServiceImpl implements CommentService {
         return replyPage.map(comment -> mapToCommentResponse(comment, productId));
     }
     
+    @Override
+    @Transactional
+    public void deleteCommentImage(Integer imageId, Optional<User> currentUser) {
+        // Find the image
+        CommentImage commentImage = commentImageRepository.findById(imageId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment image not found: " + imageId));
+        
+        Comment comment = commentImage.getComment();
+        
+        // Authorization check - only comment owner or admin can delete
+        if (currentUser.isPresent()) {
+            User user = currentUser.get();
+            if (!comment.getCmUser().equals(user) && !isAdmin(user)) {
+                throw new RuntimeException("Unauthorized to delete this image");
+            }
+        } else {
+            throw new RuntimeException("Authentication required to delete image");
+        }
+        
+        // Note: We don't delete from Cloudinary for comment images 
+        // as they use the same ImageService as products and we don't want to break product images
+        // Cloudinary will handle cleanup through its auto-deletion policies
+        
+        // Delete from database
+        commentImageRepository.delete(commentImage);
+    }
+    
+    /**
+     * Check if user is admin (implement based on your role system)
+     */
+    private boolean isAdmin(User user) {
+        // Implement based on your role system
+        // For now, return false - you can update this based on your User entity structure
+        return false;
+    }
+    
     /**
      * Validate comment request
      */
@@ -242,7 +266,7 @@ public class CommentServiceImpl implements CommentService {
     }
     
     /**
-     * Save comment images
+     * Save comment images using ImageService (same as ProductService)
      */
     private List<CommentImage> saveCommentImages(Comment comment, MultipartFile[] images) {
         List<CommentImage> commentImages = new ArrayList<>();
@@ -252,12 +276,13 @@ public class CommentServiceImpl implements CommentService {
             if (image.isEmpty()) continue;
             
             try {
-                FileStorageUtil.FileUploadResult uploadResult = fileStorageUtil.saveFile(image, comment.getCmProduct().getProdId());
+                // Upload to Cloudinary using ImageService (same as ProductService)
+                String imageUrl = imageService.upload(image.getBytes(), image.getOriginalFilename());
                 
                 CommentImage commentImage = CommentImage.builder()
-                        .url(uploadResult.getUrl())
-                        .fileName(uploadResult.getOriginalFilename())
-                        .size(uploadResult.getSize())
+                        .url(imageUrl)
+                        .fileName(image.getOriginalFilename())
+                        .size(image.getSize())
                         .displayOrder(i)
                         .comment(comment)
                         .build();
@@ -265,10 +290,7 @@ public class CommentServiceImpl implements CommentService {
                 CommentImage savedImage = commentImageRepository.save(commentImage);
                 commentImages.add(savedImage);
                 
-                log.info("Image saved for comment {}: {}", comment.getCmId(), uploadResult.getOriginalFilename());
-                
             } catch (Exception e) {
-                log.error("Failed to save image for comment {}: {}", comment.getCmId(), e.getMessage());
                 throw new RuntimeException("Failed to upload image: " + e.getMessage(), e);
             }
         }
@@ -306,12 +328,9 @@ public class CommentServiceImpl implements CommentService {
                 } else if (nameObj != null) {
                     // Handle case where name is Integer or other type
                     username = String.valueOf(nameObj);
-                    log.warn("User name for comment {} was not String, converted: {} -> {}", 
-                        comment.getCmId(), nameObj.getClass().getSimpleName(), username);
                 }
             }
         } catch (Exception e) {
-            log.warn("Could not load user for comment {}: {}", comment.getCmId(), e.getMessage());
         }
         
         // Get parent comment ID safely (handle lazy loading)
@@ -321,7 +340,6 @@ public class CommentServiceImpl implements CommentService {
                 parentCommentId = comment.getComment().getCmId();
             }
         } catch (Exception e) {
-            log.warn("Could not load parent comment for comment {}: {}", comment.getCmId(), e.getMessage());
         }
         
         return CommentResponse.builder()

@@ -1,13 +1,28 @@
 import { formatPrice } from '@/lib/format';
 import { Product } from '@/types/Product';
+import { CommentsPageResponse } from '@/types/Comment';
 import { Star, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useProductComments } from '@/hooks/useProductComments';
 
 
-export default function ProductCard({ product }: { product: Product }) {
+interface ProductCardProps {
+    product: Product;
+    commentData?: CommentsPageResponse;
+}
+
+export default function ProductCard({ product, commentData: externalCommentData }: ProductCardProps) {
     const currentPrice = product.productPrices?.[0]?.ppPrice || 0;
     const originalPrice = currentPrice * 1.15;
+
+    // Fetch comment data if not provided externally
+    const { commentData: fetchedCommentData } = useProductComments(product.prodId, !externalCommentData);
+    const commentData = externalCommentData || fetchedCommentData;
+
+    // Use product rating data exactly like ProductInfoPanel
+    const totalRatings = commentData?.totalRatings || 0;
+    const averageRating = totalRatings > 0 ? (commentData?.averageRating || product.prodRating || 0) : 0;
 
     const handleProductClick = (e: React.MouseEvent) => {
         // Prevent navigation if clicking on buttons or links
@@ -57,21 +72,22 @@ export default function ProductCard({ product }: { product: Product }) {
                 <p className="text-gray-500 text-sm mb-2 capitalize h-5 w-[90%] line-clamp-1 overflow-hidden text-ellipsis">
                     {product.prodDescription}
                 </p>
-                <div className="flex items-center gap-2 mb-3">
-                    <div className="flex gap-0.5">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((i) => (
                             <Star
                                 key={i}
-                                className={`w-4 h-4 ${i <= Math.floor(product.prodRating)
+                                className={`w-4 h-4 ${totalRatings > 0 && i <= Math.floor(averageRating)
                                     ? 'text-yellow-400 fill-yellow-400'
-                                    : i - product.prodRating < 1 && i > product.prodRating
-                                        ? 'text-yellow-400 fill-yellow-200/50'
-                                        : 'text-gray-200 fill-gray-200'
+                                    : 'text-gray-200 fill-gray-200'
                                     }`}
                             />
                         ))}
                     </div>
-                    <span className="text-gray-500 text-sm">({product.prodRating.toFixed(1)})</span>
+                    <span className="text-sm font-semibold text-gray-900">{averageRating.toFixed(1)}</span>
+                    <span className="text-gray-500 text-sm">
+                        ({totalRatings > 0 ? `${totalRatings.toLocaleString()} đánh giá` : 'Chưa có đánh giá'})
+                    </span>
                     <div className="ml-auto">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     </div>

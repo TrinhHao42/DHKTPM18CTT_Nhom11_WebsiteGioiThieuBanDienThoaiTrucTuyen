@@ -51,10 +51,8 @@ public class ProductCommentController {
             return ResponseEntity.ok(response);
             
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid request for product {}: {}", productId, e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            log.error("Error getting comments for product {}: {}", productId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -73,20 +71,14 @@ public class ProductCommentController {
                 productId, request, images, currentUser, ipAddress
             );
             
-            log.info("Comment created successfully: ID={}, ProductID={}, IP={}", 
-                response.getId(), productId, ipAddress);
-            
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
             
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid comment request for product {}: {}", productId, e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (RuntimeException e) {
             if (e.getMessage().contains("Rate limit")) {
-                log.warn("Rate limit exceeded for product {}: {}", productId, e.getMessage());
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
             }
-            log.error("Error creating comment for product {}: {}", productId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -104,42 +96,32 @@ public class ProductCommentController {
                 productId, request, null, currentUser, ipAddress
             );
             
-            log.info("Text comment created successfully: ID={}, ProductID={}, IP={}", 
-                response.getId(), productId, ipAddress);
-            
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
             
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid text comment request for product {}: {}", productId, e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (RuntimeException e) {
             if (e.getMessage().contains("Rate limit")) {
-                log.warn("Rate limit exceeded for product {}: {}", productId, e.getMessage());
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
             }
-            log.error("Error creating text comment for product {}: {}", productId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
-    @GetMapping("/{productId}/rating-distribution")
     public ResponseEntity<Map<Integer, Long>> getRatingDistribution(@PathVariable Integer productId) {
         try {
             Map<Integer, Long> distribution = commentService.getRatingDistribution(productId);
             return ResponseEntity.ok(distribution);
         } catch (Exception e) {
-            log.error("Error getting rating distribution for product {}: {}", productId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
-    @GetMapping("/{productId}/average-rating")
     public ResponseEntity<Double> getAverageRating(@PathVariable Integer productId) {
         try {
             double averageRating = commentService.getAverageRating(productId);
             return ResponseEntity.ok(averageRating);
         } catch (Exception e) {
-            log.error("Error getting average rating for product {}: {}", productId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -166,20 +148,14 @@ public class ProductCommentController {
                 productId, request, null, currentUser, ipAddress
             );
             
-            log.info("Reply created successfully: ID={}, ParentID={}, ProductID={}, IP={}", 
-                response.getId(), commentId, productId, ipAddress);
-            
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
             
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid reply request for comment {} on product {}: {}", commentId, productId, e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (RuntimeException e) {
             if (e.getMessage().contains("Rate limit")) {
-                log.warn("Rate limit exceeded for reply to comment {} on product {}: {}", commentId, productId, e.getMessage());
                 return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
             }
-            log.error("Error creating reply for comment {} on product {}: {}", commentId, productId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -219,10 +195,8 @@ public class ProductCommentController {
             return ResponseEntity.ok(response);
             
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid request for replies to comment {} on product {}: {}", commentId, productId, e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            log.error("Error getting replies for comment {} on product {}: {}", commentId, productId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -250,15 +224,37 @@ public class ProductCommentController {
                 || "anonymousUser".equals(authentication.getPrincipal())) {
                 return Optional.empty();
             }
-            Object principal = authentication.getPrincipal();
-            
-            log.debug("Authentication found but user extraction not implemented: {}", 
-                principal.getClass().getSimpleName());
             return Optional.empty();
             
         } catch (Exception e) {
-            log.warn("Error getting current user: {}", e.getMessage());
             return Optional.empty();
+        }
+    }
+    
+    /**
+     * Delete a comment image
+     * DELETE /api/products/comments/images/{imageId}
+     */
+    @DeleteMapping("/comments/images/{imageId}")
+    public ResponseEntity<Void> deleteCommentImage(@PathVariable Integer imageId) {
+        try {
+            Optional<User> currentUser = getCurrentUser();
+            commentService.deleteCommentImage(imageId, currentUser);
+            
+            return ResponseEntity.noContent().build();
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("Unauthorized")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            if (e.getMessage().contains("Authentication required")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }

@@ -66,4 +66,13 @@ public interface CommentService {
      * @return paginated reply comments
      */
     Page<CommentResponse> getReplyComments(Integer parentCommentId, int page, int size);
+    
+    /**
+     * Delete a comment image from Cloudinary and database
+     * @param imageId the comment image ID
+     * @param currentUser optional authenticated user (for authorization)
+     * @throws IllegalArgumentException if image not found
+     * @throws RuntimeException if deletion fails
+     */
+    void deleteCommentImage(Integer imageId, Optional<User> currentUser);
 }
