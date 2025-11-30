@@ -38,7 +38,7 @@ export default function ProductsPage() {
     }
   };
 
-  const handleFilterByStatus = (status: "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK" | "all") => {
+  const handleFilterByStatus = (status: "ACTIVE" | "OUT_OF_STOCK" | "REMOVED" | "all") => {
     if (status === "all") {
       fetchProducts({ page: 0, status: undefined });
     } else {

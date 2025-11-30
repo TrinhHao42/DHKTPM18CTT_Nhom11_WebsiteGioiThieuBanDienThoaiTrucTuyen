@@ -47,7 +47,7 @@ export default function EditBrandPage() {
   const handleSubmit = async (data: BrandRequest) => {
     try {
       await brandService.update(parseInt(id), data);
-      alert('Cập nhật thương hiệu thành công!');
+      // alert('Cập nhật thương hiệu thành công!');
       router.push('/brands');
     } catch (error: any) {
       throw new Error(error.message || 'Không thể cập nhật thương hiệu');
@@ -57,7 +57,7 @@ export default function EditBrandPage() {
   const handleDelete = async (brandId: number) => {
     try {
       await brandService.delete(brandId);
-      alert('Xóa thương hiệu thành công!');
+      // alert('Xóa thương hiệu thành công!');
       router.push('/brands');
     } catch (error: any) {
       throw new Error(error.message || 'Không thể xóa thương hiệu');
@@ -153,7 +153,7 @@ export default function EditBrandPage() {
     brandId: brand.brandId,
     brandName: brand.brandName,
     brandLogoUrl: brand.brandLogoUrl || '',
-    brandDescription: '', // API dashboard list doesn't return description
+    brandDescription: brand.description || '',
     brandStatus: brand.brandStatus || 'ACTIVE',
   };
 

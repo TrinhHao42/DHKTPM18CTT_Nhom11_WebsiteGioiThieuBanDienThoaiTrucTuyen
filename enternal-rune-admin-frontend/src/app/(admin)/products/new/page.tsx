@@ -13,7 +13,7 @@ export default function NewProductPage() {
   const handleSubmit = async (data: ProductFormData, images: File[]) => {
     try {
       await productService.add(data, images);
-      alert('Tạo sản phẩm thành công!');
+      // alert('Tạo sản phẩm thành công!');
       router.push('/products');
     } catch (error: any) {
       throw new Error(error.message || 'Không thể tạo sản phẩm');

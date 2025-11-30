@@ -13,7 +13,7 @@ export default function NewBrandPage() {
   const handleSubmit = async (data: BrandRequest) => {
     try {
       await brandService.add(data);
-      alert('Tạo thương hiệu thành công!');
+      // alert('Tạo thương hiệu thành công!');
       router.push('/brands');
     } catch (error: any) {
       throw new Error(error.message || 'Không thể tạo thương hiệu');

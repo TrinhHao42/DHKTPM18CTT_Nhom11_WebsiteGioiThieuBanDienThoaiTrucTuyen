@@ -1,11 +1,10 @@
 'use client';
 
 import React from 'react';
-import { ArrowUpIcon } from '@/icons';
-import Badge from '@/components/ui/badge/Badge';
+import { BrandStatisticResponse } from '@/types/brand';
 
 interface BrandMetricsProps {
-  totalBrands: number;
+  statistics: BrandStatisticResponse | null;
   loading?: boolean;
 }
 
@@ -13,15 +12,11 @@ const MetricCard = ({
   icon,
   title,
   value,
-  trend,
-  trendValue,
   loading,
 }: {
   icon: React.ReactNode;
   title: string;
   value: string | number;
-  trend?: 'up' | 'down';
-  trendValue?: string;
   loading?: boolean;
 }) => {
   return (
@@ -43,23 +38,17 @@ const MetricCard = ({
             </h4>
           )}
         </div>
-        {trend && trendValue && !loading && (
-          <Badge color={trend === 'up' ? 'success' : 'error'}>
-            <ArrowUpIcon />
-            {trendValue}
-          </Badge>
-        )}
       </div>
     </div>
   );
 };
 
-export default function BrandMetrics({ totalBrands, loading }: BrandMetricsProps) {
+export default function BrandMetrics({ statistics, loading }: BrandMetricsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       <MetricCard
         title="Tổng thương hiệu"
-        value={totalBrands}
+        value={statistics?.totalBrands ?? 0}
         loading={loading}
         icon={
           <svg
@@ -90,7 +79,8 @@ export default function BrandMetrics({ totalBrands, loading }: BrandMetricsProps
 
       <MetricCard
         title="Thương hiệu phổ biến"
-        value="Apple"
+        value={statistics?.mostPopularBrand ?? 'N/A'}
+        loading={loading}
         icon={
           <svg
             className="text-brand dark:text-white/90"
@@ -126,10 +116,9 @@ export default function BrandMetrics({ totalBrands, loading }: BrandMetricsProps
       />
 
       <MetricCard
-        title="Sản phẩm"
-        value="1,234"
-        trend="up"
-        trendValue="12.5%"
+        title="TB sản phẩm/thương hiệu"
+        value={statistics?.averageProductsPerBrand?.toFixed(1) ?? '0'}
+        loading={loading}
         icon={
           <svg
             className="text-brand dark:text-white/90"
@@ -158,10 +147,9 @@ export default function BrandMetrics({ totalBrands, loading }: BrandMetricsProps
       />
 
       <MetricCard
-        title="Thương hiệu mới"
-        value="3"
-        trend="up"
-        trendValue="Tháng này"
+        title="Thương hiệu trống"
+        value={statistics?.emptyBrandCount ?? 0}
+        loading={loading}
         icon={
           <svg
             className="text-brand dark:text-white/90"
@@ -179,7 +167,7 @@ export default function BrandMetrics({ totalBrands, loading }: BrandMetricsProps
               strokeLinejoin="round"
             />
             <path
-              d="M12 8V16M8 12H16"
+              d="M8 12H16"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"

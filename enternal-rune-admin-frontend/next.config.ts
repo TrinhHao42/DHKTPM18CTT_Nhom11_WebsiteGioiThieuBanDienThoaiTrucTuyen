@@ -17,7 +17,8 @@ module.exports = {
     domains: [
       'cdn2.cellphones.com.vn', 
       // Nếu bạn có các tên miền khác (ví dụ: cdn.example.com), bạn cũng nên thêm vào đây
-      'res.cloudinary.com'
+      'res.cloudinary.com',
+      'placehold.co'
     ],
   },
 }

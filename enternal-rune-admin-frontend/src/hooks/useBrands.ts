@@ -2,12 +2,14 @@
 
 import { useState, useCallback } from 'react';
 import brandService from '@/services/brandService';
-import { BrandDashboardListResponse, BrandRequest } from '@/types/brand';
+import { BrandDashboardListResponse, BrandRequest, BrandStatisticResponse } from '@/types/brand';
 
 interface UseBrandsReturn {
   brands: BrandDashboardListResponse[];
   loading: boolean;
   error: string | null;
+  statistics: BrandStatisticResponse | null;
+  statisticsLoading: boolean;
   pagination: {
     page: number;
     size: number;
@@ -16,6 +18,7 @@ interface UseBrandsReturn {
   };
   
   fetchBrands: () => Promise<void>;
+  fetchStatistics: () => Promise<void>;
   addBrand: (brand: BrandRequest) => Promise<void>;
   updateBrand: (id: number, brand: BrandRequest) => Promise<void>;
   deleteBrand: (id: number) => Promise<void>;
@@ -27,6 +30,8 @@ export function useBrands(initialPage: number = 0, initialSize: number = 8): Use
   const [brands, setBrands] = useState<BrandDashboardListResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statistics, setStatistics] = useState<BrandStatisticResponse | null>(null);
+  const [statisticsLoading, setStatisticsLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: initialPage,
     size: initialSize,
@@ -63,6 +68,19 @@ export function useBrands(initialPage: number = 0, initialSize: number = 8): Use
       setLoading(false);
     }
   }, [keyword, pagination.page, pagination.size]);
+
+  const fetchStatistics = useCallback(async () => {
+    setStatisticsLoading(true);
+    try {
+      const response = await brandService.getStatistics();
+      setStatistics(response);
+    } catch (err: any) {
+      console.error('Lỗi khi tải thống kê thương hiệu:', err);
+      setStatistics(null);
+    } finally {
+      setStatisticsLoading(false);
+    }
+  }, []);
 
   const addBrand = useCallback(
     async (brand: BrandRequest) => {
@@ -104,7 +122,12 @@ export function useBrands(initialPage: number = 0, initialSize: number = 8): Use
         setLoading(true);
         setError(null);
         await brandService.delete(id);
-        await fetchBrands();
+        // Optimistic update: xóa brand khỏi state ngay lập tức
+        setBrands((prevBrands) => prevBrands.filter((brand) => brand.brandId !== id));
+        setPagination((prev) => ({
+          ...prev,
+          totalElements: Math.max(0, prev.totalElements - 1),
+        }));
       } catch (err: any) {
         setError(err.message || 'Không thể xóa thương hiệu');
         throw err;
@@ -112,7 +135,7 @@ export function useBrands(initialPage: number = 0, initialSize: number = 8): Use
         setLoading(false);
       }
     },
-    [fetchBrands]
+    []
   );
 
   const search = useCallback((searchKeyword: string) => {
@@ -128,8 +151,11 @@ export function useBrands(initialPage: number = 0, initialSize: number = 8): Use
     brands,
     loading,
     error,
+    statistics,
+    statisticsLoading,
     pagination,
     fetchBrands,
+    fetchStatistics,
     addBrand,
     updateBrand,
     deleteBrand,
