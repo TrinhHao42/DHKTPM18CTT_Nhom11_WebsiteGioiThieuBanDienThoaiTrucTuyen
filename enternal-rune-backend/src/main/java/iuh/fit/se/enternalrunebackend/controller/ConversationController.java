@@ -2,7 +2,10 @@ package iuh.fit.se.enternalrunebackend.controller;
 
 
 import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Conversation;
+import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Message;
+import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Role;
 import iuh.fit.se.enternalrunebackend.repository.repositoriesForAssistanceChat.ConversationRepository;
+import iuh.fit.se.enternalrunebackend.repository.repositoriesForAssistanceChat.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,6 +15,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +25,7 @@ import java.util.Map;
 public class ConversationController {
 
     private final ConversationRepository conversationRepository;
+    private final MessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     @PostMapping
@@ -67,6 +72,33 @@ public class ConversationController {
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return conversationRepository.findAll(pageable);
+    }
+
+    // Endpoint mới: Lấy unread count cho mỗi conversation
+    // Trả về Map<conversationId, unreadCount>
+    @GetMapping("/unread-counts")
+    public Map<String, Integer> getUnreadCounts(@RequestParam String agentId) {
+        Map<String, Integer> unreadCounts = new HashMap<>();
+        
+        // Lấy tất cả conversations
+        List<Conversation> allConversations = conversationRepository.findAll();
+        
+        for (Conversation conversation : allConversations) {
+            // Lấy message cuối cùng của conversation này
+            List<Message> messages = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
+            
+            if (!messages.isEmpty()) {
+                Message lastMessage = messages.get(messages.size() - 1);
+                
+                // Nếu message cuối từ CUSTOMER hoặc từ AGENT khác (không phải agentId hiện tại)
+                if (lastMessage.getSenderRole() == Role.CUSTOMER ||
+                   (lastMessage.getSenderRole() == Role.AGENT && !lastMessage.getSenderId().equals(agentId))) {
+                    unreadCounts.put(conversation.getId(), 1);
+                }
+            }
+        }
+        
+        return unreadCounts;
     }
 
     @PatchMapping("/{id}")
