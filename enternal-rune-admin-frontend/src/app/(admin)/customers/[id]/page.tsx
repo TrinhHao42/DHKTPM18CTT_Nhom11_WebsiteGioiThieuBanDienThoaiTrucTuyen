@@ -43,10 +43,9 @@ export default function CustomerDetailPage() {
 
     try {
       await customerService.deleteCustomer(customerId);
-      // alert("Xóa khách hàng thành công!");
       router.push("/customers");
     } catch (error) {
-      // alert("Xóa khách hàng thất bại!");
+      console.error("Xóa khách hàng thất bại:", error);
     }
   };
 
@@ -105,6 +104,20 @@ export default function CustomerDetailPage() {
       <div className="flex items-center justify-between">
         <PageBreadCrumb pageTitle="Chi tiết khách hàng" />
         <div className="flex gap-3">
+          <Link
+            href="/customers"
+            className="text-theme-sm shadow-theme-xs inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Quay lại
+          </Link>
           <button
             onClick={handleDelete}
             className="text-theme-sm shadow-theme-xs inline-flex items-center gap-2 rounded-lg border border-error-600 bg-white px-4 py-2.5 font-medium text-error-600 hover:bg-error-50 dark:border-error-600 dark:bg-gray-800 dark:hover:bg-error-950"
@@ -131,20 +144,20 @@ export default function CustomerDetailPage() {
               <Image
                 width={96}
                 height={96}
-                src={customer.avatarUrl || defaultAvatar}
+                src={defaultAvatar}
                 className="h-24 w-24 object-cover"
-                alt={customer.fullName}
+                alt={customer.name}
               />
             </div>
             <h3 className="mt-4 text-xl font-semibold text-gray-800 dark:text-white/90">
-              {customer.fullName}
+              {customer.name}
             </h3>
             <div className="mt-2">
               <Badge
                 size="sm"
-                color={customer.activated ? "success" : "error"}
+                color={customer.activate ? "success" : "error"}
               >
-                {customer.activated ? "Đã kích hoạt" : "Chưa kích hoạt"}
+                {customer.activate ? "Đã kích hoạt" : "Chưa kích hoạt"}
               </Badge>
             </div>
 
@@ -165,44 +178,6 @@ export default function CustomerDetailPage() {
                 </svg>
                 <span className="text-gray-600 dark:text-gray-400">{customer.email}</span>
               </div>
-              {customer.phoneNumber && (
-                <div className="flex items-center gap-2 text-sm">
-                  <svg
-                    className="h-4 w-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                    />
-                  </svg>
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {customer.phoneNumber}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center gap-2 text-sm">
-                <svg
-                  className="h-4 w-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <span className="text-gray-600 dark:text-gray-400">
-                  Tham gia: {new Date(customer.joinDate).toLocaleDateString("vi-VN")}
-                </span>
-              </div>
             </div>
           </div>
         </div>
@@ -218,13 +193,13 @@ export default function CustomerDetailPage() {
               <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Tổng đơn hàng</p>
                 <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90">
-                  {customer.totalOrders}
+                  {customer.totalOrder}
                 </p>
               </div>
               <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Tổng chi tiêu</p>
                 <p className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90">
-                  {customer.totalSpent.toLocaleString("vi-VN")} ₫
+                  {customer.totalPrice.toLocaleString("vi-VN")} ₫
                 </p>
               </div>
             </div>
@@ -233,13 +208,13 @@ export default function CustomerDetailPage() {
           {/* Shipping Addresses */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
             <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
-              Địa chỉ giao hàng ({customer.shippingAddresses.length})
+              Địa chỉ giao hàng ({customer.addresses?.length || 0})
             </h4>
-            {customer.shippingAddresses.length > 0 ? (
+            {customer.addresses && customer.addresses.length > 0 ? (
               <div className="space-y-3">
-                {customer.shippingAddresses.map((address) => (
+                {customer.addresses.map((address, index) => (
                   <div
-                    key={address.id}
+                    key={address.id || index}
                     className="rounded-lg border border-gray-200 dark:border-gray-700 p-4"
                   >
                     <div className="flex items-start justify-between">
@@ -271,63 +246,6 @@ export default function CustomerDetailPage() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Recent Orders */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-        <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
-          Đơn hàng gần đây ({customer.recentOrders.length})
-        </h4>
-        {customer.recentOrders.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Mã đơn
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Ngày đặt
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Số lượng SP
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Tổng tiền
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Trạng thái
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {customer.recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                    <td className="py-3 px-4 text-sm font-medium text-gray-800 dark:text-white/90">
-                      #{order.id}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
-                      {new Date(order.orderDate).toLocaleDateString("vi-VN")}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
-                      {order.itemCount}
-                    </td>
-                    <td className="py-3 px-4 text-sm font-medium text-gray-800 dark:text-white/90">
-                      {order.totalAmount.toLocaleString("vi-VN")} ₫
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge size="sm" color="primary">
-                        {order.status}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có đơn hàng nào</p>
-        )}
       </div>
     </div>
   );
