@@ -1,7 +1,8 @@
-package iuh.fit.se.enternalrunebackend.service;
+package iuh.fit.se.enternalrunebackend.service.serviceClass;
 
 import iuh.fit.se.enternalrunebackend.entity.User;
 import iuh.fit.se.enternalrunebackend.repository.UserRepository;
+import iuh.fit.se.enternalrunebackend.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;

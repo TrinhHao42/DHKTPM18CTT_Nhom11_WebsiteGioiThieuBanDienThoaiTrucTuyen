@@ -10,6 +10,7 @@ export interface Message {
   senderRole: 'CUSTOMER' | 'AGENT';
   content: string;
   type?: string;
+  fileUrl?: string;
   createdAt?: string;
 }
 
@@ -195,6 +196,40 @@ class ChatService {
   async getUserInfo(userId: string): Promise<ChatUser> {
     const response = await fetch(`${BACKEND_URL}/api/chat-users/${userId}`);
     if (!response.ok) throw new Error('Failed to fetch user info');
+    return response.json();
+  }
+
+  async uploadImageMessage(
+    conversationId: string,
+    senderId: string,
+    senderRole: 'CUSTOMER' | 'AGENT',
+    file: File,
+    caption?: string
+  ): Promise<Message> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('senderId', senderId);
+    formData.append('senderRole', senderRole);
+    if (caption) {
+      formData.append('caption', caption);
+    }
+
+    // Lấy token từ localStorage
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+    const response = await fetch(
+      `${BACKEND_URL}/api/chat/conversations/${conversationId}/image`,
+      {
+        method: 'POST',
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }), // Thêm token nếu có
+          // Không set Content-Type, browser tự động set cho FormData
+        },
+        body: formData,
+      }
+    );
+
+    if (!response.ok) throw new Error('Failed to upload image');
     return response.json();
   }
 }

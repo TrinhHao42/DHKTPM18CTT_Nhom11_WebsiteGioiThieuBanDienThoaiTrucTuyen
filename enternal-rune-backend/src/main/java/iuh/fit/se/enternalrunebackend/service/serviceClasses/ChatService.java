@@ -1,4 +1,4 @@
-package iuh.fit.se.enternalrunebackend.service;
+package iuh.fit.se.enternalrunebackend.service.serviceClass;
 
 
 import lombok.AccessLevel;

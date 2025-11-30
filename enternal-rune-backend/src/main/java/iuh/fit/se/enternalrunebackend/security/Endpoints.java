@@ -19,6 +19,8 @@ public class Endpoints {
             "/api/products/*/comments/*/replies",
             "/api/products/*/rating-distribution",
             "/api/products/*/average-rating"
+            "/api/products/*/average-rating",
+            "/api/chat/**"
     };
 
     // POST không cần đăng nhập
@@ -33,7 +35,8 @@ public class Endpoints {
             "/api/chat-users/**",
             "/api/products/*/comments",
             "/api/products/*/comments/text",
-            "/api/products/*/comments/*/replies"
+            "/api/products/*/comments/*/replies",
+            "/api/chat/**"
     };
 
     // PATCH không cần đăng nhập

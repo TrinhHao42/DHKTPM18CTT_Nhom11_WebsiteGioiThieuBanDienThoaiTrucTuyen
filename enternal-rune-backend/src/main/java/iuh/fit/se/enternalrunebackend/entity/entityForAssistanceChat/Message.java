@@ -23,6 +23,6 @@ public class Message {
     private String content;     // nội dung text
 
     private String type;        // TEXT / IMAGE
-
+    private String fileUrl;
     private Instant createdAt;
 }
