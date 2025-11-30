@@ -63,6 +63,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("cart");
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("isLoggedIn");
     }
   }, [setToken, setUser]);
 
