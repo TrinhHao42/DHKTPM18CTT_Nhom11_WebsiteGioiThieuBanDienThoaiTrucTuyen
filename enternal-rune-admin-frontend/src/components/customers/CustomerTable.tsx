@@ -31,27 +31,27 @@ export default function CustomerTable({
 
   const handleSearch = () => {
     const activated = filterStatus === 'all' ? null : filterStatus === 'activated';
-    onSearch(searchTerm || undefined, activated);
+    onSearch(searchTerm , activated);
   };
 
   const handleFilterChange = (value: 'all' | 'activated' | 'inactivated') => {
     setFilterStatus(value);
     const activated = value === 'all' ? null : value === 'activated';
-    onSearch(searchTerm || undefined, activated);
+    onSearch(searchTerm , activated);
   };
 
   const handlePageChange = (page: number) => {
     const activated = filterStatus === 'all' ? null : filterStatus === 'activated';
-    onPageChange(page, searchTerm || undefined, activated);
+    onPageChange(page, searchTerm , activated);
   };
 
   const handleDeleteClick = async (id: number) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa khách hàng này?')) {
       try {
         await onDelete(id);
-        alert('Xóa khách hàng thành công!');
+        // alert('Xóa khách hàng thành công!');
       } catch (error) {
-        alert('Xóa khách hàng thất bại!');
+        // alert('Xóa khách hàng thất bại!');
       }
     }
   };

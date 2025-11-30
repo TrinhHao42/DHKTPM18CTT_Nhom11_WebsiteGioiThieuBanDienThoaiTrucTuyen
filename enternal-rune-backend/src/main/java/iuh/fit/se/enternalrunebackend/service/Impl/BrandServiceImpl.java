@@ -50,8 +50,8 @@ public class BrandServiceImpl implements iuh.fit.se.enternalrunebackend.service.
                 .map(b -> new BrandDashboardListResponse(
                         b.getBrandId(),
                         b.getBrandLogoUrl(),
-                        b.getBrandDescription(),
                         b.getBrandName(),
+                        b.getBrandDescription(),
                         productRepository.countByBrandId(b.getBrandId()), // lấy tổng product
                         b.getBrandStatus()
                 ))

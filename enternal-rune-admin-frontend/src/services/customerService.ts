@@ -7,7 +7,7 @@ import {
 const API_BASE_URL = 'http://localhost:8080/api/dashboard-user';
 
 const getAuthHeaders = (): HeadersInit => {
-  const token = localStorage.getItem('admin_access_token');
+  const token = localStorage.getItem('admin_token');
   return {
     'Content-Type': 'application/json',
     ...(token && { Authorization: `Bearer ${token}` }),

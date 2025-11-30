@@ -19,3 +19,4 @@ public class ProductRequest {
     private List<ImageRequest> images;
     private List<ProductPriceRequest> productPrices;
 }
+

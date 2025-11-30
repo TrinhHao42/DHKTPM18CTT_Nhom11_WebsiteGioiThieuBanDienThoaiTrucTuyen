@@ -7,11 +7,6 @@ import iuh.fit.se.enternalrunebackend.entity.Product;
 import iuh.fit.se.enternalrunebackend.entity.Brand;
 import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
 import iuh.fit.se.enternalrunebackend.service.ProductService;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ImageResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.BrandResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductPriceResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductSpecificationsResponse;
 import iuh.fit.se.enternalrunebackend.entity.ProductSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -190,7 +185,8 @@ public class ProductController {
         return productService.getProductDashboardList(keyword, brand, status, pageable);
     }
     @GetMapping("/dashboard/{id}")
-    public Product getProductById(@PathVariable Integer id) {
-        return productService.getProductById(id);
+    public ProductResponse getProductById(@PathVariable Integer id) {
+        Product product = productService.getProductById(id);
+        return toDto(product);
     }
 }

@@ -3,6 +3,7 @@ import {
   BrandDashboardListResponse,
   BrandRequest,
   BrandPageResponse,
+  BrandStatisticResponse,
 } from "@/types/brand";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -65,29 +66,42 @@ class BrandService {
       {
         method: "GET",
         headers: this.getAuthHeaders(),
+        cache: "no-store",
       }
     );
     return this.handleResponse<BrandPageResponse>(response);
   }
 
   /**
+   * Lấy thống kê thương hiệu
+   * GET /brands/dashboard/statistics
+   */
+  async getStatistics(): Promise<BrandStatisticResponse> {
+    const response = await fetch(`${API_BASE_URL}/brands/dashboard/statistics`, {
+      method: "GET",
+      headers: this.getAuthHeaders(),
+    });
+    return this.handleResponse<BrandStatisticResponse>(response);
+  }
+
+  /**
    * Thêm thương hiệu mới
    * POST /brands/dashboard/add
    */
-  async add(brand: BrandRequest): Promise<string> {
+  async add(brand: BrandRequest): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/brands/dashboard/add`, {
       method: "POST",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(brand),
     });
-    return this.handleResponse<string>(response);
+    // return this.handleResponse<string>(response);
   }
 
   /**
    * Cập nhật thương hiệu
    * PUT /brands/dashboard/update/{id}
    */
-  async update(id: number, brand: BrandRequest): Promise<string> {
+  async update(id: number, brand: BrandRequest): Promise<void> {
     const response = await fetch(
       `${API_BASE_URL}/brands/dashboard/update/${id}`,
       {
@@ -96,14 +110,14 @@ class BrandService {
         body: JSON.stringify(brand),
       }
     );
-    return this.handleResponse<string>(response);
+    // return this.handleResponse<string>(response);
   }
 
   /**
    * Xóa thương hiệu
    * DELETE /brands/dashboard/delete/{id}
    */
-  async delete(id: number): Promise<string> {
+  async delete(id: number): Promise<void> {
     const response = await fetch(
       `${API_BASE_URL}/brands/dashboard/delete/${id}`,
       {
@@ -111,7 +125,13 @@ class BrandService {
         headers: this.getAuthHeaders(),
       }
     );
-    return this.handleResponse<string>(response);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+    // Không cần parse response vì DELETE thường trả về 200/204
   }
 }
 

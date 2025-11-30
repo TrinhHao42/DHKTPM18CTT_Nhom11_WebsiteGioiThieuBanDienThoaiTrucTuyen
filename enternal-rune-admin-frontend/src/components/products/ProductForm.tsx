@@ -9,6 +9,7 @@ import brandService from '@/services/brandService';
 
 interface ProductFormProps {
   initialData?: Partial<ProductFormData>;
+  existingImages?: Array<{ imageId: number; imageName: string; imageData: string }>;
   onSubmit: (data: ProductFormData, images: File[]) => Promise<void>;
   onDelete?: (id: number) => Promise<void>;
   isEdit?: boolean;
@@ -16,6 +17,7 @@ interface ProductFormProps {
 
 export default function ProductForm({
   initialData,
+  existingImages,
   onSubmit,
   onDelete,
   isEdit = false,
@@ -390,31 +392,63 @@ export default function ProductForm({
             </h3>
             
             <div className="space-y-4">
-              {/* Image previews */}
-              {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {imagePreviews.map((preview, index) => (
-                    <div key={index} className="relative group">
-                      <div className="aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                        <Image
-                          src={preview}
-                          alt={`Preview ${index + 1}`}
-                          width={150}
-                          height={150}
-                          className="w-full h-full object-cover"
-                        />
+              {/* Ảnh hiện tại (chỉ hiển thị khi edit) */}
+              {isEdit && existingImages && existingImages.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Ảnh hiện tại
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {existingImages.map((image, index) => (
+                      <div key={image.imageId || index} className="relative">
+                        <div className="aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                          <Image
+                            src={image.imageData}
+                            alt={image.imageName || `Ảnh ${index + 1}`}
+                            width={150}
+                            height={150}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate text-center">
+                          {image.imageName}
+                        </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-2 -right-2 p-1 bg-error-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Ảnh mới upload */}
+              {imagePreviews.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {isEdit ? 'Ảnh mới thêm' : 'Ảnh đã chọn'}
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <div className="aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                          <Image
+                            src={preview}
+                            alt={`Preview ${index + 1}`}
+                            width={150}
+                            height={150}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-2 -right-2 p-1 bg-error-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -437,7 +471,7 @@ export default function ProductForm({
                   />
                 </svg>
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                  Click để tải lên hình ảnh
+                  {isEdit ? 'Click để thêm ảnh mới' : 'Click để tải lên hình ảnh'}
                 </p>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
                   PNG, JPG, WEBP (tối đa 5MB mỗi ảnh)
@@ -451,6 +485,20 @@ export default function ProductForm({
                 onChange={handleImageChange}
                 className="hidden"
               />
+
+              {isEdit && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Lưu ý</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-400">Ảnh mới sẽ được thêm vào danh sách ảnh hiện tại của sản phẩm.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -469,8 +517,8 @@ export default function ProductForm({
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
             >
               <option value="ACTIVE">Đang bán</option>
-              <option value="INACTIVE">Ngừng bán</option>
               <option value="OUT_OF_STOCK">Hết hàng</option>
+              <option value="REMOVED">Đã xóa</option>
             </select>
           </div>
 
