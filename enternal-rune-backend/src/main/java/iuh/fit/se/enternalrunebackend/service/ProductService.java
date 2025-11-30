@@ -41,6 +41,4 @@ public interface ProductService {
     public void deleteProduct(Integer id);
     Product updateProduct(Integer id, ProductRequest request, List<MultipartFile> newFiles) throws IOException;
     Product getProductById(Integer id);
-
-    Product getProductById(Integer id);
 }

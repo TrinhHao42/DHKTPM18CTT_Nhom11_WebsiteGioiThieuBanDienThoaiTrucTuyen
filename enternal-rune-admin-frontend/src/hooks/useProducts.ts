@@ -148,12 +148,13 @@ export function useProducts(
     async (
       id: number,
       product: ProductFormData,
-      existingImages: Array<{ imageName: string; imageData: string }> = []
+      existingImages: Array<{ imageName: string; imageData: string }> = [],
+      newImageFiles: File[] = []
     ) => {
       try {
         setLoading(true);
         setError(null);
-        await productService.update(id, product, existingImages);
+        await productService.update(id, product, existingImages, newImageFiles);
         // Refresh danh sách sau khi cập nhật
         await fetchProducts();
         await fetchStatistics();

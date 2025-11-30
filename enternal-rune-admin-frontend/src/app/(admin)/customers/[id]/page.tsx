@@ -43,10 +43,10 @@ export default function CustomerDetailPage() {
 
     try {
       await customerService.deleteCustomer(customerId);
-      alert("Xóa khách hàng thành công!");
+      // alert("Xóa khách hàng thành công!");
       router.push("/customers");
     } catch (error) {
-      alert("Xóa khách hàng thất bại!");
+      // alert("Xóa khách hàng thất bại!");
     }
   };
 

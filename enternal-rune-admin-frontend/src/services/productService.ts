@@ -135,13 +135,20 @@ class ProductService {
 
   /**
    * Cập nhật sản phẩm
-   * PUT /products/dashboard/update/{id}
+   * PUT /products/dashboard/update/{id} (multipart/form-data)
+   * @param id - ID sản phẩm
+   * @param formData - Dữ liệu form
+   * @param existingImages - Ảnh hiện tại (gửi trong data)
+   * @param newImageFiles - File ảnh mới (optional)
    */
   async update(
     id: number,
     formData: ProductFormData,
-    existingImages: Array<{ imageName: string; imageData: string }>
+    existingImages: Array<{ imageName: string; imageData: string }>,
+    newImageFiles: File[] = []
   ): Promise<ProductResponse> {
+    const token = this.getAuthToken();
+
     // Tạo ProductRequest từ FormData
     const productRequest: ProductRequest = {
       productName: formData.productName,
@@ -158,13 +165,25 @@ class ProductService {
       productPrices: [{ ppPrice: formData.price }],
     };
 
+    // Tạo FormData cho multipart request
+    const multipartFormData = new FormData();
+    multipartFormData.append('data', new Blob([JSON.stringify(productRequest)], { type: 'application/json' }));
+    
+    // Thêm các file ảnh mới (nếu có)
+    newImageFiles.forEach((file) => {
+      multipartFormData.append('files', file);
+    });
+
     console.log("Updating product with data:", JSON.stringify(productRequest));
+    
     const response = await fetch(
       `${API_BASE_URL}/products/dashboard/update/${id}`,
       {
         method: "PUT",
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(productRequest),
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: multipartFormData,
       }
     );
     return this.handleResponse<ProductResponse>(response);

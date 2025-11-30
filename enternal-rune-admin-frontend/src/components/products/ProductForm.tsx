@@ -391,16 +391,19 @@ export default function ProductForm({
               Hình ảnh sản phẩm {!isEdit && <span className="text-error-600">*</span>}
             </h3>
             
-            {isEdit ? (
-              // Chế độ edit: Hiển thị ảnh hiện tại, không cho upload mới
-              <div className="space-y-4">
-                {existingImages && existingImages.length > 0 ? (
+            <div className="space-y-4">
+              {/* Ảnh hiện tại (chỉ hiển thị khi edit) */}
+              {isEdit && existingImages && existingImages.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Ảnh hiện tại
+                  </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {existingImages.map((image, index) => (
                       <div key={image.imageId || index} className="relative">
                         <div className="aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
                           <Image
-                            src={image.imageData.startsWith('data:') ? image.imageData : `data:image/jpeg;base64,${image.imageData}`}
+                            src={image.imageData}
                             alt={image.imageName || `Ảnh ${index + 1}`}
                             width={150}
                             height={150}
@@ -413,26 +416,15 @@ export default function ProductForm({
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Không có hình ảnh</p>
-                )}
-                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                      <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Lưu ý</p>
-                      <p className="text-sm text-amber-700 dark:text-amber-400">Không thể thay đổi hình ảnh khi chỉnh sửa sản phẩm. Vui lòng tạo sản phẩm mới nếu cần thay đổi hình ảnh.</p>
-                    </div>
-                  </div>
                 </div>
-              </div>
-            ) : (
-              // Chế độ thêm mới: Cho phép upload ảnh
-              <div className="space-y-4">
-                {/* Image previews */}
-                {imagePreviews.length > 0 && (
+              )}
+
+              {/* Ảnh mới upload */}
+              {imagePreviews.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {isEdit ? 'Ảnh mới thêm' : 'Ảnh đã chọn'}
+                  </p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {imagePreviews.map((preview, index) => (
                       <div key={index} className="relative group">
@@ -457,43 +449,57 @@ export default function ProductForm({
                       </div>
                     ))}
                   </div>
-                )}
-
-                {/* Upload button */}
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-brand-500 transition-colors dark:border-gray-700 dark:hover:border-brand-500"
-                >
-                  <svg
-                    className="mx-auto h-12 w-12 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    Click để tải lên hình ảnh
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
-                    PNG, JPG, WEBP (tối đa 5MB mỗi ảnh)
-                  </p>
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
+              )}
+
+              {/* Upload button */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-brand-500 transition-colors dark:border-gray-700 dark:hover:border-brand-500"
+              >
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  {isEdit ? 'Click để thêm ảnh mới' : 'Click để tải lên hình ảnh'}
+                </p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
+                  PNG, JPG, WEBP (tối đa 5MB mỗi ảnh)
+                </p>
               </div>
-            )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageChange}
+                className="hidden"
+              />
+
+              {isEdit && (
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-300">Lưu ý</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-400">Ảnh mới sẽ được thêm vào danh sách ảnh hiện tại của sản phẩm.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

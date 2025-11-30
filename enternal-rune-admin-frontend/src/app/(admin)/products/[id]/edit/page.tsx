@@ -69,15 +69,16 @@ export default function EditProductPage() {
     return product?.images || [];
   };
 
-  const handleSubmit = async (data: ProductFormData, _images: File[]) => {
+  const handleSubmit = async (data: ProductFormData, newImageFiles: File[]) => {
     try {
       // Lấy ảnh hiện tại để gửi lại trong request
       const existingImages = getExistingImages().map((img) => ({
         imageName: img.imageName,
         imageData: img.imageData,
       }));
-      await productService.update(parseInt(id), data, existingImages);
-      alert('Cập nhật sản phẩm thành công!');
+      // Gửi cả ảnh hiện tại và ảnh mới
+      await productService.update(parseInt(id), data, existingImages, newImageFiles);
+      // alert('Cập nhật sản phẩm thành công!');
       router.push('/products');
     } catch (error: any) {
       throw new Error(error.message || 'Không thể cập nhật sản phẩm');
