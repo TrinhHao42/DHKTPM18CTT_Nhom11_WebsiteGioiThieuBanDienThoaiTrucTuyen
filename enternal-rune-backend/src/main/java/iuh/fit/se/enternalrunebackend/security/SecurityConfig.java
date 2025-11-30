@@ -70,10 +70,10 @@ public class SecurityConfig {
                     CorsConfiguration corsConfig = new CorsConfiguration();
                     // Use allowedOriginPatterns for flexibility with localhost ports
                     corsConfig.setAllowedOriginPatterns(Arrays.asList(
-                        "http://localhost:3000",  // User frontend
-                        "http://localhost:3001",  // Admin frontend  
-                        userUrl,                  // Environment variable
-                        adminUrl                  // Environment variable
+                            "http://localhost:3000", // User frontend
+                            "http://localhost:3001", // Admin frontend
+                            userUrl, // Environment variable
+                            adminUrl // Environment variable
                     ));
                     corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                     corsConfig.setAllowedHeaders(Arrays.asList("*"));
@@ -82,9 +82,7 @@ public class SecurityConfig {
                 }))
                 // API + JWT → dùng stateless
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sm ->
-                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
                         // ==== PUBLIC ENDPOINTS CHO CHAT / AUTH ====
@@ -106,13 +104,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, Endpoints.ADMIN_PUT_ENDPOINTS).hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, Endpoints.ADMIN_DELETE_ENDPOINTS).hasRole("ADMIN")
                         // Còn lại phải auth (JWT hoặc OAuth2)
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
 
                 // Không dùng form login mặc định
                 .formLogin(form -> form.disable())
                 // (tuỳ chọn) disable httpBasic nếu không dùng
-                //.httpBasic(AbstractHttpConfigurer::disable)
+                // .httpBasic(AbstractHttpConfigurer::disable)
 
                 // Thêm JWT filter trước UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -127,15 +124,13 @@ public class SecurityConfig {
                                     return new DefaultOAuth2User(
                                             List.of(new SimpleGrantedAuthority("ROLE_USER")),
                                             oauth2User.getAttributes(),
-                                            "email"
-                                    );
-                                })
-                        )
-                        .successHandler(oAuth2SuccessHandler)
-                );
+                                            "email");
+                                }))
+                        .successHandler(oAuth2SuccessHandler));
 
         return http.build();
     }
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
             throws Exception {
