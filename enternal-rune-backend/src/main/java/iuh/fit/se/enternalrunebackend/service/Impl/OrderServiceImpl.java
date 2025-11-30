@@ -414,6 +414,11 @@ public class OrderServiceImpl implements OrderService {
         PaymentStatus currentPayment = order.getCurrentPaymentStatus();
         ShippingStatus currentShipping = order.getCurrentShippingStatus();
 
+        // Map address nếu có
+        AddressResponse addressResponse = order.getOrderShippingAddress() != null 
+            ? AddressResponse.toAddressResponse(order.getOrderShippingAddress())
+            : null;
+
         return OrderResponse.builder()
                 .orderId(order.getOrderId())
                 .orderDate(order.getOrderDate())
@@ -421,6 +426,7 @@ public class OrderServiceImpl implements OrderService {
                 .orderUser(new OrderResponse.OrderUserInfo(order.getOrderUser().getName(), order.getOrderUser().getEmail()))
                 .currentPaymentStatus(currentPayment != null ? new OrderStatusInfo(currentPayment.getStatusCode(), currentPayment.getStatusName()) : null)
                 .currentShippingStatus(currentShipping != null ? new OrderStatusInfo(currentShipping.getStatusCode(), currentShipping.getStatusName()) : null)
+                .orderShippingAddress(addressResponse)
                 .orderDetails(orderDetails)
                 .build();
     }
@@ -451,6 +457,11 @@ public class OrderServiceImpl implements OrderService {
         ShippingStatus cancelledStatus = shippingStatusRepository.findByStatusCode("CANCELLED")
                 .orElseThrow(() -> new RuntimeException("Shipping status CANCELLED not found"));
         order.addShippingStatus(cancelledStatus, "Đơn hàng bị hủy bởi khách hàng");
+
+        PaymentStatus paymentCanceled = paymentStatusRepository.findByStatusCode("CANCELLED")
+                .orElseThrow(() -> new RuntimeException("Payment status CANCELLED not found"));
+        order.addPaymentStatus(paymentCanceled, "Đơn hàng bị hủy bởi khách hàng");
+
         Order savedOrder = orderRepository.save(order);
 
         // Gửi notification tới admin
@@ -469,5 +480,23 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return savedOrder;
+    }
+
+    @Override
+    @Transactional
+    public void updateShippingStatus(int orderId, String statusCode) {
+        // Tìm order
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        // Tìm shipping status
+        ShippingStatus newStatus = shippingStatusRepository.findByStatusCode(statusCode)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy trạng thái giao hàng: " + statusCode));
+
+        // Thêm status mới vào history
+        order.addShippingStatus(newStatus, "Cập nhật bởi admin");
+
+        // Lưu order
+        orderRepository.save(order);
     }
 }

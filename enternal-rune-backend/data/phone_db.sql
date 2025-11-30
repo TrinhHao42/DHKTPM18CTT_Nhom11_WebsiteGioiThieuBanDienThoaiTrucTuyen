@@ -3,13 +3,12 @@ INSERT INTO payment_statuses (status_code, status_name, description) VALUES
                                                                          ('PAID', 'Đã thanh toán', 'Đơn hàng đã được thanh toán thành công'),
                                                                          ('FAILED', 'Thanh toán thất bại', 'Giao dịch thanh toán thất bại'),
                                                                          ('REFUNDED', 'Đã hoàn tiền', 'Đã hoàn tiền cho khách hàng'),
-                                                                         ('EXPIRED', 'Hết hạn', 'Đơn hàng đã hết hạn thanh toán');
+                                                                         ('EXPIRED', 'Hết hạn', 'Đơn hàng đã hết hạn thanh toán'),
+                                                                         ('CANCELLED', 'Đã hủy', 'Đơn hàng đã bị người dùng hủy');
 
     INSERT INTO shipping_statuses (status_code, status_name, description) VALUES
-    ('PENDING', 'Chờ xử lý', 'Đơn hàng đang chờ được xử lý'),
     ('PROCESSING', 'Đang xử lý', 'Đơn hàng đang được chuẩn bị'),
     ('SHIPPED', 'Đã giao cho vận chuyển', 'Đơn hàng đã được giao cho đơn vị vận chuyển'),
-    ('IN_TRANSIT', 'Đang vận chuyển', 'Đơn hàng đang trên đường giao đến khách hàng'),
     ('DELIVERED', 'Đã giao hàng', 'Đơn hàng đã được giao thành công'),
     ('FAILED_DELIVERY', 'Giao hàng thất bại', 'Không thể giao hàng đến khách hàng'),
     ('RETURNED', 'Đã trả hàng', 'Hàng đã được trả lại'),
@@ -58,7 +57,6 @@ INSERT INTO addresses (address_id, street_name, ward_name, city_name, country_na
                                                                                         (18, '243/46 Hoàng Diệu', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam'),
                                                                                         (19, '368 Tôn Đản', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam'),
                                                                                         (20, '56 Khánh Hội', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam');
-  =====================================================================================================================================================================================
 INSERT INTO discounts (discount_active, discount_code, discount_end_date, discount_max_amount, discount_name, discount_quantity_limit, discount_start_date, discount_target_type, discount_value_type, discount_value) VALUES
 (TRUE, 'SUMMER20', '2025-08-31', 50000.00, 'Khuyến mãi Hè', 1000, '2025-06-01', 'ORDER', 'PERCENT', 20.00),
 (TRUE, 'FREE_SHIP', '2025-12-31', 0.00, 'Miễn phí vận chuyển', 500, '2025-05-15', 'ORDER', 'FIXED', 0.00),
@@ -70,16 +68,13 @@ INSERT INTO discounts (discount_active, discount_code, discount_end_date, discou
 (TRUE, 'VIP_EXTRA', '2025-12-31', 999999.00, 'Ưu đãi Thành viên VIP', 500, '2025-01-01', 'ORDER', 'PERCENT', 5.00),
 (TRUE, 'APPONLY', '2025-09-30', 60000.00, 'Chỉ áp dụng trên App', 800, '2025-03-01', 'ORDER', 'FIXED', 30000.00),
 (TRUE, 'BOOKS2025', '2025-11-30', 20000.00, 'Sách giảm giá', 400, '2025-01-01', 'ORDER', 'PERCENT', 10.00);
-=========================================================================================================================
 INSERT INTO roles (role_id,role_name) VALUES
 (1,'ROLE_ADMIN'),
 (2,'ROLE_USER'),
-(3,'ROLE_STAFF')
-============================================================================================
+(3,'ROLE_STAFF');
 INSERT INTO users (user_id, name, email, password, auth_provider, activate_id, user_active)
 VALUES
 (1, 'Admin', 'admin@gmail.com','$2a$10$/4Qgqo2DnrPiOroG4OK6beG1QN/zGN6fMp8RdTya9c6m/heUeBzIO','LOCAL', NULL, FALSE);
-==============================================================================================
 
 INSERT INTO user_role(user_id,role_id) VALUES
 (1,1)

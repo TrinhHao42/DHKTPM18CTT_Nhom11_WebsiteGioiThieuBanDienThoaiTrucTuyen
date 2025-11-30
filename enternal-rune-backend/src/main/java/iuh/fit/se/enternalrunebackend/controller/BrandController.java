@@ -19,7 +19,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/brands")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Cho phép gọi từ frontend (React, v.v.)
 public class BrandController {
     private final BrandService brandService;
 

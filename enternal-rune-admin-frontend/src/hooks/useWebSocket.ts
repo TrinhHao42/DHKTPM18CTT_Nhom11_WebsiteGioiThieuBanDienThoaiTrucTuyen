@@ -24,6 +24,12 @@ export function useWebSocket({
     const isUnmountedRef = useRef(false);
 
     useEffect(() => {
+        // Không connect nếu URL rỗng hoặc không hợp lệ
+        if (!url) {
+            console.log('⏸️ WebSocket: No URL provided, skipping connection');
+            return;
+        }
+
         isUnmountedRef.current = false;
 
         const connect = () => {

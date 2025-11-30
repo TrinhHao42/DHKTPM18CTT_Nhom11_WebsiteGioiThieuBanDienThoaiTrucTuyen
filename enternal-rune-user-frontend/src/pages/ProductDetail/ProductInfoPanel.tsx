@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/useToast'
 import { CommentsPageResponse } from '@/types/Comment'
 import { Image } from '@/types/Image'
 import { number } from 'yup'
+import BuyNowModal from '@/components/BuyNowModal'
 
 interface ProductInfoPanelProps {
     product: Product
@@ -23,6 +24,7 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
     const toast = useToast()
     const [quantity, setQuantity] = useState(1)
     const [isAdding, setIsAdding] = useState(false)
+    const [showBuyNowModal, setShowBuyNowModal] = useState(false)
     const storageOptions = ['256GB', '512GB', '1TB']
     const [selectedStorage, setSelectedStorage] = useState(storageOptions[1])
     const protectionPlans = [
@@ -64,6 +66,16 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
         } finally {
             setIsAdding(false)
         }
+    }
+
+    const handleBuyNow = () => {
+        // Since product doesn't have productVariant field, we create variant info from selected options
+        if (!selectedColor || !selectedStorage) {
+            toast.error('Vui lòng chọn màu sắc và dung lượng!');
+            return;
+        }
+
+        setShowBuyNowModal(true);
     }
 
     const features = [
@@ -270,6 +282,7 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
             {/* Add to Cart Button */}
             <div className='flex gap-4'>
                 <button
+                    onClick={handleBuyNow}
                     className="cursor-pointer bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-2xl font-semibold text-md shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-3 group hover:scale-102"
                 >
                     Mua ngay - {formatPrice(totalPrice)}
@@ -283,6 +296,28 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
                     <span>{isAdding ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}</span>
                 </button>
             </div>
+
+            {/* Buy Now Modal */}
+            {showBuyNowModal && (
+                <BuyNowModal
+                    isOpen={showBuyNowModal}
+                    onClose={() => setShowBuyNowModal(false)}
+                    product={{
+                        variantId: 0,
+                        variantName: `${product.prodName}`,
+                        price: unitPrice,
+                        imageUrl: selectedImage?.imageData || product.images[0]?.imageData,
+                        stock: 100
+                    }}
+                    productId={Number(product.prodId)}
+                    availableColors={product.prodColor || []}
+                    availableStorages={storageOptions}
+                    availableImages={product.images || []}
+                    defaultColor={selectedColor}
+                    defaultStorage={selectedStorage}
+                />
+            )}
+
             {/* Features */}
             <div className="space-y-3 pt-4 border-t border-gray-200">
                 {features.map((feature, index) => (

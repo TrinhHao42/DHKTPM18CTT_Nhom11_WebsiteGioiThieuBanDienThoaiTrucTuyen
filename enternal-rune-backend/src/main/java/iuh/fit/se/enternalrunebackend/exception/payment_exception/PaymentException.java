@@ -1,15 +1,14 @@
 package iuh.fit.se.enternalrunebackend.exception.payment_exception;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.experimental.FieldDefaults;
+import lombok.Getter;
 
-@AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@Getter
 public class PaymentException extends RuntimeException {
-    PaymentExceptionEnum paymentExceptionEnum;
-//    public PaymentException(PaymentExceptionEnum paymentExceptionEnum) {
-//        super(paymentExceptionEnum.getException());
-//        this.paymentExceptionEnum = paymentExceptionEnum;
-//    }
+
+    private final PaymentExceptionEnum error;
+
+    public PaymentException(PaymentExceptionEnum error) {
+        super(error.getMessage());
+        this.error = error;
+    }
 }
