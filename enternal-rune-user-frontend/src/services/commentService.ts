@@ -61,8 +61,8 @@ export class CommentService {
     } catch (error: unknown) {
       // Handle specific error cases
       if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response: { status: number; data?: { message?: string } } }
-
+        const axiosError = error as { response: { status: number; data?: { message?: string }; statusText?: string } }
+        
         if (axiosError.response.status === 429) {
           throw new Error('Bạn đang gửi bình luận quá nhanh. Vui lòng chờ một chút.')
         }
@@ -86,6 +86,22 @@ export class CommentService {
         if (axiosError.response.data?.message) {
           throw new Error(axiosError.response.data.message)
         }
+        
+        // Add more specific error message
+        throw new Error(`Lỗi ${axiosError.response.status}: ${axiosError.response.statusText || 'Unknown error'}`)
+      }
+      
+      // Handle network errors
+      if (error && typeof error === 'object' && 'code' in error) {
+        const networkError = error as { code: string; message: string }
+        
+        if (networkError.code === 'NETWORK_ERROR') {
+          throw new Error('Không thể kết nối tới server. Vui lòng kiểm tra kết nối mạng.')
+        }
+        
+        if (networkError.code === 'ECONNREFUSED') {
+          throw new Error('Server không phản hồi. Vui lòng thử lại sau.')
+        }
       }
 
       throw new Error('Không thể gửi bình luận. Vui lòng thử lại.')
@@ -100,8 +116,10 @@ export class CommentService {
     productId: string | number,
     commentData: CreateCommentRequest
   ): Promise<CommentResponse> {
+    const endpoint = API_ROUTES.PRODUCT_COMMENT_TEXT_ONLY(productId)
+    
     const response = await AxiosInstance.post<CommentResponse>(
-      API_ROUTES.PRODUCT_COMMENT_TEXT_ONLY(productId),
+      endpoint,
       commentData,
       {
         headers: {
@@ -123,6 +141,8 @@ export class CommentService {
     commentData: CreateCommentRequest,
     images: File[]
   ): Promise<CommentResponse> {
+    const endpoint = API_ROUTES.PRODUCT_COMMENTS(productId)
+    
     const formData = new FormData()
 
     // Add comment data as JSON blob
@@ -137,11 +157,11 @@ export class CommentService {
     })
 
     const response = await AxiosInstance.post<CommentResponse>(
-      API_ROUTES.PRODUCT_COMMENTS(productId),
+      endpoint,
       formData,
       {
         headers: {
-          // Don't set Content-Type, let Axios handle multipart/form-data
+          // Content-Type will be automatically handled by interceptor for FormData
         },
         withCredentials: true,
         timeout: 30000 // 30 seconds for file upload
@@ -227,6 +247,52 @@ export class CommentService {
       return response.data
     } catch {
       return this.isDevelopment ? 4.7 : 0
+    }
+  }
+
+  /**
+   * Delete a comment image
+   * Yêu cầu quyền: chỉ owner của comment hoặc admin mới có thể xóa
+   */
+  static async deleteCommentImage(imageId: number): Promise<void> {
+    try {
+      if (!imageId || imageId <= 0) {
+        throw new Error('Image ID is required')
+      }
+
+      await AxiosInstance.delete(
+        `/api/products/comments/images/${imageId}`,
+        {
+          withCredentials: true, // Cần authentication để xóa ảnh
+          timeout: 10000,
+          headers: {
+            'Accept': 'application/json'
+          }
+        }
+      )
+    } catch (error: unknown) {
+      // Handle specific error cases
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response: { status: number; data?: { message?: string } } }
+
+        if (axiosError.response.status === 401) {
+          throw new Error('Bạn cần đăng nhập để xóa ảnh.')
+        }
+
+        if (axiosError.response.status === 403) {
+          throw new Error('Bạn không có quyền xóa ảnh này.')
+        }
+
+        if (axiosError.response.status === 404) {
+          throw new Error('Không tìm thấy ảnh.')
+        }
+
+        if (axiosError.response.data?.message) {
+          throw new Error(axiosError.response.data.message)
+        }
+      }
+
+      throw new Error('Không thể xóa ảnh. Vui lòng thử lại.')
     }
   }
 

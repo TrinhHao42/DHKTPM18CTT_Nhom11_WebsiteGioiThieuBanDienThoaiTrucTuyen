@@ -3,6 +3,7 @@ package iuh.fit.se.enternalrunebackend.service.Impl;
 import iuh.fit.se.enternalrunebackend.dto.request.BrandRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.BrandDashboardListResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.BrandResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.BrandStatisticResponse;
 import iuh.fit.se.enternalrunebackend.entity.Message;
 import iuh.fit.se.enternalrunebackend.repository.BrandRepository;
 import iuh.fit.se.enternalrunebackend.repository.ProductRepository;
@@ -50,6 +51,7 @@ public class BrandServiceImpl implements iuh.fit.se.enternalrunebackend.service.
                         b.getBrandId(),
                         b.getBrandLogoUrl(),
                         b.getBrandName(),
+                        b.getBrandDescription(),
                         productRepository.countByBrandId(b.getBrandId()), // lấy tổng product
                         b.getBrandStatus()
                 ))
@@ -101,5 +103,27 @@ public class BrandServiceImpl implements iuh.fit.se.enternalrunebackend.service.
 
         brandRepository.save(brand);
     }
+    @Override
+    public BrandStatisticResponse getBrandStatistics() {
+        long totalBrands = brandRepository.count();
+        long totalProducts = brandRepository.getTotalProducts();
+        String mostPopularBrand = brandRepository.getMostPopularBrand();
+        long emptyBrandCount = brandRepository.countEmptyBrands();
 
+        double averageProductsPerBrand =
+                totalBrands == 0 ? 0 :
+                        Math.round(((double) totalProducts / totalBrands) * 100.0) / 100.0;
+
+        return new BrandStatisticResponse(
+                totalBrands,
+                mostPopularBrand,
+                averageProductsPerBrand,
+                emptyBrandCount
+        );
+    }
+
+    @Override
+    public Brand getBrandById(Integer id) {
+        return brandRepository.findById(id).orElse(null);
+    }
 }

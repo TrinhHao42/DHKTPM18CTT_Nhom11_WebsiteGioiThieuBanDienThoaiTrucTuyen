@@ -40,6 +40,7 @@ public class ImageServiceImpl implements ImageService {
                                 .crop("limit")
                 )
         );
+
         return uploadResult.get("secure_url").toString();
     }
 

@@ -43,14 +43,14 @@ export interface ProductResponse {
   prodName: string;
   prodModel: string;
   productStatus: string | null;
-  prodVersion: string;
-  prodColor: string;
+  prodVersion: string[];
+  prodColor: string[];
   prodDescription: string;
   prodRating: number;
-  brand: BrandResponse | null;
+  prodBrand: BrandResponse | null;
   images: ImageResponse[];
   productPrices: ProductPriceResponse[];
-  specifications: ProductSpecificationsResponse | null;
+  prodSpecs: ProductSpecificationsResponse | null;
 }
 
 export interface ProductDashboardListResponse {
@@ -70,10 +70,15 @@ export interface ProductDashboardResponse {
   outOfStockProducts: number;
 }
 
-export type ProductStatus = "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK";
+export type ProductStatus = "ACTIVE" | "OUT_OF_STOCK" | "REMOVED";
 
 export interface ProductPriceRequest {
   ppPrice: number;
+}
+
+export interface ImageRequest {
+  imageName: string;
+  imageData: string;
 }
 
 export interface ProductRequest {
@@ -84,6 +89,7 @@ export interface ProductRequest {
   productColor: string[];
   productDescription: string;
   brandId: number;
+  images: ImageRequest[];
   productPrices: ProductPriceRequest[];
 }
 

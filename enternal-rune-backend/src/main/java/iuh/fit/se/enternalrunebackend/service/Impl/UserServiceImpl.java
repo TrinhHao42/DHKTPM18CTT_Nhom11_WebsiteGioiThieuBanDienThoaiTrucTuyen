@@ -149,6 +149,7 @@ public class UserServiceImpl implements UserService {
                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
            return new UserDashboardResponse(
+                   user.getUserId(),
                    user.getName(),
                    user.getEmail(),
                    user.getAuthProvider(),

@@ -1,13 +1,31 @@
 import { formatPrice } from '@/lib/format';
 import { Product } from '@/types/Product';
+import { CommentsPageResponse } from '@/types/Comment';
 import { Star, ShoppingCart } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
+import BuyNowModal from './BuyNowModal';
+import { useProductComments } from '@/hooks/useProductComments';
 
 
-export default function ProductCard({ product }: { product: Product }) {
+interface ProductCardProps {
+    product: Product;
+    commentData?: CommentsPageResponse;
+}
+
+export default function ProductCard({ product, commentData: externalCommentData }: ProductCardProps) {
     const currentPrice = product.productPrices?.[0]?.ppPrice || 0;
     const originalPrice = currentPrice * 1.15;
+    const [showBuyNowModal, setShowBuyNowModal] = useState(false);
+
+    // Fetch comment data if not provided externally
+    const { commentData: fetchedCommentData } = useProductComments(product.prodId, !externalCommentData);
+    const commentData = externalCommentData || fetchedCommentData;
+
+    // Use product rating data exactly like ProductInfoPanel
+    const totalRatings = commentData?.totalRatings || 0;
+    const averageRating = totalRatings > 0 ? (commentData?.averageRating || product.prodRating || 0) : 0;
 
     const handleProductClick = (e: React.MouseEvent) => {
         // Prevent navigation if clicking on buttons or links
@@ -16,6 +34,18 @@ export default function ProductCard({ product }: { product: Product }) {
             return;
         }
         window.location.href = `/products/${product.prodId}`;
+    };
+
+    const handleBuyNowClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        
+        // Since product doesn't have productVariant array, we need to create variant data from available info
+        if (!product.prodColor || product.prodColor.length === 0) {
+            console.error('No color variants available for this product');
+            return;
+        }
+
+        setShowBuyNowModal(true);
     };
 
     return (
@@ -57,21 +87,22 @@ export default function ProductCard({ product }: { product: Product }) {
                 <p className="text-gray-500 text-sm mb-2 capitalize h-5 w-[90%] line-clamp-1 overflow-hidden text-ellipsis">
                     {product.prodDescription}
                 </p>
-                <div className="flex items-center gap-2 mb-3">
-                    <div className="flex gap-0.5">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center gap-1">
                         {[1, 2, 3, 4, 5].map((i) => (
                             <Star
                                 key={i}
-                                className={`w-4 h-4 ${i <= Math.floor(product.prodRating)
+                                className={`w-4 h-4 ${totalRatings > 0 && i <= Math.floor(averageRating)
                                     ? 'text-yellow-400 fill-yellow-400'
-                                    : i - product.prodRating < 1 && i > product.prodRating
-                                        ? 'text-yellow-400 fill-yellow-200/50'
-                                        : 'text-gray-200 fill-gray-200'
+                                    : 'text-gray-200 fill-gray-200'
                                     }`}
                             />
                         ))}
                     </div>
-                    <span className="text-gray-500 text-sm">({product.prodRating.toFixed(1)})</span>
+                    <span className="text-sm font-semibold text-gray-900">{averageRating.toFixed(1)}</span>
+                    <span className="text-gray-500 text-sm">
+                        ({totalRatings > 0 ? `${totalRatings.toLocaleString()} đánh giá` : 'Chưa có đánh giá'})
+                    </span>
                     <div className="ml-auto">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     </div>
@@ -97,7 +128,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
                 <div className="flex gap-2">
                     <button
-                        onClick={handleProductClick}
+                        onClick={handleBuyNowClick}
                         className="cursor-pointer flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-3 rounded-xl font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2 group/btn">
                         <ShoppingCart className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span>Mua ngay</span>
@@ -116,6 +147,27 @@ export default function ProductCard({ product }: { product: Product }) {
                     <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Bảo hành 12 tháng</span>
                 </div>
             </div>
+
+            {/* Buy Now Modal */}
+            {showBuyNowModal && (
+                <BuyNowModal
+                    isOpen={showBuyNowModal}
+                    onClose={() => setShowBuyNowModal(false)}
+                    product={{
+                        variantId: 0,
+                        variantName: `${product.prodName}`,
+                        price: currentPrice,
+                        imageUrl: product.images[0]?.imageData,
+                        stock: 100
+                    }}
+                    productId={Number(product.prodId)}
+                    availableColors={product.prodColor || []}
+                    availableStorages={['64GB', '128GB', '256GB', '512GB', '1TB']}
+                    availableImages={product.images || []}
+                    defaultColor={product.prodColor?.[0]}
+                    defaultStorage="256GB"
+                />
+            )}
         </div>
     );
 }

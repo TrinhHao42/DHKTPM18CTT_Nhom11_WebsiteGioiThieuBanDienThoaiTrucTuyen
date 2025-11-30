@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequestMapping("account")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class AuthController {
 
     @Autowired
@@ -81,20 +80,9 @@ public class AuthController {
 
         var user = userService.findByEmail(userDetails.getUsername());
 
-//        String fullAddress = null;
-//        if (user.getUserAddress() != null) {
-//            var addr = user.getUserAddress();
-//            fullAddress = String.join(", ",
-//                    addr.getStreetName(),
-//                    addr.getWardName(),
-//                    addr.getCityName(),
-//                    addr.getCountryName()
-//            );
-//        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
-//        response.put("username", userDetails.getUsername());
         response.put("roles", roles);
 
         UserResponse loginUser = UserResponse.toUserResponse(user);
@@ -115,7 +103,7 @@ public class AuthController {
                     .collect(Collectors.toList());
 
             response.put("username", userDetails.getUsername());
-            response.put("roles", roles); // Sử dụng List<String> đã chuyển đổi
+            response.put("roles", roles);
         } else {
             response.put("error", "User not authenticated");
         }

@@ -11,6 +11,7 @@ public class BrandDashboardListResponse {
     private int brandId;
     private String brandLogoUrl;
     private String brandName;
+    private String description;
     private Long productCount;
     private String brandStatus;
 }

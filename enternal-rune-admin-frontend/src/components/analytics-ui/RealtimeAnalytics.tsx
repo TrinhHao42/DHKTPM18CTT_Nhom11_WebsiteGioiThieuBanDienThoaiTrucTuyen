@@ -2,6 +2,75 @@
 
 import React from 'react';
 import { useRealtimeAnalytics, useOnlineUsers, useRecentActivity } from '@/hooks/useRealtimeAnalytics';
+import { EVENT_DISPLAY_NAMES } from '@/utils/eventNames';
+
+type EventData = {
+  interactions?: number;
+  timeOnPage?: number;
+  text?: string;
+  href?: string;
+  tag?: string;
+  [key: string]: unknown;
+};
+
+type TrackingEvent = {
+  eventName?: string;
+  pageTitle?: string;
+  urlPath?: string;
+  eventData?: EventData;
+  createdAt?: string | Date;
+  browser?: string;
+  country?: string;
+};
+
+function getEventDetail(event: TrackingEvent): string {
+  const page = event.pageTitle || event.urlPath || '';
+  const ed = event.eventData || {};
+
+  switch (event.eventName) {
+    case 'page_engagement': {
+      const interactions = typeof ed.interactions === 'number' ? `${ed.interactions} lần` : null;
+      const time = typeof ed.timeOnPage === 'number' ? `${Math.round(ed.timeOnPage / 1000)}s` : null;
+      return `Tương tác trên ${page}${interactions ? ` • ${interactions}` : ''}${!interactions && time ? ` • ${time}` : ''}`;
+    }
+    case 'click':
+    case 'button':
+    case 'external_link':
+  if (typeof ed.text === 'string') return `${getEventDisplayName(event.eventName || '')}: "${ed.text}"`;
+  if (typeof ed.href === 'string') return `${getEventDisplayName(event.eventName || '')} → ${new URL(ed.href, typeof window !== 'undefined' ? window.location.href : 'http://localhost').hostname}`;
+      return page || getEventDisplayName(event.eventName || '');
+    case 'page_hidden':
+      return `Rời khỏi ${page || 'trang'}`;
+    case 'page_visible':
+      return `Quay lại ${page || 'trang'}`;
+    default:
+      if (page) return page;
+  if (typeof ed.tag === 'string') return ed.tag;
+  if (typeof ed.href === 'string') return ed.href;
+  if (typeof ed.text === 'string') return ed.text;
+      return '';
+  }
+}
+
+// Type declaration for window.umami
+declare global {
+  interface Window {
+    umami?: {
+      getEventDisplayName?: (eventName: string) => string;
+    };
+  }
+}
+
+// Helper function to get user-friendly event names
+function getEventDisplayName(eventName: string): string {
+  // Check if window.umami is available with the translation function
+  if (typeof window !== 'undefined' && window.umami?.getEventDisplayName) {
+    return window.umami.getEventDisplayName(eventName);
+  }
+  
+  // Fallback mapping if umami is not loaded
+  return EVENT_DISPLAY_NAMES[eventName] || eventName;
+}
 
 interface RealtimeAnalyticsProps {
   websiteId?: string;
@@ -79,10 +148,10 @@ export default function RealtimeAnalytics({ websiteId, className = '' }: Realtim
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
-                    {event.eventName}
+                    {getEventDisplayName(event.eventName)}
                   </p>
                   <p className="text-sm text-gray-500 truncate">
-                    {event.pageTitle || event.urlPath}
+                    {getEventDetail(event)}
                   </p>
                 </div>
                 <div className="flex-shrink-0 text-xs text-gray-400">
@@ -154,12 +223,12 @@ export function RecentActivityFeed({ websiteId, limit = 5, className = '' }: Rea
           events.map((event) => (
             <div key={event.id} className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded">
               <div className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0"></div>
-              <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-gray-900 truncate">
-                  {event.eventName}
+                  {getEventDisplayName(event.eventName)}
                 </p>
                 <p className="text-xs text-gray-500 truncate">
-                  {event.urlPath}
+                  {getEventDetail(event)}
                 </p>
               </div>
               <div className="text-xs text-gray-400">

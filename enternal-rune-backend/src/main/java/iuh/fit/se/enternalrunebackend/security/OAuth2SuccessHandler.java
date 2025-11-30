@@ -59,10 +59,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             user.setAuthProvider(User.AuthProvider.GOOGLE);
             user.setPassword(UUID.randomUUID().toString());
 
-            Role defaultRole = roleRepository.findByRoleName("USER");
+            Role defaultRole = roleRepository.findByRoleName("ROLE_USER");
             if (defaultRole == null) {
                 defaultRole = new Role();
-                defaultRole.setRoleName("USER");
+                defaultRole.setRoleName("ROLE_USER");
                 roleRepository.save(defaultRole);
             }
 

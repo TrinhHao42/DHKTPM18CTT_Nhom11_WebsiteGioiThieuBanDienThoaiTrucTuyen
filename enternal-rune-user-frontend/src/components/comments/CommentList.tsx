@@ -9,6 +9,7 @@ interface CommentListProps {
   loadingMore: boolean
   onLoadMore: () => void
   onImageClick?: (url: string) => void
+  onRefresh?: () => void
 }
 
 export const CommentList: React.FC<CommentListProps> = ({
@@ -16,7 +17,8 @@ export const CommentList: React.FC<CommentListProps> = ({
   loading,
   loadingMore,
   onLoadMore,
-  onImageClick
+  onImageClick,
+  onRefresh
 }) => {
   const [visibleCommentsCount, setVisibleCommentsCount] = useState(3)
   if (loading) {
@@ -70,6 +72,11 @@ export const CommentList: React.FC<CommentListProps> = ({
             key={comment.id || index} 
             comment={comment}
             onImageClick={onImageClick}
+            onImageDeleted={() => {
+              if (onRefresh) {
+                onRefresh()
+              }
+            }}
           />
         ))}
 

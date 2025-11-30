@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 @Setter
 @Getter
 public class UserDashboardResponse {
+    private Long id;
     private String name;
     private String email;
     private User.AuthProvider authProvider;

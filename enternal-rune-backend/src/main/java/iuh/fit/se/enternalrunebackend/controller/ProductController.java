@@ -7,11 +7,6 @@ import iuh.fit.se.enternalrunebackend.entity.Product;
 import iuh.fit.se.enternalrunebackend.entity.Brand;
 import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
 import iuh.fit.se.enternalrunebackend.service.ProductService;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ImageResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.BrandResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductPriceResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductSpecificationsResponse;
 import iuh.fit.se.enternalrunebackend.entity.ProductSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,7 +24,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/products")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Cho phép gọi từ frontend (React, v.v.)
 public class ProductController {
 
     private final ProductService productService;
@@ -157,17 +151,23 @@ public class ProductController {
         productService.addProduct(productRequest, images);
         return ResponseEntity.ok("Product created successfully");
     }
-
-
     @DeleteMapping("/dashboard/delete/{id}")
     public ResponseEntity<String> deleteProduct(@PathVariable Integer id){
         productService.deleteProduct(id);
         return ResponseEntity.ok("Xóa sản phẩm thành công");
     }
-    @PutMapping("/dashboard/update/{id}")
-    public Product updateProduct(@PathVariable Integer id, @RequestBody ProductRequest request){
-        return productService.updateProduct(id, request);
+//    @PutMapping("/dashboard/update/{id}")
+//    public Product updateProduct(@PathVariable Integer id, @RequestBody ProductRequest request){
+//        return productService.updateProduct(id, request);
+//    }
+    @PutMapping(value = "/dashboard/update/{id}", consumes = {"multipart/form-data"})
+    public Product updateProduct(
+            @PathVariable Integer id,
+            @RequestPart("data") ProductRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> newFiles) throws IOException {
+        return productService.updateProduct(id, request, newFiles);
     }
+
     @GetMapping("/dashboard/statistics")
     public ProductDashboardResponse getDashboard() {
         return productService.getProductDashboard();
@@ -184,6 +184,9 @@ public class ProductController {
         Pageable pageable = PageRequest.of(page, size);
         return productService.getProductDashboardList(keyword, brand, status, pageable);
     }
-
-
+    @GetMapping("/dashboard/{id}")
+    public ProductResponse getProductById(@PathVariable Integer id) {
+        Product product = productService.getProductById(id);
+        return toDto(product);
+    }
 }

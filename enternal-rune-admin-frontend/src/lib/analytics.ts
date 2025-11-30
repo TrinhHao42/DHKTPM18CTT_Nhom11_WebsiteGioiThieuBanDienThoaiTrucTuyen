@@ -445,12 +445,12 @@ export class AnalyticsService {
   }
 
   /**
-   * Get traffic sources
+   * Get traffic sources based on unique user sessions
    */
   async getTrafficSources(websiteId: string, startDate: Date, endDate: Date): Promise<{ source: string; count: number; percentage: number }[]> {
     try {
-      // Get referrer domains and UTM sources
-      const referrers = await prisma.pageView.findMany({
+      // Get user sessions with their first page view to determine traffic source
+      const sessions = await prisma.userSession.findMany({
         where: {
           websiteId,
           createdAt: {
@@ -458,27 +458,70 @@ export class AnalyticsService {
             lte: endDate,
           },
         },
-        select: {
-          referrerDomain: true,
-          utmSource: true,
+        include: {
+          pageViews: {
+            orderBy: {
+              createdAt: 'asc',
+            },
+            take: 1, // Get the first page view for each session
+            select: {
+              referrerDomain: true,
+              utmSource: true,
+            },
+          },
         },
       });
 
       const sourceMap = new Map<string, number>();
 
-      for (const pageView of referrers) {
-        let source = 'direct';
+      for (const session of sessions) {
+        let source = 'Truy cập trực tiếp';
 
-        if (pageView.utmSource) {
-          source = pageView.utmSource;
-        } else if (pageView.referrerDomain) {
-          if (pageView.referrerDomain.includes('google')) {
-            source = 'search';
-          } else if (['facebook.com', 'twitter.com', 'linkedin.com', 'instagram.com'].some(s => pageView.referrerDomain!.includes(s))) {
-            source = 'social';
-          } else {
-            source = 'external';
+        // Use the first page view of the session to determine traffic source
+        const firstPageView = session.pageViews[0];
+        if (firstPageView) {
+          if (firstPageView.utmSource) {
+            // UTM source takes priority
+            switch (firstPageView.utmSource.toLowerCase()) {
+              case 'google':
+              case 'bing':
+              case 'yahoo':
+              case 'baidu':
+                source = 'Tìm kiếm có trả phí';
+                break;
+              case 'facebook':
+              case 'twitter':
+              case 'instagram':
+              case 'linkedin':
+              case 'tiktok':
+                source = 'Mạng xã hội';
+                break;
+              case 'email':
+                source = 'Email marketing';
+                break;
+              default:
+                source = firstPageView.utmSource;
+            }
+          } else if (firstPageView.referrerDomain) {
+            const domain = firstPageView.referrerDomain.toLowerCase();
+            
+            if (domain.includes('google.') || domain.includes('bing.') || 
+                domain.includes('yahoo.') || domain.includes('baidu.') ||
+                domain.includes('duckduckgo.') || domain.includes('yandex.')) {
+              source = 'Tìm kiếm tự nhiên';
+            } else if (domain.includes('facebook.') || domain.includes('twitter.') || 
+                       domain.includes('instagram.') || domain.includes('linkedin.') ||
+                       domain.includes('tiktok.') || domain.includes('youtube.') ||
+                       domain.includes('pinterest.')) {
+              source = 'Mạng xã hội';
+            } else if (domain.includes('gmail.') || domain.includes('outlook.') || 
+                       domain.includes('mail.') || domain.includes('email.')) {
+              source = 'Email';
+            } else {
+              source = 'Website khác';
+            }
           }
+          // If no referrer and no UTM, it remains 'Truy cập trực tiếp'
         }
 
         sourceMap.set(source, (sourceMap.get(source) || 0) + 1);
@@ -771,7 +814,7 @@ export class AnalyticsService {
   }
 
   /**
-   * Get user behavior metrics
+   * Get user behavior metrics with URL paths
    */
   async getUserBehavior(websiteId?: string, startDate?: Date, endDate?: Date) {
     const where: Record<string, unknown> = websiteId ? { websiteId } : {};
@@ -789,7 +832,35 @@ export class AnalyticsService {
       const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-      // Get event counts for current month
+      // Get page view counts by URL path for current month
+      const currentMonthPageViews = await prisma.pageView.groupBy({
+        by: ['urlPath'],
+        where: {
+          ...where,
+          createdAt: {
+            gte: currentMonthStart,
+            lte: currentMonthEnd,
+          },
+        },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 10
+      });
+
+      // Get page view counts by URL path for previous month
+      const previousMonthPageViews = await prisma.pageView.groupBy({
+        by: ['urlPath'],
+        where: {
+          ...where,
+          createdAt: {
+            gte: previousMonthStart,
+            lte: previousMonthEnd,
+          },
+        },
+        _count: { id: true },
+      });
+
+      // Get regular event counts for current month (excluding e-commerce events)
       const currentMonthEvents = await prisma.event.groupBy({
         by: ['eventName'],
         where: {
@@ -798,11 +869,16 @@ export class AnalyticsService {
             gte: currentMonthStart,
             lte: currentMonthEnd,
           },
+          eventName: {
+            notIn: ['add_to_cart', 'buy_now']
+          }
         },
         _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 15
       });
 
-      // Get event counts for previous month
+      // Get regular event counts for previous month (excluding e-commerce events)
       const previousMonthEvents = await prisma.event.groupBy({
         by: ['eventName'],
         where: {
@@ -811,71 +887,166 @@ export class AnalyticsService {
             gte: previousMonthStart,
             lte: previousMonthEnd,
           },
+          eventName: {
+            notIn: ['add_to_cart', 'buy_now']
+          }
         },
         _count: { id: true },
       });
 
-      // Get page view counts
-      const currentMonthPageViews = await prisma.pageView.count({
+      // Get e-commerce events grouped by product_id for current month
+      const currentMonthEcommerceEvents = await prisma.event.findMany({
         where: {
           ...where,
           createdAt: {
             gte: currentMonthStart,
             lte: currentMonthEnd,
           },
+          eventName: {
+            in: ['add_to_cart', 'buy_now']
+          }
         },
+        select: {
+          eventName: true,
+          eventData: true,
+          id: true
+        }
       });
 
-      const previousMonthPageViews = await prisma.pageView.count({
+      // Get e-commerce events grouped by product_id for previous month
+      const previousMonthEcommerceEvents = await prisma.event.findMany({
         where: {
           ...where,
           createdAt: {
             gte: previousMonthStart,
             lte: previousMonthEnd,
           },
+          eventName: {
+            in: ['add_to_cart', 'buy_now']
+          }
         },
+        select: {
+          eventName: true,
+          eventData: true,
+          id: true
+        }
       });
 
       // Calculate changes and format data
       const userBehavior: Array<{
         action: string;
+        urlPath?: string;
         currentMonth: number;
         previousMonth: number;
         change: number;
+        eventData?: Record<string, unknown>;
       }> = [];
 
-      // Add page views
-      const pageViewChange = previousMonthPageViews > 0 ?
-        ((currentMonthPageViews - previousMonthPageViews) / previousMonthPageViews) * 100 : 0;
-
-      userBehavior.push({
-        action: 'page_views',
-        currentMonth: currentMonthPageViews,
-        previousMonth: previousMonthPageViews,
-        change: Math.round(pageViewChange * 100) / 100,
-      });
-
-      // Add events
-      const allEventTypes = new Set([
-        ...currentMonthEvents.map(e => e.eventName),
-        ...previousMonthEvents.map(e => e.eventName),
-      ]);
-
-      for (const eventType of allEventTypes) {
-        const currentCount = currentMonthEvents.find(e => e.eventName === eventType)?._count.id || 0;
-        const previousCount = previousMonthEvents.find(e => e.eventName === eventType)?._count.id || 0;
+      // Add page views by URL path
+      for (const pageView of currentMonthPageViews) {
+        const previousCount = previousMonthPageViews.find(p => p.urlPath === pageView.urlPath)?._count.id || 0;
         const change = previousCount > 0 ?
-          ((currentCount - previousCount) / previousCount) * 100 : 0;
+          ((pageView._count.id - previousCount) / previousCount) * 100 : 
+          (pageView._count.id > 0 ? 100 : 0); // New data = 100% increase
 
+        const roundedChange = Math.round(change * 100) / 100;
+                
         userBehavior.push({
-          action: eventType,
-          currentMonth: currentCount,
+          action: pageView.urlPath || 'Unknown Page',
+          urlPath: pageView.urlPath || undefined,
+          currentMonth: pageView._count.id,
           previousMonth: previousCount,
-          change: Math.round(change * 100) / 100,
+          change: roundedChange,
+          eventData: undefined
         });
       }
 
-      return userBehavior;
+      // Add regular events (eventName already contains URL paths like "/path:click")
+      for (const event of currentMonthEvents) {
+        const previousCount = previousMonthEvents.find(e => e.eventName === event.eventName)?._count.id || 0;
+        const change = previousCount > 0 ?
+          ((event._count.id - previousCount) / previousCount) * 100 : 
+          (event._count.id > 0 ? 100 : 0); // New data = 100% increase
+
+        // Extract URL path from eventName if it contains one
+        let urlPath: string | undefined;
+        if (event.eventName.startsWith('/') && event.eventName.includes(':')) {
+          urlPath = event.eventName.split(':')[0];
+        } else if (event.eventName.startsWith('/')) {
+          urlPath = event.eventName;
+        }
+
+        const roundedChange = Math.round(change * 100) / 100;
+        
+        console.log(`Event Change - ${event.eventName}: current=${event._count.id}, previous=${previousCount}, change=${roundedChange}%`);
+        
+        userBehavior.push({
+          action: event.eventName,
+          urlPath,
+          currentMonth: event._count.id,
+          previousMonth: previousCount,
+          change: roundedChange,
+          eventData: undefined
+        });
+      }
+
+      // Process e-commerce events grouped by product_id
+      const processEcommerceEvents = (events: typeof currentMonthEcommerceEvents) => {
+        const grouped = new Map<string, { count: number; eventData?: Record<string, unknown>; eventName: string }>();
+        
+        events.forEach(event => {
+          try {
+            const eventData = event.eventData as Record<string, unknown> || {};
+            const productId = eventData.product_id || eventData.productId || eventData['product-id'] || 'unknown';
+            const key = `${event.eventName}_${productId}`;
+            
+            if (grouped.has(key)) {
+              grouped.get(key)!.count++;
+            } else {
+              grouped.set(key, {
+                count: 1,
+                eventData: eventData,
+                eventName: event.eventName
+              });
+            }
+          } catch (error) {
+            console.error('Error processing e-commerce event:', error);
+          }
+        });
+        
+        return grouped;
+      };
+
+      const currentEcommerceGrouped = processEcommerceEvents(currentMonthEcommerceEvents);
+      const previousEcommerceGrouped = processEcommerceEvents(previousMonthEcommerceEvents);
+
+      // Add e-commerce events to userBehavior
+      currentEcommerceGrouped.forEach((current, key) => {
+        const previous = previousEcommerceGrouped.get(key);
+        const previousCount = previous ? previous.count : 0;
+        const change = previousCount > 0 ?
+          ((current.count - previousCount) / previousCount) * 100 : 
+          (current.count > 0 ? 100 : 0);
+
+        const roundedChange = Math.round(change * 100) / 100;
+        
+        console.log(`E-commerce Event Change - ${key}: current=${current.count}, previous=${previousCount}, change=${roundedChange}%`);
+        
+        userBehavior.push({
+          action: current.eventName,
+          urlPath: undefined,
+          currentMonth: current.count,
+          previousMonth: previousCount,
+          change: roundedChange,
+          eventData: current.eventData
+        });
+      });
+
+      // Sort by current month count (descending)
+      return userBehavior
+        .sort((a, b) => b.currentMonth - a.currentMonth)
+        .slice(0, 20); // Limit to top 20 actions
+
     } catch (error) {
       console.error('Error getting user behavior:', error);
       return [];

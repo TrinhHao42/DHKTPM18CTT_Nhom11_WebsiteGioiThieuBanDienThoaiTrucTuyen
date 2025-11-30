@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import ProductForm from '@/components/products/ProductForm';
 import productService from '@/services/productService';
-import { ProductDashboardListResponse, ProductFormData } from '@/types/product';
+import { ProductResponse, ProductFormData, ImageResponse } from '@/types/product';
 
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
 
-  const [product, setProduct] = useState<ProductDashboardListResponse | null>(null);
+  const [product, setProduct] = useState<ProductResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,17 +25,14 @@ export default function EditProductPage() {
   const fetchProduct = async () => {
     try {
       setLoading(true);
-      // Lấy sản phẩm từ danh sách dashboard
-      const response = await productService.getAll({ page: 0, size: 1000 });
-      const foundProduct = response.content.find(
-        (p) => p.productId === parseInt(id)
-      );
+      // Gọi API /products/dashboard/{id} để lấy chi tiết sản phẩm
+      const data = await productService.getById(parseInt(id));
       
-      if (!foundProduct) {
+      if (!data) {
         throw new Error('Không tìm thấy sản phẩm');
       }
       
-      setProduct(foundProduct);
+      setProduct(data);
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Không thể tải thông tin sản phẩm');
@@ -45,10 +42,43 @@ export default function EditProductPage() {
     }
   };
 
-  const handleSubmit = async (data: ProductFormData, _images: File[]) => {
+  // Chuyển đổi ProductResponse sang ProductFormData
+  const getFormData = (): Partial<ProductFormData> | undefined => {
+    if (!product) return undefined;
+    
+    // Lấy giá đầu tiên từ productPrices
+    const currentPrice = product.productPrices && product.productPrices.length > 0 
+      ? product.productPrices[0].ppPrice 
+      : 0;
+
+    return {
+      productId: product.prodId,
+      productName: product.prodName,
+      productModel: product.prodModel,
+      productStatus: (product.productStatus as 'ACTIVE' | 'OUT_OF_STOCK' | 'REMOVED') || 'ACTIVE',
+      productVersion: product.prodVersion || [''],
+      productColor: product.prodColor || [''],
+      productDescription: product.prodDescription || '',
+      brandId: product.prodBrand?.brandId || 0,
+      price: currentPrice,
+    };
+  };
+
+  // Lấy danh sách ảnh hiện tại
+  const getExistingImages = (): ImageResponse[] => {
+    return product?.images || [];
+  };
+
+  const handleSubmit = async (data: ProductFormData, newImageFiles: File[]) => {
     try {
-      await productService.update(parseInt(id), data);
-      alert('Cập nhật sản phẩm thành công!');
+      // Lấy ảnh hiện tại để gửi lại trong request
+      const existingImages = getExistingImages().map((img) => ({
+        imageName: img.imageName,
+        imageData: img.imageData,
+      }));
+      // Gửi cả ảnh hiện tại và ảnh mới
+      await productService.update(parseInt(id), data, existingImages, newImageFiles);
+      // alert('Cập nhật sản phẩm thành công!');
       router.push('/products');
     } catch (error: any) {
       throw new Error(error.message || 'Không thể cập nhật sản phẩm');
@@ -58,7 +88,6 @@ export default function EditProductPage() {
   const handleDelete = async (productId: number) => {
     try {
       await productService.delete(productId);
-      // alert('Xóa sản phẩm thành công!');
       router.push('/products');
     } catch (error: any) {
       throw new Error(error.message || 'Không thể xóa sản phẩm');
@@ -178,14 +207,15 @@ export default function EditProductPage() {
             </h1>
           </div>
           <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-            Cập nhật thông tin sản phẩm #{product.productId}
+            Cập nhật thông tin sản phẩm #{product.prodId}
           </p>
         </div>
       </div>
 
       {/* Form Content */}
       <ProductForm
-        initialData={product}
+        initialData={getFormData()}
+        existingImages={getExistingImages()}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
         isEdit={true}

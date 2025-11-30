@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 type ApiError = Error & { message?: string };
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth(); // ✅ Sử dụng login từ AuthContext
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);

@@ -183,5 +183,30 @@ public class OrderController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+
+    /**
+     * Cập nhật trạng thái giao hàng (cho admin)
+     * PUT /orders/admin/{orderId}/shipping-status?statusCode=SHIPPED
+     */
+    @PutMapping("/admin/{orderId}/shipping-status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<?> updateShippingStatus(
+            @PathVariable int orderId,
+            @RequestParam String statusCode
+    ) {
+        try {
+            orderService.updateShippingStatus(orderId, statusCode);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Cập nhật trạng thái giao hàng thành công!");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể cập nhật trạng thái: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
 }
+
 

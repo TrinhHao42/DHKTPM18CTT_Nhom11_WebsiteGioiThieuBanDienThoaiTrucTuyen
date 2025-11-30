@@ -18,4 +18,5 @@ public interface OrderService {
     OrderResponse getOrderDetail(int orderId);
     Order cancelOrder(int orderId, Long userId);
     Page<OrderListResponse> getOrderList(String keyword, String paymentStatusCode, String shippingStatusCode, Pageable pageable);
+    void updateShippingStatus(int orderId, String statusCode);
 }

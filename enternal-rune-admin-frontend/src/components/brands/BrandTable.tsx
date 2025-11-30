@@ -17,7 +17,7 @@ interface BrandTableProps {
   };
   onSearch: (keyword: string) => void;
   onChangePage: (page: number) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: number) => Promise<void>;
 }
 
 export default function BrandTable({
@@ -37,7 +37,7 @@ export default function BrandTable({
 
   const handleDeleteClick = async (id: number, name: string) => {
     if (confirm(`Bạn có chắc muốn xóa thương hiệu "${name}"?\nĐiều này có thể ảnh hưởng đến các sản phẩm liên quan.`)) {
-      onDelete(id);
+      await onDelete(id);
     }
   };
 
@@ -46,7 +46,7 @@ export default function BrandTable({
       true: { bg: 'bg-success-100 dark:bg-success-900/30', text: 'text-success-700 dark:text-success-400', label: 'Hoạt động' },
       false: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-700 dark:text-gray-400', label: 'Không hoạt động' },
     };
-    const config = statusConfig[status] || statusConfig.INACTIVE;
+    const config = statusConfig[status] || statusConfig.false;
     return (
       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.bg} ${config.text}`}>
         {config.label}

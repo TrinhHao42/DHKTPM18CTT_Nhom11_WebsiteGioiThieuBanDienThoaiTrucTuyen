@@ -9,6 +9,7 @@ export interface BrandDashboardListResponse {
   brandId: number;
   brandLogoUrl: string;
   brandName: string;
+  description: string;
   productCount: number;
   brandStatus: string;
 }
@@ -37,4 +38,12 @@ export interface BrandPageResponse {
   first: boolean;
   last: boolean;
   empty: boolean;
+}
+
+// Brand statistics response
+export interface BrandStatisticResponse {
+  totalBrands: number;
+  mostPopularBrand: string;
+  averageProductsPerBrand: number;
+  emptyBrandCount: number;
 }

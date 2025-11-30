@@ -11,8 +11,11 @@ export default function BrandsPage() {
     brands,
     loading,
     error,
+    statistics,
+    statisticsLoading,
     pagination,
     fetchBrands,
+    fetchStatistics,
     deleteBrand,
     search,
     changePage,
@@ -20,14 +23,17 @@ export default function BrandsPage() {
 
   useEffect(() => {
     fetchBrands();
-  }, [fetchBrands]);
+    fetchStatistics();
+  }, [fetchBrands, fetchStatistics]);
 
   const handleDelete = async (id: number) => {
     try {
       await deleteBrand(id);
-      alert('Xóa thương hiệu thành công!');
+      // deleteBrand đã tự động gọi fetchBrands() bên trong
+      // Chỉ cần refresh statistics
+      await fetchStatistics();
     } catch (err: any) {
-      alert(err.message || 'Không thể xóa thương hiệu');
+      console.error('Lỗi khi xóa thương hiệu:', err);
     }
   };
 
@@ -38,8 +44,8 @@ export default function BrandsPage() {
 
       {/* Metrics */}
       <BrandMetrics 
-        totalBrands={pagination.totalElements}
-        loading={loading}
+        statistics={statistics}
+        loading={statisticsLoading}
       />
 
       {/* Table */}

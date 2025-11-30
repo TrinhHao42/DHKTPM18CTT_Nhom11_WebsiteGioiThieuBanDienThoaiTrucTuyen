@@ -34,4 +34,23 @@ public interface BrandRepository extends JpaRepository<Brand,Integer> {
     Optional<Brand> findByBrandName(String brandName);
 
 
+    // Tổng số sản phẩm tất cả brand
+    @Query("SELECT COUNT(p) FROM Brand b JOIN b.products p")
+    long getTotalProducts();
+
+    // Thương hiệu có nhiều sản phẩm nhất
+    @Query("""
+        SELECT b.brandName
+        FROM Brand b 
+        LEFT JOIN b.products p 
+        GROUP BY b 
+        ORDER BY COUNT(p) DESC 
+        LIMIT 1
+    """)
+    String getMostPopularBrand();
+
+    // Brand không có sản phẩm nào
+    @Query("SELECT COUNT(b) FROM Brand b WHERE b.products IS EMPTY")
+    long countEmptyBrands();
+
 }

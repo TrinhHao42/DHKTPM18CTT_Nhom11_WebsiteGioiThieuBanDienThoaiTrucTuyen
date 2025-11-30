@@ -12,6 +12,9 @@ interface BrandFormProps {
   isEdit?: boolean;
 }
 
+// Ảnh mặc định cho thương hiệu
+const DEFAULT_BRAND_LOGO = 'https://placehold.co/200x200/e2e8f0/64748b?text=Brand';
+
 export default function BrandForm({
   initialData,
   onSubmit,
@@ -136,7 +139,7 @@ export default function BrandForm({
               </div>
 
               {/* Brand Logo URL */}
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   URL Logo thương hiệu
                 </label>
@@ -148,23 +151,25 @@ export default function BrandForm({
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                   placeholder="https://example.com/logo.png"
                 />
-                {formData.brandLogoUrl && (
-                  <div className="mt-3">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Xem trước:</p>
-                    <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
-                      <Image
-                        src={formData.brandLogoUrl}
-                        alt="Logo preview"
-                        fill
-                        className="object-contain p-2"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Để trống sẽ sử dụng ảnh mặc định
+                </p>
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Xem trước:</p>
+                  <div className="relative h-20 w-20 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800">
+                    <Image
+                      src={formData.brandLogoUrl || DEFAULT_BRAND_LOGO}
+                      alt="Logo preview"
+                      fill
+                      className="object-contain p-2"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = DEFAULT_BRAND_LOGO;
+                      }}
+                      unoptimized={true}
+                    />
                   </div>
-                )}
-              </div>
+                </div>
+              </div> */}
 
               {/* Brand Description */}
               <div>
