@@ -152,17 +152,23 @@ public class ProductController {
         productService.addProduct(productRequest, images);
         return ResponseEntity.ok("Product created successfully");
     }
-
-
     @DeleteMapping("/dashboard/delete/{id}")
     public ResponseEntity<String> deleteProduct(@PathVariable Integer id){
         productService.deleteProduct(id);
         return ResponseEntity.ok("Xóa sản phẩm thành công");
     }
-    @PutMapping("/dashboard/update/{id}")
-    public Product updateProduct(@PathVariable Integer id, @RequestBody ProductRequest request){
-        return productService.updateProduct(id, request);
+//    @PutMapping("/dashboard/update/{id}")
+//    public Product updateProduct(@PathVariable Integer id, @RequestBody ProductRequest request){
+//        return productService.updateProduct(id, request);
+//    }
+    @PutMapping(value = "/dashboard/update/{id}", consumes = {"multipart/form-data"})
+    public Product updateProduct(
+            @PathVariable Integer id,
+            @RequestPart("data") ProductRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> newFiles) throws IOException {
+        return productService.updateProduct(id, request, newFiles);
     }
+
     @GetMapping("/dashboard/statistics")
     public ProductDashboardResponse getDashboard() {
         return productService.getProductDashboard();

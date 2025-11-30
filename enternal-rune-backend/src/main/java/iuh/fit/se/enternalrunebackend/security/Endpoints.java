@@ -53,7 +53,8 @@ public class Endpoints {
 
     // DELETE không cần đăng nhập
     public static final String[] PUBLIC_DELETE_ENDPOINTS = {
-            "/cart/**"
+            "/cart/**",
+            "/api/discounts/**"
     };
 
     // Admin GET
@@ -61,21 +62,25 @@ public class Endpoints {
             "/addresses/**",
             "/api/dashboard-order/**",
             "/api/dashboard-user/**",
-            "/products/dashboard/**"
+            "/products/dashboard/**",
+            "/api/discounts/**"
     };
     
     public static final String[] ADMIN_POST_ENDPOINTS = {
-            "/products/dashboard/**"
+            "/products/dashboard/**",
+            "/api/discounts/**"
     };
     
     public static final String[] ADMIN_PUT_ENDPOINTS = {
             "/api/dashboard-order/**",
-            "/products/dashboard/**"
+            "/products/dashboard/**",
+            "/api/discounts/**"
     };
     
     public static final String[] ADMIN_DELETE_ENDPOINTS = {
             "/api/dashboard-order/**",
             "/api/dashboard-user/**",
-            "/products/dashboard/**"
+            "/products/dashboard/**",
+            "/api/discounts/**"
     };
 }

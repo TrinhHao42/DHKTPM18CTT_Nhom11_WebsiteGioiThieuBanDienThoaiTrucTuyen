@@ -57,5 +57,29 @@ INSERT INTO addresses (address_id, street_name, ward_name, city_name, country_na
                                                                                         (17, '10 Nguyễn Văn Cừ', 'Nguyễn Cư Trinh', 'Thành phố Hồ Chí Minh', 'Việt Nam'),
                                                                                         (18, '243/46 Hoàng Diệu', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam'),
                                                                                         (19, '368 Tôn Đản', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam'),
-
                                                                                         (20, '56 Khánh Hội', 'Phường 4', 'Thành phố Hồ Chí Minh', 'Việt Nam');
+  =====================================================================================================================================================================================
+INSERT INTO discounts (discount_active, discount_code, discount_end_date, discount_max_amount, discount_name, discount_quantity_limit, discount_start_date, discount_target_type, discount_value_type, discount_value) VALUES
+(TRUE, 'SUMMER20', '2025-08-31', 50000.00, 'Khuyến mãi Hè', 1000, '2025-06-01', 'ORDER', 'PERCENT', 20.00),
+(TRUE, 'FREE_SHIP', '2025-12-31', 0.00, 'Miễn phí vận chuyển', 500, '2025-05-15', 'ORDER', 'FIXED', 0.00),
+(FALSE, 'WINTER10', '2024-12-31', 30000.00, 'Giảm giá mùa Đông', 200, '2024-10-01', 'ORDER', 'PERCENT', 10.00),
+(TRUE, 'NEWUSER50', '2025-12-31', 100000.00, 'Ưu đãi Người dùng mới', 5000, '2025-01-01', 'ORDER', 'FIXED', 50000.00),
+(TRUE, 'PROD_SALE', '2025-07-30', 25000.00, 'Giảm giá Sản phẩm A', 300, '2025-07-01', 'PRODUCT', 'PERCENT', 15.00),
+(TRUE, 'FLASH_24H', '2025-06-05', 75000.00, 'Flash Sale 24h', 50, '2025-06-04', 'ORDER', 'FIXED', 20000.00),
+(FALSE, 'HOLIDAY23', '2023-12-25', 40000.00, 'Giảm giá Lễ hội 2023', 100, '2023-11-01', 'ORDER', 'PERCENT', 25.00),
+(TRUE, 'VIP_EXTRA', '2025-12-31', 999999.00, 'Ưu đãi Thành viên VIP', 500, '2025-01-01', 'ORDER', 'PERCENT', 5.00),
+(TRUE, 'APPONLY', '2025-09-30', 60000.00, 'Chỉ áp dụng trên App', 800, '2025-03-01', 'ORDER', 'FIXED', 30000.00),
+(TRUE, 'BOOKS2025', '2025-11-30', 20000.00, 'Sách giảm giá', 400, '2025-01-01', 'ORDER', 'PERCENT', 10.00);
+=========================================================================================================================
+INSERT INTO roles (role_id,role_name) VALUES
+(1,'ROLE_ADMIN'),
+(2,'ROLE_USER'),
+(3,'ROLE_STAFF')
+============================================================================================
+INSERT INTO users (user_id, name, email, password, auth_provider, activate_id, user_active)
+VALUES
+(1, 'Admin', 'admin@gmail.com','$2a$10$/4Qgqo2DnrPiOroG4OK6beG1QN/zGN6fMp8RdTya9c6m/heUeBzIO','LOCAL', NULL, FALSE);
+==============================================================================================
+
+INSERT INTO user_role(user_id,role_id) VALUES
+(1,1)

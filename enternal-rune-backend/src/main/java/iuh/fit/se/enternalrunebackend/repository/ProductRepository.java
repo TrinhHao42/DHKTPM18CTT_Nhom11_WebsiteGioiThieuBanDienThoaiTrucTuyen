@@ -100,6 +100,4 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
     Long countByBrandId(@Param("brandId") int brandId);
 
 
-
-
 }
