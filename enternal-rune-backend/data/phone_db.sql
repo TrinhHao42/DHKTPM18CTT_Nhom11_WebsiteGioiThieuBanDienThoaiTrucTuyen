@@ -11,6 +11,7 @@ INSERT INTO payment_statuses (status_code, status_name, description) VALUES
     ('SHIPPED', 'Đã giao cho vận chuyển', 'Đơn hàng đã được giao cho đơn vị vận chuyển'),
     ('DELIVERED', 'Đã giao hàng', 'Đơn hàng đã được giao thành công'),
     ('FAILED_DELIVERY', 'Giao hàng thất bại', 'Không thể giao hàng đến khách hàng'),
+    ('RECEIVED', 'Đã nhận hàng', 'Hàng đã được khách hàng nhận'),
     ('RETURNED', 'Đã trả hàng', 'Hàng đã được trả lại'),
     ('CANCELLED', 'Đã hủy', 'Đơn hàng đã bị hủy');
 

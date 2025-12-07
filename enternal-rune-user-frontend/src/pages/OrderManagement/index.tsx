@@ -107,6 +107,7 @@ const OrderManagement = () => {
                             { code: ShippingStatus.PROCESSING, label: 'Đang xử lý' },
                             { code: ShippingStatus.SHIPPED, label: 'Đang giao' },
                             { code: ShippingStatus.DELIVERED, label: 'Đã giao' },
+                            { code: ShippingStatus.RECEIVED, label: 'Đã nhận hàng' },
                             { code: ShippingStatus.CANCELLED, label: 'Đã hủy' },
                             { code: ShippingStatus.RETURNED, label: 'Đã trả hàng' }
                         ].map(tab => (

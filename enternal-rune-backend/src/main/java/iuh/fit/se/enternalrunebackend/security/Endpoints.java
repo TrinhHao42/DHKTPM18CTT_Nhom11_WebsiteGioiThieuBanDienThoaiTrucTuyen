@@ -11,6 +11,7 @@ public class Endpoints {
             "/brands/names",
             "/notifications",
             "/api/dashboard/**",
+            "/orders/*/pending-requests",
             // ==== CHAT HISTORY (user xem lại) ====
             "/api/conversations/**",
             "/api/messages/**",
@@ -46,6 +47,7 @@ public class Endpoints {
 
     // PUT không cần đăng nhập
     public static final String[] PUBLIC_PUT_ENDPOINTS = {
+            "/orders/*/confirm-received"
     };
 
     // DELETE không cần đăng nhập
