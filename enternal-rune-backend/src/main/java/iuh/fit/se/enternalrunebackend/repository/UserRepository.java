@@ -58,6 +58,5 @@ public interface UserRepository extends JpaRepository<User,Long> {
     """)
     Integer countCustomerByProvider(@Param("provider") User.AuthProvider provider);
 
-
-
+    // Dashboard queries
 }
