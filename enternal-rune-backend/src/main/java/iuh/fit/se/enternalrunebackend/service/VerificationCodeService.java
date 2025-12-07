@@ -1,4 +1,4 @@
-package iuh.fit.se.enternalrunebackend.service.serviceClass;
+package iuh.fit.se.enternalrunebackend.service;
 
 import org.springframework.stereotype.Service;
 

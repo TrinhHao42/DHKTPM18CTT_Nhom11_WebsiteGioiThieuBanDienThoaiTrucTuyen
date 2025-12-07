@@ -1,11 +1,10 @@
-package iuh.fit.se.enternalrunebackend.service.serviceClass;
+package iuh.fit.se.enternalrunebackend.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Message;
 import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Role;
 import iuh.fit.se.enternalrunebackend.repository.repositoriesForAssistanceChat.MessageRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
