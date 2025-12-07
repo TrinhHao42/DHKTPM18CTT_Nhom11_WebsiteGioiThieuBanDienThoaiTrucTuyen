@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot-EnternalRuneBackendApplication<enternal-rune-backend>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "iuh.fit.se.enternalrunebackend.EnternalRuneBackendApplication",
+      "projectName": "enternal-rune-backend",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}

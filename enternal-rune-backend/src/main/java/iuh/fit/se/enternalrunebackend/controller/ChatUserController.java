@@ -20,11 +20,8 @@ public class ChatUserController {
         String userId = userInfo.get("userId");
         String displayName = userInfo.get("displayName");
         String email = userInfo.get("email");
-        
-        // Tìm user đã tồn tại
         return chatUserMongoRepository.findById(userId)
                 .map(existingUser -> {
-                    // Cập nhật thông tin nếu có thay đổi
                     boolean updated = false;
                     if (displayName != null && !displayName.equals(existingUser.getDisplayName())) {
                         existingUser.setDisplayName(displayName);
@@ -40,7 +37,6 @@ public class ChatUserController {
                     return existingUser;
                 })
                 .orElseGet(() -> {
-                    // Tạo user mới
                     User newUser = new User();
                     newUser.setId(userId);
                     newUser.setDisplayName(displayName);
