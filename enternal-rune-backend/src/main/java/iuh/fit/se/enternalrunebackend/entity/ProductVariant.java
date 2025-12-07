@@ -25,6 +25,10 @@ public class ProductVariant {
 
     String prodvColor;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = true)
+    Product pvProduct;
+
     @ManyToOne
     @JoinColumn(name = "pp_price")
     ProductPrice prodvPrice;

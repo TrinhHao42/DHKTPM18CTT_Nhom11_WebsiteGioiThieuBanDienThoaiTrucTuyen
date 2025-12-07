@@ -9,43 +9,51 @@ import { getUserFromLocalStorage } from '@/lib/utils'
 import UploadImage from './UploadImage'
 
 // Validation schema
-const commentSchema = yup.object().shape({
-  rating: yup
-    .number()
-    .required('Vui lòng chọn số sao đánh giá')
-    .min(1, 'Vui lòng chọn ít nhất 1 sao')
-    .max(5, 'Không thể chọn quá 5 sao'),
-  displayName: yup
-    .string()
-    .when('isLoggedIn', {
-      is: false,
-      then: (schema) => schema
-        .required('Vui lòng nhập tên hiển thị')
-        .min(2, 'Tên phải có ít nhất 2 ký tự')
-        .max(50, 'Tên không được vượt quá 50 ký tự')
-        .trim(),
-      otherwise: (schema) => schema.optional()
-    }),
-  comment: yup
-    .string()
-    .required('Vui lòng nhập nội dung đánh giá')
-    .min(10, 'Nội dung đánh giá phải có ít nhất 10 ký tự')
-    .max(1000, 'Nội dung đánh giá không được vượt quá 1000 ký tự')
-    .trim()
-})
+// Schema động: nếu chưa mua thì không validate rating
+const getCommentSchema = (hasPurchased: boolean) =>
+  yup.object().shape({
+    ...(hasPurchased ? {
+      rating: yup
+        .number()
+        .required('Vui lòng chọn số sao đánh giá')
+        .min(1, 'Vui lòng chọn ít nhất 1 sao')
+        .max(5, 'Không thể chọn quá 5 sao'),
+    } : {}),
+    displayName: yup
+      .string()
+      .when('isLoggedIn', {
+        is: false,
+        then: (schema) => schema
+          .required('Vui lòng nhập tên hiển thị')
+          .min(2, 'Tên phải có ít nhất 2 ký tự')
+          .max(50, 'Tên không được vượt quá 50 ký tự')
+          .trim(),
+        otherwise: (schema) => schema.optional()
+      }),
+    comment: yup
+      .string()
+      .required('Vui lòng nhập nội dung đánh giá')
+      .min(10, 'Nội dung đánh giá phải có ít nhất 10 ký tự')
+      .max(1000, 'Nội dung đánh giá không được vượt quá 1000 ký tự')
+      .trim()
+  })
 
 interface CommentFormProps {
   productId: string | number
   commentsData: CommentsPageResponse | null
   setCommentsData: (data: CommentsPageResponse | null | ((prev: CommentsPageResponse | null) => CommentsPageResponse | null)) => void
   onSuccess?: () => void
+  hasPurchased?: boolean // Thêm prop xác định đã mua hàng chưa,
+  isPaid?: boolean // Thêm prop xác định đã thanh toán chưa
 }
 
 export const CommentForm: React.FC<CommentFormProps> = ({
   productId,
   commentsData,
   setCommentsData,
-  onSuccess
+  onSuccess,
+  hasPurchased,
+  isPaid
 }) => {
   const isLoggedIn = getUserFromLocalStorage() !== null
   const user = getUserFromLocalStorage()
@@ -58,7 +66,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
     watch,
     formState: { errors, isSubmitting }
   } = useForm({
-    resolver: yupResolver(commentSchema),
+    resolver: yupResolver(getCommentSchema(Boolean(hasPurchased))),
     defaultValues: {
       rating: 5, // Default 5 sao thay vì 0
       displayName: isLoggedIn ? user?.userName || '' : 'Người dùng ẩn danh',
@@ -66,7 +74,8 @@ export const CommentForm: React.FC<CommentFormProps> = ({
     }
   })
 
-  const rating = watch('rating')
+  const ratingRaw = watch('rating')
+  const rating: number = hasPurchased ? (typeof ratingRaw === 'number' ? ratingRaw : 0) : 0
   const displayName = watch('displayName')
   const comment = watch('comment')
   const [hoverRating, setHoverRating] = React.useState(0)
@@ -100,15 +109,15 @@ export const CommentForm: React.FC<CommentFormProps> = ({
   }, [isLoggedIn, user?.userName, setValue])
 
   // Custom submit handler that integrates with existing logic
-  const onSubmit = async (data: { rating: number; displayName?: string; comment: string }) => {
+  const onSubmit = async (data: { rating?: unknown; displayName?: string; comment: string }) => {
     const fakeEvent = {
       preventDefault: () => { },
       target: document.createElement('form')
     } as unknown as React.FormEvent
 
-    // Truyền data trực tiếp vào handleSubmit thay vì update state
+    // Nếu chưa mua thì không truyền rating (rating = null hoặc undefined)
     await submitComment(fakeEvent, {
-      rating: data.rating,
+      rating: hasPurchased ? (typeof data.rating === 'number' ? data.rating : 5) : null,
       comment: data.comment.trim(),
       displayName: data.displayName?.trim() || 'Người dùng ẩn danh'
     })
@@ -120,38 +129,51 @@ export const CommentForm: React.FC<CommentFormProps> = ({
         <div className="text-center mb-6">
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Chia sẻ đánh giá của bạn</h3>
           <p className="text-gray-600">Giúp khách hàng khác bằng trải nghiệm thực tế của bạn</p>
+          {isPaid === false && (
+            <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+              <div className="flex items-center justify-center gap-2 text-orange-700">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">Bạn chưa mua sản phẩm này</span>
+              </div>
+              <p className="text-sm text-orange-600 mt-2">Bạn có thể chia sẻ bình luận nhưng không thể đánh giá sao. Chỉ khách hàng đã mua hàng mới có thể đánh giá sao để đảm bảo độ chính xác.</p>
+            </div>
+          )}
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Rating Input */}
-          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <label className="block text-lg font-semibold text-gray-900 mb-3">
-              Đánh giá của bạn *
-            </label>
-            <div className="flex flex-col items-center gap-3">
-              <StarRating
-                rating={hoverRating || rating}
-                interactive
-                onRatingChange={(newRating) => setValue('rating', newRating)}
-                onHover={setHoverRating}
-                onLeave={() => setHoverRating(0)}
-              />
-              <div className="text-sm text-gray-600">
-                {rating > 0 && (
-                  <span className="font-medium">
-                    {rating === 1 && 'Rất tệ'}
-                    {rating === 2 && 'Tệ'}
-                    {rating === 3 && 'Bình thường'}
-                    {rating === 4 && 'Tốt'}
-                    {rating === 5 && 'Xuất sắc'}
-                  </span>
+          {/* Rating Input: chỉ hiển thị nếu đã mua hàng */}
+          {isPaid && (
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <label className="block text-lg font-semibold text-gray-900 mb-3">
+                Đánh giá của bạn *
+              </label>
+              <div className="flex flex-col items-center gap-3">
+                <StarRating
+                  rating={hoverRating || rating}
+                  interactive
+                  onRatingChange={(newRating) => setValue('rating', newRating)}
+                  onHover={setHoverRating}
+                  onLeave={() => setHoverRating(0)}
+                />
+                <div className="text-sm text-gray-600">
+                  {rating > 0 && (
+                    <span className="font-medium">
+                      {rating === 1 && 'Rất tệ'}
+                      {rating === 2 && 'Tệ'}
+                      {rating === 3 && 'Bình thường'}
+                      {rating === 4 && 'Tốt'}
+                      {rating === 5 && 'Xuất sắc'}
+                    </span>
+                  )}
+                </div>
+                {errors.rating && (
+                  <p className="text-sm text-red-500">{errors.rating.message}</p>
                 )}
               </div>
-              {errors.rating && (
-                <p className="text-sm text-red-500">{errors.rating.message}</p>
-              )}
             </div>
-          </div>
+          )}
 
           {/* Name Input */}
           <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
@@ -214,7 +236,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
           <div className="pt-4">
             <button
               type="submit"
-              disabled={submitting || isSubmitting || !rating || !comment?.trim() || (!isLoggedIn && !displayName?.trim())}
+              disabled={submitting || isSubmitting || (hasPurchased && !rating) || !comment?.trim() || (!isLoggedIn && !displayName?.trim())}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-4 px-8 rounded-xl transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               {submitting || isSubmitting ? (
@@ -235,11 +257,11 @@ export const CommentForm: React.FC<CommentFormProps> = ({
               )}
             </button>
 
-            {(!rating || !comment?.trim() || (!isLoggedIn && !displayName?.trim())) && (
+            {((hasPurchased && !rating) || !comment?.trim() || (!isLoggedIn && !displayName?.trim())) && (
               <p className="text-center text-sm text-gray-500 mt-3">
                 Vui lòng điền đầy đủ thông tin bắt buộc: <span className="font-medium">
                   {[
-                    !rating && 'Đánh giá sao',
+                    (hasPurchased && !rating) && 'Đánh giá sao',
                     !comment?.trim() && 'Nội dung',
                     (!isLoggedIn && !displayName?.trim()) && 'Tên hiển thị'
                   ].filter(Boolean).join(', ')}
@@ -247,7 +269,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
               </p>
             )}
 
-            {(rating && comment?.trim() && (isLoggedIn || displayName?.trim())) && (
+            {((!hasPurchased || rating) && comment?.trim() && (isLoggedIn || displayName?.trim())) && (
               <p className="text-center text-sm text-green-600 mt-3 font-medium">
                 ✓ Sẵn sàng gửi đánh giá {images.length > 0 ? `(có ${images.length} ảnh)` : '(không có ảnh)'}
               </p>

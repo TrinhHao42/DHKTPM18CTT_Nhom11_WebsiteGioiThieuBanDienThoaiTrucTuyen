@@ -17,7 +17,7 @@ public interface CommentRepository extends JpaRepository<Comment, Integer> {
 
     Page<Comment> findByCmProductOrderByCmDateDesc(Product product, Pageable pageable);
 
-    @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.cmUser LEFT JOIN FETCH c.comment WHERE c.cmProduct.prodId = :productId AND c.comment IS NULL ORDER BY c.cmDate DESC")
+    @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.cmUser LEFT JOIN FETCH c.comment LEFT JOIN FETCH c.images WHERE c.cmProduct.prodId = :productId AND c.comment IS NULL ORDER BY c.cmDate DESC")
     Page<Comment> findByProductIdOrderByCmDateDesc(@Param("productId") Integer productId, Pageable pageable);
 
     int countByIpAddressAndCmDateAfter(String ipAddress, LocalDateTime after);

@@ -10,6 +10,11 @@ interface RatingBreakdownProps {
 
 export const RatingBreakdown: React.FC<RatingBreakdownProps> = ({ ratingCounts = {}, total = 0, averageRating = 0 }) => {
   // Always show rating breakdown, even if no ratings yet
+  // Compute total number of ratings from ratingCounts (defensive in case parent passed comment count instead)
+  const ratingsTotal = Object.values(ratingCounts || {}).reduce((sum, val) => {
+    const n = Number(val || 0)
+    return sum + (Number.isFinite(n) ? n : 0)
+  }, 0) || total || 0
 
   return (
     <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-8 border border-blue-100">
@@ -22,9 +27,9 @@ export const RatingBreakdown: React.FC<RatingBreakdownProps> = ({ ratingCounts =
             </div>
             <StarRating rating={Math.round(averageRating)} />
             <div className="text-sm text-gray-600 mt-3 font-medium">
-              {total} {total === 1 ? 'đánh giá' : 'đánh giá'}
+              {ratingsTotal} {ratingsTotal === 1 ? 'đánh giá' : 'đánh giá'}
             </div>
-            {total > 0 && (
+            {ratingsTotal > 0 && (
               <div className="text-xs text-gray-500 mt-1">
                 Từ khách hàng đã mua
               </div>
@@ -38,7 +43,7 @@ export const RatingBreakdown: React.FC<RatingBreakdownProps> = ({ ratingCounts =
           <div className="space-y-3">
             {[5, 4, 3, 2, 1].map(stars => {
               const count = (ratingCounts && ratingCounts[stars.toString()]) ? ratingCounts[stars.toString()] : 0
-              const percentage = total > 0 && Number.isFinite(count) ? (count / total) * 100 : 0
+              const percentage = ratingsTotal > 0 && Number.isFinite(count) ? (count / ratingsTotal) * 100 : 0
               
               return (
                 <div key={stars} className="flex items-center gap-3 group">

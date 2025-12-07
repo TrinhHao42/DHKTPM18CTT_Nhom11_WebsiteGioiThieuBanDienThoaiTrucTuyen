@@ -22,4 +22,8 @@ export type Product = {
   productPrices?: ProductPrice[]
   comments: Comment[]
   prodBrand?: Brand
+  // New rating fields from backend
+  totalComments?: number
+  averageRating?: number
+  ratingDistribution?: { [key: string]: number }
 }

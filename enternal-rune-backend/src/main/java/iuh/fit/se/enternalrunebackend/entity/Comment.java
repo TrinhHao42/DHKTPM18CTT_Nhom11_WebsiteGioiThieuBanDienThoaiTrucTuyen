@@ -28,8 +28,9 @@ public class Comment {
     @Column(name = "comment_content", length = 1000)
     String cmContent;
 
-    @Column(name = "comment_rating", nullable = false)
-    int cmRating;
+    @Column(name = "comment_rating", nullable = true)
+    @Basic(optional = true)
+    Integer cmRating;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "comment_status", nullable = false)

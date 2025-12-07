@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { CommentsPageResponse } from '@/types/Comment'
 import Image from 'next/image'
 import { useComments } from '@/hooks/useComments'
@@ -8,9 +8,12 @@ import { CommentForm } from '@/components/comments/CommentForm'
 import { CommentList } from '@/components/comments/CommentList'
 import { RatingBreakdown } from '@/components/comments/RatingBreakdown'
 import { CommentExamples } from '@/components/comments/CommentExamples'
+import { useAuth } from '@/context/AuthContext'
+import { getUserOrders } from '@/services/checkoutService'
 
 interface ProductRatingProps {
   productId: string | number
+  productInfo?: { prodId: number | string; prodName: string }
   initialData?: CommentsPageResponse
   // optional external comments management from a parent component
   externalCommentsData?: CommentsPageResponse | null
@@ -19,13 +22,23 @@ interface ProductRatingProps {
   externalLoadingMore?: boolean
   externalLoadMoreComments?: () => void | Promise<void>
   externalRefreshComments?: () => void | Promise<void>
+
 }
 
 export default function ProductRating({ productId, initialData, externalCommentsData, externalSetCommentsData, externalLoading, externalLoadingMore, externalLoadMoreComments, externalRefreshComments }: ProductRatingProps) {
   // Refs
   const formRef = useRef<HTMLDivElement>(null)
-  
-  // Custom hooks or external state
+
+  // Auth context
+  const { user } = useAuth()
+
+  // Purchase status for current user (if needed for form display)
+  const [hasPurchased, setHasPurchased] = useState<boolean>(false)
+
+  // ✅ Only use internal hook if no external data is provided
+  const useInternalHook = !externalCommentsData && !externalSetCommentsData
+
+  // Custom hooks or external state - chỉ call khi cần
   const {
     commentsData: internalCommentsData,
     setCommentsData: internalSetCommentsData,
@@ -33,7 +46,10 @@ export default function ProductRating({ productId, initialData, externalComments
     loadingMore: internalLoadingMore,
     loadMoreComments: internalLoadMoreComments,
     refreshComments: internalRefreshComments
-  } = useComments({ productId, initialData })
+  } = useComments({
+    productId: useInternalHook ? productId : '', // Không call hook nếu có external data
+    initialData: useInternalHook ? initialData : undefined
+  })
 
   const commentsData = externalCommentsData ?? internalCommentsData
   const setCommentsData = externalSetCommentsData ?? internalSetCommentsData
@@ -45,6 +61,49 @@ export default function ProductRating({ productId, initialData, externalComments
   // UI states
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
   const [showExamples, setShowExamples] = useState(false)
+
+  const [isPaid, setIsPaid] = useState(false)
+  const lastOrdersUserIdRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    const loadUserOrders = async () => {
+      if (!user?.userId) {
+        // Clear last user when logged out
+        lastOrdersUserIdRef.current = null
+        setIsPaid(false)
+        return
+      }
+      // If we've already fetched for this user, don't fetch again
+      if (lastOrdersUserIdRef.current === user.userId) return
+      lastOrdersUserIdRef.current = user.userId
+      try {
+        const res = await getUserOrders(user.userId, 0, 100)
+        // Kiểm tra bất kỳ order nào có statusCode = "PAID"
+        const hasPaidOrder = res?.content?.some(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (order: any) => order?.currentPaymentStatus?.statusCode === "PAID"
+        )
+        setIsPaid(hasPaidOrder)
+      } catch (error) {
+        console.error("Error loading orders:", error)
+      }
+    }
+    loadUserOrders()
+  }, [user?.userId])
+
+  // Set hasPurchased based on user's purchase history from comments data
+  useEffect(() => {
+    // For form display: assume user has purchased if they have any comments with hasPurchased=true
+    if (commentsData?.comments && user?.userId) {
+      const userComments = commentsData.comments.filter(comment =>
+        comment.username === user.userName || comment.displayName === user.userName
+      )
+      const hasUserPurchased = userComments.some(comment => comment.hasPurchased)
+      setHasPurchased(hasUserPurchased)
+    } else {
+      setHasPurchased(false)
+    }
+  }, [commentsData, user])
 
   // Helper functions
   const handleImageClick = (url: string) => {
@@ -96,6 +155,8 @@ export default function ProductRating({ productId, initialData, externalComments
             commentsData={commentsData}
             setCommentsData={setCommentsData}
             onSuccess={refreshComments}
+            hasPurchased={hasPurchased}
+            isPaid={isPaid}
           />
         </div>
 
@@ -107,6 +168,7 @@ export default function ProductRating({ productId, initialData, externalComments
             loadingMore={loadingMore}
             onLoadMore={loadMoreComments}
             onImageClick={handleImageClick}
+            onRefresh={refreshComments}
           />
         </div>
       </div>
@@ -115,8 +177,8 @@ export default function ProductRating({ productId, initialData, externalComments
       {selectedImageUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80 backdrop-blur-sm" onClick={closeModal}>
           <div className="relative max-w-4xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <button 
-              onClick={closeModal} 
+            <button
+              onClick={closeModal}
               className="absolute -top-12 right-0 z-10 bg-white text-gray-700 hover:bg-gray-100 rounded-full p-3 transition-colors shadow-lg"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,11 +186,11 @@ export default function ProductRating({ productId, initialData, externalComments
               </svg>
             </button>
             <div className="relative w-full h-[80vh] bg-white rounded-xl overflow-hidden shadow-2xl">
-              <Image 
-                src={selectedImageUrl} 
-                alt="Full size" 
-                fill 
-                className="object-contain" 
+              <Image
+                src={selectedImageUrl}
+                alt="Full size"
+                fill
+                className="object-contain"
                 quality={95}
               />
             </div>
