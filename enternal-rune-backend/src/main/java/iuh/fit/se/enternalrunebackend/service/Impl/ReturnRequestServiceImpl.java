@@ -9,6 +9,7 @@ import iuh.fit.se.enternalrunebackend.repository.OrderRepository;
 import iuh.fit.se.enternalrunebackend.repository.ReturnRequestRepository;
 import iuh.fit.se.enternalrunebackend.repository.UserRepository;
 import iuh.fit.se.enternalrunebackend.repository.NotificationRespository;
+import iuh.fit.se.enternalrunebackend.repository.ShippingStatusRepository;
 import iuh.fit.se.enternalrunebackend.service.ReturnRequestService;
 import iuh.fit.se.enternalrunebackend.service.NotificationService;
 import iuh.fit.se.enternalrunebackend.dto.notification.OrderNotification;
@@ -32,6 +33,7 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
     private final UserRepository userRepository;
     private final NotificationRespository notificationRepository;
     private final NotificationService notificationService;
+    private final ShippingStatusRepository shippingStatusRepository;
 
     @Override
     @Transactional
@@ -134,11 +136,13 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
         
         // If approved, update order status
         if (newStatus == RequestStatus.APPROVED) {
-            // Add logic to handle return - update order status, inventory, etc.
-            returnRequest.getOrder().addShippingStatus(
-                returnRequest.getOrder().getCurrentShippingStatus(), 
-                "Đơn hàng được trả lại"
-            );
+            // Get RETURNED shipping status
+            ShippingStatus returnedStatus = shippingStatusRepository.findByStatusCode("RETURNED")
+                    .orElseThrow(() -> new RuntimeException("Shipping status RETURNED not found"));
+            
+            // Update order shipping status to RETURNED
+            returnRequest.getOrder().addShippingStatus(returnedStatus, "Đơn hàng đã được trả lại");
+            orderRepository.save(returnRequest.getOrder());
         }
         
         return mapToResponse(returnRequest);

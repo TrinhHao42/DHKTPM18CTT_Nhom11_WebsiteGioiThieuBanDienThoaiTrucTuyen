@@ -25,4 +25,7 @@ public interface CancelRequestRepository extends JpaRepository<CancelRequest, Lo
     Optional<CancelRequest> findByIdWithDetails(@Param("id") Long id);
     
     long countByStatus(RequestStatus status);
+    
+    // Kiểm tra đơn hàng có pending cancel request không
+    boolean existsByOrder_OrderIdAndStatus(int orderId, RequestStatus status);
 }

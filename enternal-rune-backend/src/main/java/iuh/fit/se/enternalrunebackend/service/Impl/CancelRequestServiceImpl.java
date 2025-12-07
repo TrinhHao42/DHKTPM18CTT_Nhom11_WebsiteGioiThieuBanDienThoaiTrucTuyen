@@ -9,6 +9,7 @@ import iuh.fit.se.enternalrunebackend.repository.CancelRequestRepository;
 import iuh.fit.se.enternalrunebackend.repository.OrderRepository;
 import iuh.fit.se.enternalrunebackend.repository.UserRepository;
 import iuh.fit.se.enternalrunebackend.repository.NotificationRespository;
+import iuh.fit.se.enternalrunebackend.repository.ShippingStatusRepository;
 import iuh.fit.se.enternalrunebackend.service.CancelRequestService;
 import iuh.fit.se.enternalrunebackend.service.NotificationService;
 import iuh.fit.se.enternalrunebackend.dto.notification.OrderNotification;
@@ -32,6 +33,7 @@ public class CancelRequestServiceImpl implements CancelRequestService {
     private final UserRepository userRepository;
     private final NotificationRespository notificationRepository;
     private final NotificationService notificationService;
+    private final ShippingStatusRepository shippingStatusRepository;
 
     @Override
     @Transactional
@@ -169,7 +171,12 @@ public class CancelRequestServiceImpl implements CancelRequestService {
         // If approved, cancel the order
         if (newStatus == RequestStatus.APPROVED) {
             Order order = cancelRequest.getOrder();
-            order.addShippingStatus(order.getCurrentShippingStatus(), "Đơn hàng đã bị hủy theo yêu cầu");
+            
+            // Get CANCELLED shipping status
+            ShippingStatus cancelledStatus = shippingStatusRepository.findByStatusCode("CANCELLED")
+                    .orElseThrow(() -> new RuntimeException("Shipping status CANCELLED not found"));
+            
+            order.addShippingStatus(cancelledStatus, "Đơn hàng đã bị hủy theo yêu cầu");
             order.addPaymentStatus(order.getCurrentPaymentStatus(), "Đơn hàng đã bị hủy - chờ hoàn tiền");
             orderRepository.save(order);
         }

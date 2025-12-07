@@ -6,6 +6,7 @@ import iuh.fit.se.enternalrunebackend.dto.request.OrderItemRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.*;
 import iuh.fit.se.enternalrunebackend.dto.response.OrderStatusInfo;
 import iuh.fit.se.enternalrunebackend.entity.*;
+import iuh.fit.se.enternalrunebackend.entity.enums.RequestStatus;
 import iuh.fit.se.enternalrunebackend.repository.*;
 import iuh.fit.se.enternalrunebackend.service.NotificationService;
 import iuh.fit.se.enternalrunebackend.service.OrderService;
@@ -18,7 +19,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,6 +53,15 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private ShippingStatusRepository shippingStatusRepository;
+    
+    @Autowired
+    private CancelRequestRepository cancelRequestRepository;
+    
+    @Autowired
+    private ReturnRequestRepository returnRequestRepository;
+    
+    @Autowired
+    private NotificationRespository notificationRepository;
 
     @Override
     public DashboardSummaryResponse getSummaryForMonth(int year, int month) {
@@ -524,5 +536,68 @@ public class OrderServiceImpl implements OrderService {
 
         // Lưu order
         orderRepository.save(order);
+    }
+    
+    @Override
+    @Transactional
+    public void confirmReceivedOrder(int orderId, Long userId) {
+        // Tìm order
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+        
+        // Kiểm tra order thuộc về user
+        if (!order.getOrderUser().getUserId().equals(userId)) {
+            throw new RuntimeException("Đơn hàng không thuộc về người dùng này");
+        }
+        
+        // Kiểm tra trạng thái hiện tại phải là DELIVERED
+        String currentStatus = order.getCurrentShippingStatus().getStatusCode();
+        if (!"DELIVERED".equals(currentStatus)) {
+            throw new RuntimeException("Chỉ có thể xác nhận nhận hàng khi đơn hàng đã được giao");
+        }
+        
+        // Tìm shipping status RECEIVED
+        ShippingStatus receivedStatus = shippingStatusRepository.findByStatusCode("RECEIVED")
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy trạng thái RECEIVED"));
+        
+        // Cập nhật trạng thái
+        order.addShippingStatus(receivedStatus, "Khách hàng xác nhận đã nhận hàng");
+        orderRepository.save(order);
+        
+        // Tạo notification cho admin
+        Notification notification = new Notification();
+        notification.setNotiUser(order.getOrderUser());
+        notification.setNotiUserName(order.getOrderUser().getName());
+        notification.setNotiType("ORDER_RECEIVED");
+        notification.setNotiMessage("Khách hàng " + order.getOrderUser().getName() + " đã xác nhận nhận hàng cho đơn #" + orderId);
+        notification.setNotiTime(LocalDateTime.now());
+        notification.setTargetRole("ADMIN");
+        notificationRepository.save(notification);
+        
+        // Send real-time notification to admin
+        OrderNotification orderNotification = OrderNotification.builder()
+                .type("ORDER_RECEIVED")
+                .userId(userId)
+                .userName(order.getOrderUser().getName())
+                .message("đã xác nhận nhận hàng cho đơn #" + orderId)
+                .timestamp(LocalDateTime.now())
+                .build();
+        notificationService.sendOrderNotificationToAdmin(orderNotification);
+    }
+    
+    @Override
+    public Map<String, Boolean> checkPendingRequests(int orderId) {
+        Map<String, Boolean> result = new HashMap<>();
+        
+        // Kiểm tra có pending cancel request không
+        boolean hasPendingCancel = cancelRequestRepository.existsByOrder_OrderIdAndStatus(orderId, RequestStatus.PENDING);
+        
+        // Kiểm tra có pending return request không
+        boolean hasPendingReturn = returnRequestRepository.existsByOrder_OrderIdAndStatus(orderId, RequestStatus.PENDING);
+        
+        result.put("hasPendingCancelRequest", hasPendingCancel);
+        result.put("hasPendingReturnRequest", hasPendingReturn);
+        
+        return result;
     }
 }

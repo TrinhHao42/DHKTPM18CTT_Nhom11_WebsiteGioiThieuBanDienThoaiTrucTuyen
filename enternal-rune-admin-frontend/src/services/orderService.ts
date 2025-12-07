@@ -140,6 +140,7 @@ export const getAvailableShippingStatuses = async (): Promise<Array<{code: strin
       { code: 'PROCESSING', name: 'Đang xử lý' },
       { code: 'SHIPPED', name: 'Đang giao' },
       { code: 'DELIVERED', name: 'Đã giao' },
+      { code: 'RECIVED', name: 'Đã nhận hàng' },
       { code: 'CANCELLED', name: 'Đã hủy' }
     ];
   }
