@@ -137,7 +137,6 @@ export default function CancelRequestTable() {
           <Table>
             <TableHeader className="bg-gray-50 dark:bg-gray-800/50">
               <TableRow className="border-b border-gray-200 dark:border-gray-800">
-                <TableCell isHeader className="py-3 text-xs font-medium text-gray-500 dark:text-gray-400">ID</TableCell>
                 <TableCell isHeader className="py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Đơn hàng</TableCell>
                 <TableCell isHeader className="py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Khách hàng</TableCell>
                 <TableCell isHeader className="py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Lý do</TableCell>
@@ -150,8 +149,7 @@ export default function CancelRequestTable() {
             <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filteredRequests.map((request) => (
                 <TableRow key={request.cancelRequestId} className="transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                  <TableCell className="py-3 text-sm font-medium">#{request.cancelRequestId}</TableCell>
-                  <TableCell className="py-3 text-sm font-medium text-brand-600 dark:text-brand-400">#ORD{request.orderId}</TableCell>
+                  <TableCell className="py-3 text-center text-sm font-medium text-brand-600 dark:text-brand-400">#ORD{request.orderId}</TableCell>
                   <TableCell className="py-3">
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">{request.userName}</p>
@@ -247,12 +245,12 @@ function DetailModal({
   const [adminNote, setAdminNote] = useState('');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-2xl dark:bg-gray-900">
         <div className="sticky top-0 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-              Chi tiết yêu cầu hủy đơn #{request.cancelRequestId}
+              Chi tiết yêu cầu hủy đơn
             </h3>
             <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

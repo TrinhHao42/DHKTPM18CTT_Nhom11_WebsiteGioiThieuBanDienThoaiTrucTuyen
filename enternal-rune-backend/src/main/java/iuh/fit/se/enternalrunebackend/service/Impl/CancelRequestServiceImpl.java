@@ -62,8 +62,11 @@ public class CancelRequestServiceImpl implements CancelRequestService {
             // Create notification for admin
             Notification notification = new Notification();
             notification.setNotiUser(user);
+            notification.setNotiUserName(user.getName());
+            notification.setNotiType("ORDER_CANCELLED");
             notification.setNotiMessage("Khách hàng " + user.getName() + " đã hủy đơn hàng #" + order.getOrderId());
             notification.setNotiTime(LocalDateTime.now());
+            notification.setTargetRole("ADMIN");
             notificationRepository.save(notification);
             
             // Send real-time notification
@@ -92,8 +95,11 @@ public class CancelRequestServiceImpl implements CancelRequestService {
         // Create notification for admin
         Notification notification = new Notification();
         notification.setNotiUser(user);
+        notification.setNotiUserName(user.getName());
+        notification.setNotiType("CANCEL_REQUEST");
         notification.setNotiMessage("Khách hàng " + user.getName() + " đã gửi yêu cầu hủy đơn hàng #" + order.getOrderId());
         notification.setNotiTime(LocalDateTime.now());
+        notification.setTargetRole("ADMIN");
         notificationRepository.save(notification);
         
         // Send real-time notification to admin via WebSocket
@@ -151,11 +157,13 @@ public class CancelRequestServiceImpl implements CancelRequestService {
         // Create notification for customer
         Notification notification = new Notification();
         notification.setNotiUser(cancelRequest.getUser());
+        notification.setNotiType("CANCEL_REQUEST");
         String message = newStatus == RequestStatus.APPROVED 
                 ? "Yêu cầu hủy đơn hàng của bạn cho đơn #" + cancelRequest.getOrder().getOrderId() + " đã được chấp nhận"
                 : "Yêu cầu hủy đơn hàng của bạn cho đơn #" + cancelRequest.getOrder().getOrderId() + " đã bị từ chối";
         notification.setNotiMessage(message);
         notification.setNotiTime(LocalDateTime.now());
+        notification.setTargetRole("USER");
         notificationRepository.save(notification);
         
         // If approved, cancel the order

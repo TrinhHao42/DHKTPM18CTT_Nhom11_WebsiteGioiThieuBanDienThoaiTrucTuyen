@@ -18,7 +18,8 @@ import {
     Clock,
     RotateCcw,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Eye
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import CancelOrderModal from './CancelOrderModal'
@@ -64,6 +65,18 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
             "w-full sm:w-auto px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 active:scale-95"
 
         const buttons = []
+
+        // Nút xem chi tiết (luôn hiển thị)
+        buttons.push(
+            <button
+                key="detail"
+                onClick={() => router.push(`/OrderManagementScreen/${order.orderId}`)}
+                className={`${buttonClass} bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center gap-2`}
+            >
+                <Eye className="w-4 h-4" />
+                Chi tiết
+            </button>
+        )
 
         // Nút thanh toán khi chưa thanh toán (độc lập)
         if (paymentStatus === PaymentStatus.PENDING) {
@@ -220,13 +233,19 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
             let imageUrl = ''
             if (images.length > 0) {
                 try {
+                    console.log('📤 Uploading image...', images[0].name)
                     imageUrl = await uploadImage(images[0])
+                    console.log('✅ Upload success, imageUrl:', imageUrl)
                 } catch (uploadError) {
                     // Nếu upload thất bại, vẫn tiếp tục gửi request nhưng không có ảnh
-                    console.warn('Upload ảnh thất bại, tiếp tục gửi request không có ảnh')
+                    console.error('❌ Upload ảnh thất bại:', uploadError)
+                    toast.error('Upload ảnh thất bại, vui lòng thử lại')
+                    setIsProcessing(false)
+                    return
                 }
             }
             
+            console.log('📦 Creating return request with imageUrl:', imageUrl)
             await createReturnRequest(order.orderId, user.userId, reason, imageUrl)
             toast.success('Đã gửi yêu cầu trả hàng!')
             setTimeout(() => window.location.reload(), 1500)

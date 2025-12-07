@@ -61,8 +61,11 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
         // Create notification for admin
         Notification notification = new Notification();
         notification.setNotiUser(user);
+        notification.setNotiUserName(user.getName());
+        notification.setNotiType("RETURN_REQUEST");
         notification.setNotiMessage("Khách hàng " + user.getName() + " đã gửi yêu cầu trả hàng cho đơn hàng #" + order.getOrderId());
         notification.setNotiTime(LocalDateTime.now());
+        notification.setTargetRole("ADMIN"); // This notification is for admin
         notificationRepository.save(notification);
         
         // Send real-time notification to admin via WebSocket
@@ -120,11 +123,13 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
         // Create notification for customer
         Notification notification = new Notification();
         notification.setNotiUser(returnRequest.getUser());
+        notification.setNotiType("RETURN_REQUEST");
         String message = newStatus == RequestStatus.APPROVED 
                 ? "Yêu cầu trả hàng của bạn cho đơn hàng #" + returnRequest.getOrder().getOrderId() + " đã được chấp nhận"
                 : "Yêu cầu trả hàng của bạn cho đơn hàng #" + returnRequest.getOrder().getOrderId() + " đã bị từ chối";
         notification.setNotiMessage(message);
         notification.setNotiTime(LocalDateTime.now());
+        notification.setTargetRole("USER"); // This notification is for customer
         notificationRepository.save(notification);
         
         // If approved, update order status

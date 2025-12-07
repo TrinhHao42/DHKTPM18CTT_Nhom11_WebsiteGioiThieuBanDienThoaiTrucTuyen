@@ -3,16 +3,19 @@ package iuh.fit.se.enternalrunebackend.service.Impl;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import iuh.fit.se.enternalrunebackend.service.ImageService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class ImageServiceImpl implements ImageService {
     private final Cloudinary cloudinary;
+
+    public ImageServiceImpl(@Qualifier("cloudinary") Cloudinary cloudinary) {
+        this.cloudinary = cloudinary;
+    }
     public String upload(byte[] imageData, String fileName) throws IOException {
 
         // ===== 1. Giới hạn kích thước (5MB) =====

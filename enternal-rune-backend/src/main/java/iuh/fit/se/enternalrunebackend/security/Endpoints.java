@@ -35,7 +35,8 @@ public class Endpoints {
             "/api/products/*/comments",
             "/api/products/*/comments/text",
             "/api/products/*/comments/*/replies",
-            "/api/chat/**"
+            "/api/chat/**",
+            "/upload/**"
     };
 
     // PATCH không cần đăng nhập
@@ -62,7 +63,8 @@ public class Endpoints {
             "/products/dashboard/**",
             "/api/discounts/**",
             "/orders/admin/**",
-            "/shipping-status"
+            "/shipping-status",
+            "/api/notifications/**"
     };
     
     public static final String[] ADMIN_POST_ENDPOINTS = {
@@ -74,7 +76,8 @@ public class Endpoints {
             "/api/dashboard-order/**",
             "/products/dashboard/**",
             "/api/discounts/**",
-            "/orders/admin/*/shipping-status"
+            "/orders/admin/*/shipping-status",
+            "/api/notifications/**"
     };
     
     public static final String[] ADMIN_DELETE_ENDPOINTS = {

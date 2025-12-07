@@ -34,6 +34,22 @@ export interface OrderDetail {
     statusCode: string;
     statusName: string;
   };
+  paymentStatusHistory?: Array<{
+    statusId: number;
+    statusCode: string;
+    statusName: string;
+    description: string;
+    createdAt: string;
+    note: string;
+  }>;
+  shippingStatusHistory?: Array<{
+    statusId: number;
+    statusCode: string;
+    statusName: string;
+    description: string;
+    createdAt: string;
+    note: string;
+  }>;
   orderUser: {
     userId?: number;
     userName: string;
