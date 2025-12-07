@@ -4,7 +4,7 @@ import Badge from "@/components/ui/badge/Badge";
 import { getAllOrders, OrderListItem, updateShippingStatus, getAvailableShippingStatuses } from "@/services/orderService";
 import { useToast } from "@/hooks/useToast";
 
-type TrackingStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+type TrackingStatus = "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "RECEIVED" | "CANCELLED";
 
 export default function ShippingTracking() {
   const [orders, setOrders] = useState<OrderListItem[]>([]);
@@ -53,11 +53,12 @@ export default function ShippingTracking() {
       toast.success('Cập nhật trạng thái thành công!');
       
       // Refresh orders
-      await fetchOrders();
+      const data = await getAllOrders(0, 50, undefined, undefined, undefined);
+      setOrders(data.content);
       
-      // Update selected order
+      // Update selected order from fresh data
       if (selectedOrder && selectedOrder.orderId === orderId) {
-        const updatedOrder = orders.find(o => o.orderId === orderId);
+        const updatedOrder = data.content.find((o: OrderListItem) => o.orderId === orderId);
         if (updatedOrder) {
           setSelectedOrder(updatedOrder);
         }
@@ -81,7 +82,8 @@ export default function ShippingTracking() {
     status: string
   ): "success" | "error" | "warning" | "info" => {
     const upperStatus = status.toUpperCase();
-    if (upperStatus.includes('DELIVERED')) return "success";
+    if (upperStatus.includes('RECIVED')) return "success";
+    if (upperStatus.includes('DELIVERED')) return "info";
     if (upperStatus.includes('CANCEL')) return "error";
     if (upperStatus.includes('PENDING')) return "warning";
     if (upperStatus.includes('SHIP') || upperStatus.includes('PROCESS')) return "info";

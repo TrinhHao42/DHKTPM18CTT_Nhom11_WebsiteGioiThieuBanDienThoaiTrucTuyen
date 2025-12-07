@@ -1,15 +1,16 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Paperclip, X, User, Bot, Loader2, MessageCircle, ChevronDown } from 'lucide-react';
+import { Send, X, User, Bot, Loader2, MessageCircle, ChevronDown, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   createConversation,
   getConversationsByCustomer,
   getMessagesByConversation,
   registerOrUpdateChatUser,
+  uploadImageMessage,
   Message as BackendMessage,
-  Conversation,
 } from '@/services/assistanceChatService';
 import { getChatWebSocketService } from '@/services/chatWebSocketService';
 
@@ -19,6 +20,8 @@ interface Message {
   sender: 'user' | 'staff';
   timestamp: Date;
   senderName?: string;
+  type?: string;
+  fileUrl?: string;
 }
 
 const AssistanceChat = () => {
@@ -30,8 +33,12 @@ const AssistanceChat = () => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const wsServiceRef = useRef(getChatWebSocketService());
 
   // Convert backend message to UI message
@@ -42,6 +49,8 @@ const AssistanceChat = () => {
       sender: msg.senderRole === 'CUSTOMER' ? 'user' : 'staff',
       timestamp: new Date(msg.createdAt),
       senderName: msg.senderRole === 'CUSTOMER' ? user?.userName || 'Bạn' : 'Nhân viên hỗ trợ',
+      type: msg.type,
+      fileUrl: msg.fileUrl,
     };
   };
 
@@ -204,6 +213,71 @@ const AssistanceChat = () => {
     }
   };
 
+  // Handle image upload
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSendImage = async () => {
+    if (!selectedImage || !user?.userId) return;
+
+    setIsUploading(true);
+
+    try {
+      // Nếu chưa có conversation, tạo mới
+      let currentConvId = conversationId;
+      
+      if (!currentConvId) {
+        const newConversation = await createConversation(user.userId.toString());
+        currentConvId = newConversation.id;
+        setConversationId(currentConvId);
+
+        const wsService = wsServiceRef.current;
+        await wsService.subscribeToConversation(currentConvId, (newMessage: BackendMessage) => {
+          setMessages((prev) => {
+            const exists = prev.some(msg => msg.id === newMessage.id);
+            if (exists) return prev;
+            return [...prev, convertBackendMessage(newMessage)];
+          });
+        });
+      }
+
+      // Upload image - backend sẽ tự broadcast qua WebSocket
+      await uploadImageMessage(
+        currentConvId,
+        user.userId.toString(),
+        'CUSTOMER',
+        selectedImage,
+        inputMessage.trim() || undefined
+      );
+
+      // Clear input and image
+      setInputMessage('');
+      handleRemoveImage();
+    } catch (error) {
+      console.error('❌ Error uploading image:', error);
+      alert('Không thể gửi ảnh. Vui lòng thử lại.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   // Hiển thị thông báo nếu chưa đăng nhập
   if (!token) {
     return (
@@ -331,9 +405,29 @@ const AssistanceChat = () => {
                     : 'bg-white text-gray-800 rounded-tl-sm shadow-sm border border-gray-200'
                 }`}
               >
-                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                  {message.content}
-                </p>
+                {message.type === 'IMAGE' && message.fileUrl ? (
+                  <div className="space-y-2">
+                    <div className="relative max-w-xs">
+                      <Image
+                        src={message.fileUrl}
+                        alt="Uploaded image"
+                        width={300}
+                        height={300}
+                        className="rounded-lg cursor-pointer hover:opacity-90 transition-opacity w-full h-auto"
+                        onClick={() => window.open(message.fileUrl, '_blank')}
+                      />
+                    </div>
+                    {message.content && (
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                        {message.content}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                    {message.content}
+                  </p>
+                )}
               </div>
               <span className="text-xs text-gray-500 mt-1 px-1">
                 {message.timestamp.toLocaleTimeString('vi-VN', {
@@ -361,32 +455,65 @@ const AssistanceChat = () => {
 
         {/* Input Area */}
         <div className="bg-white border-t border-gray-200 px-6 py-4">
-        <div className="flex items-end gap-3">
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 mb-1">
-            <Paperclip className="w-5 h-5" />
+        {/* Image Preview */}
+        {imagePreview && (
+          <div className="mb-3 relative inline-block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="max-h-32 rounded-lg border-2 border-blue-500"
+            />
+            <button
+              onClick={handleRemoveImage}
+              className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        
+        <div className="flex items-center gap-3">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageSelect}
+            accept="image/*"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-shrink-0 w-12 h-12 flex items-center justify-center hover:bg-gray-100 rounded-xl transition-colors text-gray-600 border border-gray-300"
+            disabled={isUploading}
+            title="Đính kèm hình ảnh"
+          >
+            <ImageIcon className="w-5 h-5" />
           </button>
-          <div className="flex-1 relative">
+          <div className="flex-1 relative h-12">
             <textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Nhập tin nhắn của bạn..."
+              placeholder={selectedImage ? "Thêm chú thích cho ảnh (tùy chọn)..." : "Nhập tin nhắn của bạn..."}
               rows={1}
-              className="w-full px-4 py-3 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none max-h-32"
-              style={{ minHeight: '48px' }}
+              className="w-full h-12 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none leading-tight"
+              disabled={isUploading}
             />
           </div>
           <button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim()}
-            className="p-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-full transition-all active:scale-95 mb-1"
+            onClick={selectedImage ? handleSendImage : handleSendMessage}
+            disabled={(selectedImage ? false : !inputMessage.trim()) || isUploading}
+            className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl transition-all active:scale-95"
+            title="Gửi tin nhắn"
           >
-            <Send className="w-5 h-5" />
+            {isUploading ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
           </button>
         </div>
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Nhấn Enter để gửi, Shift + Enter để xuống dòng
-        </p>
+      
       </div>
       </div>
     </div>

@@ -1,10 +1,8 @@
 package iuh.fit.se.enternalrunebackend.service;
 
 import iuh.fit.se.enternalrunebackend.entity.Product;
-import iuh.fit.se.enternalrunebackend.repository.ProductRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;

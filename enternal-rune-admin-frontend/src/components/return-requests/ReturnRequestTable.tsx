@@ -137,7 +137,6 @@ export default function ReturnRequestTable() {
           <Table>
             <TableHeader className="bg-gray-50 dark:bg-gray-800/50">
               <TableRow className="border-b border-gray-200 dark:border-gray-800">
-                <TableCell isHeader className="py-3 text-xs font-medium text-gray-500 dark:text-gray-400">ID</TableCell>
                 <TableCell isHeader className="py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Đơn hàng</TableCell>
                 <TableCell isHeader className="py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Khách hàng</TableCell>
                 <TableCell isHeader className="py-3 text-xs font-medium text-gray-500 dark:text-gray-400">Lý do</TableCell>
@@ -150,8 +149,7 @@ export default function ReturnRequestTable() {
             <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
               {filteredRequests.map((request) => (
                 <TableRow key={request.returnRequestId} className="transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                  <TableCell className="py-3 text-sm font-medium">#{request.returnRequestId}</TableCell>
-                  <TableCell className="py-3 text-sm font-medium text-brand-600 dark:text-brand-400">#ORD{request.orderId}</TableCell>
+                  <TableCell className="py-3 text-center text-sm font-medium text-brand-600 dark:text-brand-400">#ORD{request.orderId}</TableCell>
                   <TableCell className="py-3">
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">{request.userName}</p>
@@ -199,11 +197,10 @@ export default function ReturnRequestTable() {
               <button
                 key={i}
                 onClick={() => setCurrentPage(i)}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  currentPage === i
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${currentPage === i
                     ? 'bg-brand-600 border-brand-600 text-white'
                     : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]'
-                }`}
+                  }`}
               >
                 {i + 1}
               </button>
@@ -247,12 +244,12 @@ function DetailModal({
   const [adminNote, setAdminNote] = useState('');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-[999999] flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-2xl dark:bg-gray-900">
-        <div className="sticky top-0 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
+        <div className="sticky top-0 z-10 border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-gray-900">
           <div className="flex items-center justify-between">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-              Chi tiết yêu cầu trả hàng #{request.returnRequestId}
+              Chi tiết yêu cầu trả hàng
             </h3>
             <button onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,7 +287,21 @@ function DetailModal({
           {request.imageUrl && (
             <div>
               <h4 className="mb-3 font-semibold text-gray-900 dark:text-white">Hình ảnh minh chứng</h4>
-              <img src={request.imageUrl} alt="Return request" className="h-64 w-full rounded-lg object-cover" />
+              <div className="rounded-lg border border-gray-200 p-2 dark:border-gray-700">
+                <a 
+                  href={request.imageUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <img 
+                    src={request.imageUrl} 
+                    alt="Return request" 
+                    className="h-64 w-full rounded-lg object-contain cursor-pointer hover:opacity-90 transition-opacity" 
+                  />
+                </a>
+                <p className="text-xs text-center text-gray-500 mt-2">Click vào ảnh để xem kích thước đầy đủ</p>
+              </div>
             </div>
           )}
 

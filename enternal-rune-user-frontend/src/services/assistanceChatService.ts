@@ -17,6 +17,7 @@ export interface Message {
   senderRole: 'CUSTOMER' | 'AGENT';
   content: string;
   type: string;
+  fileUrl?: string;
   createdAt: string;
 }
 
@@ -72,5 +73,37 @@ export const registerOrUpdateChatUser = async (
     displayName,
     email
   });
+  return response.data;
+};
+
+// API Upload Image
+export const uploadImageMessage = async (
+  conversationId: string,
+  senderId: string,
+  senderRole: 'CUSTOMER' | 'AGENT',
+  file: File,
+  caption?: string
+): Promise<Message> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('senderId', senderId);
+  formData.append('senderRole', senderRole);
+  if (caption) {
+    formData.append('caption', caption);
+  }
+
+  // Lấy token từ localStorage
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  const response = await AxiosInstance.post(
+    `/api/chat/conversations/${conversationId}/image`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...(token && { Authorization: `Bearer ${token}` }), // Thêm token nếu có
+      },
+    }
+  );
   return response.data;
 };

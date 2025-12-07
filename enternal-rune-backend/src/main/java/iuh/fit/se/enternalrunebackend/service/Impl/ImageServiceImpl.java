@@ -6,6 +6,7 @@ import com.cloudinary.utils.ObjectUtils;
 import iuh.fit.se.enternalrunebackend.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -15,16 +16,21 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class ImageServiceImpl implements ImageService {
-    
+
     private final Cloudinary cloudinary;
+
+    // public ImageServiceImpl(@Qualifier("cloudinary") Cloudinary cloudinary) {
+    //     this.cloudinary = cloudinary;
+    // }
+
     @Override
     public String upload(byte[] imageData, String fileName) throws IOException {
-        
+
         // Validate inputs
         if (imageData == null || imageData.length == 0) {
             throw new IOException("Image data is empty");
         }
-        
+
         if (fileName == null || fileName.trim().isEmpty()) {
             throw new IOException("File name is required");
         }
@@ -39,9 +45,9 @@ public class ImageServiceImpl implements ImageService {
             // ===== 2. File format validation =====
             String lowerFileName = fileName.toLowerCase();
             if (!(lowerFileName.endsWith(".jpg") ||
-                  lowerFileName.endsWith(".jpeg") ||
-                  lowerFileName.endsWith(".png") ||
-                  lowerFileName.endsWith(".webp"))) {
+                    lowerFileName.endsWith(".jpeg") ||
+                    lowerFileName.endsWith(".png") ||
+                    lowerFileName.endsWith(".webp"))) {
                 throw new IOException("Unsupported file format. Only JPG, JPEG, PNG, WEBP allowed");
             }
 
@@ -50,7 +56,7 @@ public class ImageServiceImpl implements ImageService {
 
             // ===== 4. Upload to Cloudinary =====
             log.info("Uploading image: {} (size: {} bytes)", fileName, imageData.length);
-            
+
             @SuppressWarnings("unchecked")
             Map<String, Object> uploadResult = cloudinary.uploader().upload(
                     imageData,
@@ -63,9 +69,7 @@ public class ImageServiceImpl implements ImageService {
                                     .height(1200)
                                     .crop("limit")
                                     .quality("auto")
-                                    .fetchFormat("auto")
-                    )
-            );
+                                    .fetchFormat("auto")));
 
             // ===== 5. Extract secure URL =====
             String secureUrl = (String) uploadResult.get("secure_url");
@@ -84,7 +88,7 @@ public class ImageServiceImpl implements ImageService {
             throw new IOException("Failed to upload image: " + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Alternative upload method với MultipartFile (nếu cần)
      */
@@ -92,7 +96,7 @@ public class ImageServiceImpl implements ImageService {
         if (file == null || file.isEmpty()) {
             throw new IOException("File is empty");
         }
-        
+
         return upload(file.getBytes(), file.getOriginalFilename());
     }
 

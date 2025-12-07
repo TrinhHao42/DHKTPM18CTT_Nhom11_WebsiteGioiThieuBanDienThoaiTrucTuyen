@@ -207,6 +207,46 @@ public class OrderController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+    
+    /**
+     * Xác nhận đã nhận hàng (cho user)
+     * PUT /orders/{orderId}/confirm-received?userId=1
+     */
+    @PutMapping("/{orderId}/confirm-received")
+    public ResponseEntity<?> confirmReceivedOrder(
+            @PathVariable int orderId,
+            @RequestParam Long userId
+    ) {
+        try {
+            orderService.confirmReceivedOrder(orderId, userId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Xác nhận nhận hàng thành công!");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể xác nhận nhận hàng: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    /**
+     * Kiểm tra đơn hàng có pending request không
+     * GET /orders/{orderId}/pending-requests
+     */
+    @GetMapping("/{orderId}/pending-requests")
+    public ResponseEntity<?> checkPendingRequests(@PathVariable int orderId) {
+        try {
+            Map<String, Boolean> result = orderService.checkPendingRequests(orderId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể kiểm tra pending requests: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
 }
 
 

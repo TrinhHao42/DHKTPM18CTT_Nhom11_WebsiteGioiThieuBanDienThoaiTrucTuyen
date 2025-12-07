@@ -1,10 +1,10 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Order } from '@/types/Order'
 import { PaymentStatus } from '@/types/enums/PaymentStatus'
 import { ShippingStatus } from '@/types/enums/ShippingStatus'
-import { cancelOrder, createRefundRequest, createReturnRequest, createCancelRequest, uploadImage } from '@/services/checkoutService'
+import { cancelOrder, createRefundRequest, createReturnRequest, createCancelRequest, uploadImage, confirmReceivedOrder, checkPendingRequest } from '@/services/checkoutService'
 import { useAuth } from '@/context/AuthContext'
 import {
     Package,
@@ -18,7 +18,10 @@ import {
     Clock,
     RotateCcw,
     ChevronDown,
-    ChevronUp
+    ChevronUp,
+    Eye,
+    PackageCheck,
+    Loader2
 } from 'lucide-react'
 import { useToast } from '@/hooks/useToast'
 import CancelOrderModal from './CancelOrderModal'
@@ -36,15 +39,37 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
     const [isProcessing, setIsProcessing] = useState(false)
     const { user } = useAuth()
     const toast = useToast()
-    
+
     const [showRefundModal, setShowRefundModal] = useState(false)
     const [showReturnModal, setShowReturnModal] = useState(false)
+
+    // Pending request states
+    const [hasPendingCancelRequest, setHasPendingCancelRequest] = useState(false)
+    const [hasPendingReturnRequest, setHasPendingReturnRequest] = useState(false)
+    const [loadingPendingStatus, setLoadingPendingStatus] = useState(true)
+
+    // Check pending requests on mount
+    useEffect(() => {
+        const checkPending = async () => {
+            try {
+                const result = await checkPendingRequest(order.orderId)
+                setHasPendingCancelRequest(result.hasPendingCancelRequest)
+                setHasPendingReturnRequest(result.hasPendingReturnRequest)
+            } catch (error) {
+                console.error('Error checking pending requests:', error)
+            } finally {
+                setLoadingPendingStatus(false)
+            }
+        }
+        checkPending()
+    }, [order.orderId])
 
     const getShippingStatusBadge = (status?: ShippingStatus) => {
         const statusMap: Record<ShippingStatus, { label: string; color: string }> = {
             [ShippingStatus.PROCESSING]: { label: 'Đang xử lý', color: 'bg-blue-100 text-blue-800' },
             [ShippingStatus.SHIPPED]: { label: 'Đang giao', color: 'bg-indigo-100 text-indigo-800' },
-            [ShippingStatus.DELIVERED]: { label: 'Đã giao', color: 'bg-green-100 text-green-800' },
+            [ShippingStatus.DELIVERED]: { label: 'Đã giao', color: 'bg-yellow-100 text-yellow-800' },
+            [ShippingStatus.RECEIVED]: { label: 'Đã nhận hàng', color: 'bg-green-100 text-green-800' },
             [ShippingStatus.CANCELLED]: { label: 'Đã hủy', color: 'bg-red-100 text-red-800' },
             [ShippingStatus.RETURNED]: { label: 'Đã trả hàng', color: 'bg-orange-100 text-orange-800' },
         }
@@ -59,11 +84,41 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
         )
     }
 
+    // Get pending request badge
+    const getPendingRequestBadge = () => {
+        if (hasPendingCancelRequest) {
+            return (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Đang xử lý hủy đơn
+                </span>
+            )
+        }
+        if (hasPendingReturnRequest) {
+            return (
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Đang xử lý trả hàng
+                </span>
+            )
+        }
+        return null
+    }
+
     const getActionButtons = (paymentStatus?: PaymentStatus, shippingStatus?: ShippingStatus) => {
         const buttonClass =
             "w-full sm:w-auto px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 active:scale-95"
 
-        const buttons = []
+        const buttons: React.ReactElement[] = []
+
+        // Nếu có pending request, không hiện các nút khác
+        if (hasPendingCancelRequest || hasPendingReturnRequest) {
+            return buttons.length > 0 ? (
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-end">
+                    {buttons}
+                </div>
+            ) : null
+        }
 
         // Nút thanh toán khi chưa thanh toán (độc lập)
         if (paymentStatus === PaymentStatus.PENDING) {
@@ -93,8 +148,23 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
             )
         }
 
-        // Nút trả hàng khi đã giao (độc lập)
+        // Nút nhận hàng khi đã giao (DELIVERED)
         if (shippingStatus === ShippingStatus.DELIVERED) {
+            buttons.push(
+                <button
+                    key="confirm-received"
+                    onClick={() => handleConfirmReceived()}
+                    disabled={isProcessing}
+                    className={`${buttonClass} bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
+                >
+                    <PackageCheck className="w-4 h-4" />
+                    {isProcessing ? 'Đang xử lý...' : 'Nhận hàng'}
+                </button>
+            )
+        }
+
+        // Nút trả hàng khi đã nhận hàng (RECEIVED)
+        if (shippingStatus === ShippingStatus.RECEIVED) {
             buttons.push(
                 <button
                     key="return"
@@ -114,10 +184,28 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
         ) : null
     }
 
+    const handleConfirmReceived = async () => {
+        if (!user?.userId) {
+            toast.error('Vui lòng đăng nhập để thực hiện thao tác này')
+            return
+        }
+
+        try {
+            setIsProcessing(true)
+            await confirmReceivedOrder(order.orderId, user.userId)
+            toast.success('Xác nhận nhận hàng thành công!')
+            setTimeout(() => window.location.reload(), 1500)
+        } catch (error: any) {
+            toast.error(error.message || 'Không thể xác nhận nhận hàng')
+        } finally {
+            setIsProcessing(false)
+        }
+    }
+
     const handlePayment = async () => {
         try {
             setIsProcessing(true)
-            
+
             // Transform order to CreateOrderResponse format
             const orderResponse = {
                 success: true,
@@ -187,7 +275,7 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
 
         try {
             setIsProcessing(true)
-            
+
             // Kiểm tra xem đơn hàng đã thanh toán chưa
             const isPaid = order.currentPaymentStatus.statusCode === PaymentStatus.PAID
 
@@ -200,7 +288,7 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
                 await cancelOrder(order.orderId, user.userId)
                 toast.success('Đơn hàng chưa thanh toán đã được hủy!')
             }
-            
+
             setTimeout(() => window.location.reload(), 1500)
         } catch (error: any) {
             toast.error(error.message || 'Không thể thực hiện yêu cầu')
@@ -215,18 +303,24 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
 
         try {
             setIsProcessing(true)
-            
+
             // Upload ảnh đầu tiên (nếu có nhiều ảnh, chỉ lấy ảnh đầu tiên)
             let imageUrl = ''
             if (images.length > 0) {
                 try {
+                    console.log('📤 Uploading image...', images[0].name)
                     imageUrl = await uploadImage(images[0])
+                    console.log('✅ Upload success, imageUrl:', imageUrl)
                 } catch (uploadError) {
                     // Nếu upload thất bại, vẫn tiếp tục gửi request nhưng không có ảnh
-                    console.warn('Upload ảnh thất bại, tiếp tục gửi request không có ảnh')
+                    console.error('❌ Upload ảnh thất bại:', uploadError)
+                    toast.error('Upload ảnh thất bại, vui lòng thử lại')
+                    setIsProcessing(false)
+                    return
                 }
             }
-            
+
+            console.log('📦 Creating return request with imageUrl:', imageUrl)
             await createReturnRequest(order.orderId, user.userId, reason, imageUrl)
             toast.success('Đã gửi yêu cầu trả hàng!')
             setTimeout(() => window.location.reload(), 1500)
@@ -266,11 +360,15 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-600">Mã đơn hàng</p>
-                                    <p className="font-semibold text-gray-900">#ORD{order.orderId}</p>
+                                    <p
+                                        className="font-semibold cursor-pointer text-blue-700"
+                                        onClick={() => router.push(`/OrderManagementScreen/${order.orderId}`)}
+                                    >#ORD{order.orderId}</p>
                                 </div>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                                 {getShippingStatusBadge(order.currentShippingStatus.statusCode as ShippingStatus)}
+                                {getPendingRequestBadge()}
                             </div>
                         </div>
                     </div>

@@ -9,6 +9,7 @@ import iuh.fit.se.enternalrunebackend.repository.CancelRequestRepository;
 import iuh.fit.se.enternalrunebackend.repository.OrderRepository;
 import iuh.fit.se.enternalrunebackend.repository.UserRepository;
 import iuh.fit.se.enternalrunebackend.repository.NotificationRespository;
+import iuh.fit.se.enternalrunebackend.repository.ShippingStatusRepository;
 import iuh.fit.se.enternalrunebackend.service.CancelRequestService;
 import iuh.fit.se.enternalrunebackend.service.NotificationService;
 import iuh.fit.se.enternalrunebackend.dto.notification.OrderNotification;
@@ -32,6 +33,7 @@ public class CancelRequestServiceImpl implements CancelRequestService {
     private final UserRepository userRepository;
     private final NotificationRespository notificationRepository;
     private final NotificationService notificationService;
+    private final ShippingStatusRepository shippingStatusRepository;
 
     @Override
     @Transactional
@@ -62,8 +64,11 @@ public class CancelRequestServiceImpl implements CancelRequestService {
             // Create notification for admin
             Notification notification = new Notification();
             notification.setNotiUser(user);
+            notification.setNotiUserName(user.getName());
+            notification.setNotiType("ORDER_CANCELLED");
             notification.setNotiMessage("Khách hàng " + user.getName() + " đã hủy đơn hàng #" + order.getOrderId());
             notification.setNotiTime(LocalDateTime.now());
+            notification.setTargetRole("ADMIN");
             notificationRepository.save(notification);
             
             // Send real-time notification
@@ -92,8 +97,11 @@ public class CancelRequestServiceImpl implements CancelRequestService {
         // Create notification for admin
         Notification notification = new Notification();
         notification.setNotiUser(user);
+        notification.setNotiUserName(user.getName());
+        notification.setNotiType("CANCEL_REQUEST");
         notification.setNotiMessage("Khách hàng " + user.getName() + " đã gửi yêu cầu hủy đơn hàng #" + order.getOrderId());
         notification.setNotiTime(LocalDateTime.now());
+        notification.setTargetRole("ADMIN");
         notificationRepository.save(notification);
         
         // Send real-time notification to admin via WebSocket
@@ -151,17 +159,24 @@ public class CancelRequestServiceImpl implements CancelRequestService {
         // Create notification for customer
         Notification notification = new Notification();
         notification.setNotiUser(cancelRequest.getUser());
+        notification.setNotiType("CANCEL_REQUEST");
         String message = newStatus == RequestStatus.APPROVED 
                 ? "Yêu cầu hủy đơn hàng của bạn cho đơn #" + cancelRequest.getOrder().getOrderId() + " đã được chấp nhận"
                 : "Yêu cầu hủy đơn hàng của bạn cho đơn #" + cancelRequest.getOrder().getOrderId() + " đã bị từ chối";
         notification.setNotiMessage(message);
         notification.setNotiTime(LocalDateTime.now());
+        notification.setTargetRole("USER");
         notificationRepository.save(notification);
         
         // If approved, cancel the order
         if (newStatus == RequestStatus.APPROVED) {
             Order order = cancelRequest.getOrder();
-            order.addShippingStatus(order.getCurrentShippingStatus(), "Đơn hàng đã bị hủy theo yêu cầu");
+            
+            // Get CANCELLED shipping status
+            ShippingStatus cancelledStatus = shippingStatusRepository.findByStatusCode("CANCELLED")
+                    .orElseThrow(() -> new RuntimeException("Shipping status CANCELLED not found"));
+            
+            order.addShippingStatus(cancelledStatus, "Đơn hàng đã bị hủy theo yêu cầu");
             order.addPaymentStatus(order.getCurrentPaymentStatus(), "Đơn hàng đã bị hủy - chờ hoàn tiền");
             orderRepository.save(order);
         }

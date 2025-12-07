@@ -16,6 +16,7 @@ export default function CustomerSupport() {
   const [userInfoCache, setUserInfoCache] = useState<Map<string, ChatUser>>(new Map());
   const [unreadCounts, setUnreadCounts] = useState<Map<string, number>>(new Map());
   const openConversationIdRef = useRef<string | null>(null);
+  const subscribedConversationsRef = useRef<Set<string>>(new Set());
   const pageSize = 20;
 
   // ID nhân viên - trong thực tế sẽ lấy từ auth context
@@ -88,6 +89,13 @@ export default function CustomerSupport() {
 
   // Subscribe to messages của một conversation
   const subscribeToConversationMessages = (conversationId: string) => {
+    // Kiểm tra đã subscribe chưa để tránh trùng
+    if (subscribedConversationsRef.current.has(conversationId)) {
+      return;
+    }
+    
+    subscribedConversationsRef.current.add(conversationId);
+    
     chatService.subscribeToConversation(conversationId, (newMessage) => {
       // Kiểm tra xem có đang xem conversation này không
       const isViewingThis = openConversationIdRef.current === conversationId;
@@ -97,18 +105,28 @@ export default function CustomerSupport() {
         setMessages((prev) => {
           const exists = prev.some((m) => m.id === newMessage.id);
           if (exists) return prev;
-          return [...prev, newMessage];
+          return [...prev, { ...newMessage }];
         });
-      }
-      
-      // Nếu tin nhắn từ customer và KHÔNG đang xem conversation này
-      if (newMessage.senderRole === 'CUSTOMER' && !isViewingThis) {
-        // Đánh dấu có tin nhắn chưa đọc
+        
+        // Xóa chấm đỏ vì đang xem conversation
         setUnreadCounts((prevCounts) => {
           const newCounts = new Map(prevCounts);
-          newCounts.set(conversationId, 1);
+          newCounts.delete(conversationId);
           return newCounts;
         });
+      } else {
+        // KHÔNG đang xem conversation này
+        // Nếu tin nhắn từ customer hoặc từ agent khác (không phải mình)
+        if (newMessage.senderRole === 'CUSTOMER' || 
+           (newMessage.senderRole === 'AGENT' && newMessage.senderId !== agentId)) {
+          // Tăng số tin nhắn chưa đọc
+          setUnreadCounts((prevCounts) => {
+            const newCounts = new Map(prevCounts);
+            const currentCount = newCounts.get(conversationId) || 0;
+            newCounts.set(conversationId, currentCount + 1);
+            return newCounts;
+          });
+        }
       }
     });
   };
@@ -134,6 +152,14 @@ export default function CustomerSupport() {
         if (info) newCache.set(info.id, info);
       });
       setUserInfoCache(newCache);
+      
+      // Lấy unread counts từ backend (thay vì check từng message)
+      try {
+        const unreadCountsFromBackend = await chatService.getUnreadCounts(agentId);
+        setUnreadCounts(unreadCountsFromBackend);
+      } catch (error) {
+        console.error('Failed to fetch unread counts:', error);
+      }
       
       // Subscribe to messages cho tất cả conversations hiện có
       data.content.forEach((conversation) => {
@@ -192,6 +218,32 @@ export default function CustomerSupport() {
       senderRole: 'AGENT',
       content,
     });
+  };
+
+  const handleSendImage = async (file: File, caption?: string) => {
+    if (!selectedConversation) return;
+
+    try {
+      // Upload image - API trả về message object và tự động broadcast
+      const imageMessage = await chatService.uploadImageMessage(
+        selectedConversation.id,
+        agentId,
+        'AGENT',
+        file,
+        caption
+      );
+      
+      // Thêm message ngay lập tức vào UI để hiển thị
+      setMessages((prev) => {
+        // Kiểm tra xem message đã tồn tại chưa (tránh duplicate)
+        const exists = prev.some((m) => m.id === imageMessage.id);
+        if (exists) return prev;
+        return [...prev, imageMessage];
+      });
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      throw error;
+    }
   };
 
   const handleCompleteConversation = async () => {
@@ -389,6 +441,7 @@ export default function CustomerSupport() {
             customerEmail={userDisplay.email}
             messages={messages}
             onSendMessage={handleSendMessage}
+            onSendImage={handleSendImage}
             onCompleteConversation={handleCompleteConversation}
             onReopenConversation={handleReopenConversation}
             agentId={agentId}

@@ -188,3 +188,35 @@ export const uploadImage = async (file: File): Promise<string> => {
     }
 }
 
+// Xác nhận đã nhận hàng
+export const confirmReceivedOrder = async (orderId: number, userId: number): Promise<any> => {
+    try {
+        console.log('✅ Xác nhận nhận hàng:', { orderId, userId });
+        const response = await AxiosInstance.put(`/orders/${orderId}/confirm-received`, null, {
+            params: { userId }
+        });
+        console.log('✅ Xác nhận nhận hàng thành công:', response.data);
+        return response.data;
+    } catch (error: any) {
+        console.error('❌ Lỗi xác nhận nhận hàng:', error);
+        if (error.response?.data?.message) {
+            throw new Error(error.response.data.message);
+        }
+        throw error;
+    }
+}
+
+// Kiểm tra đơn hàng có pending request không
+export const checkPendingRequest = async (orderId: number): Promise<{
+    hasPendingCancelRequest: boolean;
+    hasPendingReturnRequest: boolean;
+}> => {
+    try {
+        const response = await AxiosInstance.get(`/orders/${orderId}/pending-requests`);
+        return response.data;
+    } catch (error: any) {
+        console.error('❌ Lỗi kiểm tra pending request:', error);
+        return { hasPendingCancelRequest: false, hasPendingReturnRequest: false };
+    }
+}
+
