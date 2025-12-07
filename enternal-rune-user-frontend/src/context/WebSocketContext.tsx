@@ -1,5 +1,5 @@
 'use client'
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
 interface WebSocketContextType {
@@ -9,23 +9,44 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
+    // Only connect WebSocket in production or when backend is running
+    // For now, disable auto-connect to prevent reconnect loop when backend is down
+    const wsUrl = useMemo(() => {
+        // Check if we're in browser and want to enable WebSocket
+        if (typeof window !== 'undefined') {
+            // You can add conditions here, e.g., only connect when user is logged in
+            // For now, return empty string to disable WebSocket until needed
+            // return 'ws://localhost:8080/notifications?role=user';
+            return ''; // Disabled for now - enable when backend WebSocket is ready
+        }
+        return '';
+    }, []);
+
+    const handleOpen = useCallback(() => {
+        console.log('✅ User WebSocket connected');
+    }, []);
+
+    const handleMessage = useCallback((data: any) => {
+        console.log('📩 User received notification:', data);
+    }, []);
+
+    const handleError = useCallback((error: Event) => {
+        console.error('❌ User WebSocket error:', error);
+    }, []);
+
     const { send } = useWebSocket({
-        url: 'ws://localhost:8080/notifications?role=user',
-        onOpen: () => {
-            console.log('✅ User WebSocket connected');
-        },
-        onMessage: (data) => {
-            console.log('📩 User received notification:', data);
-        },
-        onError: (error) => {
-            console.error('❌ User WebSocket error:', error);
-        },
+        url: wsUrl,
+        onOpen: handleOpen,
+        onMessage: handleMessage,
+        onError: handleError,
         autoReconnect: true,
         reconnectInterval: 5000
     });
 
+    const contextValue = useMemo(() => ({ send }), [send]);
+
     return (
-        <WebSocketContext.Provider value={{ send }}>
+        <WebSocketContext.Provider value={contextValue}>
             {children}
         </WebSocketContext.Provider>
     );

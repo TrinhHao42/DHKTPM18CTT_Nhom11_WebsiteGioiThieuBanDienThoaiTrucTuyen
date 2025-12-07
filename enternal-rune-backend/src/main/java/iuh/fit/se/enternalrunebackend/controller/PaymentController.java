@@ -17,4 +17,10 @@ public class PaymentController {
     public boolean Payment(@RequestBody TransactionRequest transactionRequest) {
        return sePayServiceImpl.sePayWebHookPayment(transactionRequest);
     }
+
+    @PostMapping("/refundPayment")
+    @Transactional
+    public boolean RefundPayment(@RequestBody String orderInvoiceNumber) {
+        return sePayServiceImpl.refundPayment(orderInvoiceNumber);
+    }
 }

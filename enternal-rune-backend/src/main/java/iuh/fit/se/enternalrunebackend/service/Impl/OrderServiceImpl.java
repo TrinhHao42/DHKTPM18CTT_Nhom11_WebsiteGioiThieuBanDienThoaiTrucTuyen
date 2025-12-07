@@ -401,6 +401,30 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
+        // Map Payment Status History
+        List<OrderStatusInfo> paymentHistory = order.getPaymentStatusHistories().stream()
+                .map(history -> OrderStatusInfo.builder()
+                        .statusId(history.getPaymentStatus().getStatusId())
+                        .statusCode(history.getPaymentStatus().getStatusCode())
+                        .statusName(history.getPaymentStatus().getStatusName())
+                        .description(history.getPaymentStatus().getDescription())
+                        .createdAt(history.getCreatedAt())
+                        .note(history.getNote())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Map Shipping Status History
+        List<OrderStatusInfo> shippingHistory = order.getShippingStatusHistories().stream()
+                .map(history -> OrderStatusInfo.builder()
+                        .statusId(history.getShippingStatus().getStatusId())
+                        .statusCode(history.getShippingStatus().getStatusCode())
+                        .statusName(history.getShippingStatus().getStatusName())
+                        .description(history.getShippingStatus().getDescription())
+                        .createdAt(history.getCreatedAt())
+                        .note(history.getNote())
+                        .build())
+                .collect(Collectors.toList());
+
         List<OrderDetailResponse> orderDetails = order.getOrderDetails().stream()
                 .map(od -> OrderDetailResponse.builder()
                         .orderId(od.getOrder().getOrderId())
@@ -426,6 +450,8 @@ public class OrderServiceImpl implements OrderService {
                 .orderUser(new OrderResponse.OrderUserInfo(order.getOrderUser().getName(), order.getOrderUser().getEmail()))
                 .currentPaymentStatus(currentPayment != null ? new OrderStatusInfo(currentPayment.getStatusCode(), currentPayment.getStatusName()) : null)
                 .currentShippingStatus(currentShipping != null ? new OrderStatusInfo(currentShipping.getStatusCode(), currentShipping.getStatusName()) : null)
+                .paymentStatusHistory(paymentHistory)
+                .shippingStatusHistory(shippingHistory)
                 .orderShippingAddress(addressResponse)
                 .orderDetails(orderDetails)
                 .build();

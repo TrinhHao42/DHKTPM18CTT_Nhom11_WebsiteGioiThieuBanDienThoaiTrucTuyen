@@ -1,5 +1,6 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
 
+import iuh.fit.se.enternalrunebackend.dto.notification.OrderNotification;
 import iuh.fit.se.enternalrunebackend.dto.request.TransactionRequest;
 import iuh.fit.se.enternalrunebackend.entity.Order;
 import iuh.fit.se.enternalrunebackend.entity.PaymentStatus;
@@ -8,11 +9,18 @@ import iuh.fit.se.enternalrunebackend.entity.Transaction;
 import iuh.fit.se.enternalrunebackend.exception.payment_exception.PaymentException;
 import iuh.fit.se.enternalrunebackend.exception.payment_exception.PaymentExceptionEnum;
 import iuh.fit.se.enternalrunebackend.repository.*;
+import iuh.fit.se.enternalrunebackend.service.NotificationService;
 import iuh.fit.se.enternalrunebackend.service.SePayService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.Objects;
 
 @Service
@@ -28,6 +36,9 @@ public class SePayServiceImpl implements SePayService {
 
     @Autowired
     private PaymentStatusRepository paymentStatusRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public boolean sePayWebHookPayment(TransactionRequest transactionRequest) {
         try {
@@ -86,25 +97,52 @@ public class SePayServiceImpl implements SePayService {
             order.addPaymentStatus(paidStatus, "Đơn hàng đã được thanh toán");
             orderRepository.save(order);
 
+            // Gửi notification đến admin về thanh toán thành công
+            OrderNotification paymentNotification = OrderNotification.builder()
+                    .type("PAYMENT_SUCCESS")
+                    .userId(order.getOrderUser().getUserId())
+                    .userName(order.getOrderUser().getName())
+                    .message(String.format("Khách hàng %s đã thanh toán thành công đơn hàng #%d với số tiền %s VNĐ",
+                            order.getOrderUser().getName(),
+                            order.getOrderId(),
+                            transactionRequest.getTransaction().getTransactionAmount()))
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            notificationService.sendOrderNotificationToAdmin(paymentNotification);
+
             return true;
         } catch (Exception e) {
             return false;
         }
     }
 
-    private Integer extractRefundRequestIdFromContent(String content) {
-        try {
-            if (content == null || content.isEmpty()) {
-                return null;
-            }
+    public boolean refundPayment(String orderInvoiceNumber) {
+        String endpoint = "https://pgapi-sandbox.sepay.vn/v1/order/voidTransaction";
 
-            String numbers = content.replaceAll("[^0-9]", "");
-            if (!numbers.isEmpty()) {
-                return Integer.parseInt(numbers);
-            }
-        } catch (NumberFormatException e) {
-            return null;
+        String json = String.format(
+                "{\"order_invoice_number\":\"%s\", \"reason\":\"Customer request\"}",
+                orderInvoiceNumber
+        );
+
+        try {
+            String secret = "your_secret_key_here:";
+            String basicAuth = Base64.getEncoder()
+                    .encodeToString(secret.getBytes(StandardCharsets.UTF_8));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(endpoint))
+                    .header("Authorization", "Basic " + basicAuth)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            return response.statusCode() == 200;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-        return null;
     }
 }
