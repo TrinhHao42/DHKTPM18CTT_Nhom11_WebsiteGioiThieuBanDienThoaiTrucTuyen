@@ -85,6 +85,8 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        // ==== ADMIN COMMENTS - MUST BE FIRST ====
+                        .requestMatchers("/api/admin/comments/**").permitAll()
                         // ==== PUBLIC ENDPOINTS CHO CHAT / AUTH ====
                         // WebSocket endpoint + STOMP prefix
                         .requestMatchers("/ws/**").permitAll()
