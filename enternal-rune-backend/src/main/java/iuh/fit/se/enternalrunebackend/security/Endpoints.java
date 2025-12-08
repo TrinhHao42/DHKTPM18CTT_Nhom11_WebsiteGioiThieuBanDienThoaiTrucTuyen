@@ -66,7 +66,8 @@ public class Endpoints {
             "/api/discounts/**",
             "/orders/admin/**",
             "/shipping-status",
-            "/api/notifications/**"
+            "/api/notifications/**",
+            "/api/admin/payments/**"
     };
     
     public static final String[] ADMIN_POST_ENDPOINTS = {

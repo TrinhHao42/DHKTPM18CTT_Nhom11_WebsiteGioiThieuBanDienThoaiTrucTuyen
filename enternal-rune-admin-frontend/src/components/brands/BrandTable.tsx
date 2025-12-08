@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { BrandDashboardListResponse } from '@/types/brand';
+import { useRouter } from 'next/router';
 
 interface BrandTableProps {
   brands: BrandDashboardListResponse[];
@@ -29,7 +30,6 @@ export default function BrandTable({
   onDelete,
 }: BrandTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(searchTerm);
