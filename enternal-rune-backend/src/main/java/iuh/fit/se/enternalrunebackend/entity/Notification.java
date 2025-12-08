@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Setter
 @Getter
+@Builder
 @Table(name="notifications")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Notification {
@@ -19,9 +20,19 @@ public class Notification {
     Long notiId;
 
     @ManyToOne
+    @JoinColumn(name = "user_id")
     User notiUser;
+
+    String notiType; // ORDER, CANCEL_REQUEST, RETURN_REQUEST, etc.
+
+    String notiUserName; // User name who triggered the notification
 
     String notiMessage;
 
+    String targetRole; // ADMIN or USER - who should receive this notification
+
     LocalDateTime notiTime;
+
+    @Builder.Default
+    Boolean notiIsRead = false;
 }

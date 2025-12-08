@@ -8,7 +8,7 @@ export enum CommentStatus {
 export interface Comment {
     id?: number
     content?: string
-    rating: number
+    rating: number | null
     displayName?: string
     username?: string  // from User entity if authenticated
     isAnonymous: boolean
@@ -33,7 +33,7 @@ export interface ImageInfo {
 export interface CommentResponse {
     id?: number
     content?: string
-    rating: number
+    rating: number | null
     displayName?: string
     username?: string  // from User entity if authenticated
     isAnonymous: boolean
@@ -44,6 +44,7 @@ export interface CommentResponse {
     images: ImageInfo[]
     replies?: CommentResponse[]
     replyCount?: number
+    hasPurchased?: boolean  // Backend sẽ check và trả về purchase status của comment author
 }
 
 export interface CommentsPageResponse {
@@ -60,7 +61,7 @@ export interface CommentsPageResponse {
 }
 
 export interface CreateCommentRequest {
-    rating: number
+    rating: number | null
     content?: string
     displayName?: string
     parentCommentId?: number

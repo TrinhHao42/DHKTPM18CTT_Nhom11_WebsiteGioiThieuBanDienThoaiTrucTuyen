@@ -1,6 +1,6 @@
 package iuh.fit.se.enternalrunebackend.controller;
 
-import iuh.fit.se.enternalrunebackend.service.serviceClass.ForgotPasswordService;
+import iuh.fit.se.enternalrunebackend.service.ForgotPasswordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;

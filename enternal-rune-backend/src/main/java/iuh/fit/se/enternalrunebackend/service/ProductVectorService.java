@@ -1,7 +1,6 @@
-package iuh.fit.se.enternalrunebackend.service.serviceClass;
+package iuh.fit.se.enternalrunebackend.service;
 
 import iuh.fit.se.enternalrunebackend.entity.Product;
-import iuh.fit.se.enternalrunebackend.service.ProductService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.vectorstore.VectorStore;

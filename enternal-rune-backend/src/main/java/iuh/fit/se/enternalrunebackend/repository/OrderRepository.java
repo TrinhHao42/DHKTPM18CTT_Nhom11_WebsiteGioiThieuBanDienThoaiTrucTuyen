@@ -6,12 +6,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.util.List;
 
-@RepositoryRestResource(path = "orders")
+@Repository
 public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecificationExecutor<Order>{
 
     @Query("SELECT DISTINCT o FROM Order o " +
@@ -44,6 +44,107 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
            "WHERE ssh.createdAt = (SELECT MAX(ssh2.createdAt) FROM OrderShippingHistory ssh2 WHERE ssh2.order = o) " +
            "AND ss.statusCode IN ('PENDING', 'PROCESSING')")
     long countProcessingOrders();
+
+    /**
+     * Kiểm tra user đã mua sản phẩm cụ thể hay chưa (đơn hàng đã thanh toán)
+     * Sử dụng native query để tránh lỗi JPQL phức tạp
+     */
+    @Query(value = """
+        SELECT COUNT(*) > 0
+        FROM orders o
+        INNER JOIN order_detail od ON o.order_id = od.order_id
+        INNER JOIN product_variants pv ON od.product_variant_id = pv.product_variant_id
+        INNER JOIN products p ON pv.product_id = p.prod_id
+        INNER JOIN order_payment_history oph ON o.order_id = oph.order_id
+        INNER JOIN payment_statuses ps ON oph.status_id = ps.status_id
+        WHERE o.user_id = :userId
+        AND p.prod_id = :productId
+        AND ps.status_code = 'PAID'
+        AND pv.product_id IS NOT NULL
+        AND oph.created_at = (
+            SELECT MAX(oph2.created_at)
+            FROM order_payment_history oph2
+            WHERE oph2.order_id = o.order_id
+        )
+        """, nativeQuery = true)
+    boolean hasUserPurchasedProduct(@Param("userId") Long userId, @Param("productId") Integer productId);
+
+    /**
+     * Lấy danh sách sản phẩm user đã mua (đơn hàng đã thanh toán)
+     * Sử dụng native query để đảm bảo performance và tránh lỗi mapping
+     */
+    @Query(value = """
+        SELECT DISTINCT p.product_id 
+        FROM orders o
+        INNER JOIN order_detail od ON o.order_id = od.order_id
+        INNER JOIN product_variants pv ON od.product_variant_id = pv.product_variant_id  
+        INNER JOIN products p ON pv.product_id = p.product_id
+        INNER JOIN order_payment_history oph ON o.order_id = oph.order_id
+        INNER JOIN payment_statuses ps ON oph.status_id = ps.status_id
+        WHERE o.user_id = :userId 
+        AND ps.status_code = 'PAID'
+        AND oph.created_at = (
+            SELECT MAX(oph2.created_at) 
+            FROM order_payment_history oph2 
+            WHERE oph2.order_id = o.order_id
+        )
+        """, nativeQuery = true)
+    List<Integer> getPurchasedProductIdsByUser(@Param("userId") Long userId);
+
+    /**
+     * JPQL Version - Đã sửa lỗi mapping và syntax 
+     * Version 1: Sử dụng JOIN trực tiếp (khuyến nghị)
+     */
+    @Query("""
+        SELECT DISTINCT pv.pvProduct.prodId 
+        FROM Order o 
+        JOIN o.orderDetails od 
+        JOIN od.odProductVariant pv 
+        JOIN o.paymentStatusHistories psh
+        WHERE o.orderUser.userId = :userId 
+        AND psh.paymentStatus.statusCode = 'PAID'
+        AND psh.createdAt = (
+            SELECT MAX(psh2.createdAt) 
+            FROM OrderPaymentHistory psh2 
+            WHERE psh2.order.orderId = o.orderId
+        )
+        """)
+    List<Integer> getPurchasedProductIdsByUserJPQL(@Param("userId") Long userId);
+
+    /**
+     * JPQL Version 2: Sử dụng subquery đơn giản hơn
+     */
+    @Query("""
+        SELECT DISTINCT pv.pvProduct.prodId 
+        FROM Order o 
+        JOIN o.orderDetails od 
+        JOIN od.odProductVariant pv 
+        WHERE o.orderUser.userId = :userId 
+        AND o.orderId IN (
+            SELECT DISTINCT psh.order.orderId
+            FROM OrderPaymentHistory psh
+            WHERE psh.paymentStatus.statusCode = 'PAID'
+            AND psh.createdAt = (
+                SELECT MAX(psh2.createdAt) 
+                FROM OrderPaymentHistory psh2 
+                WHERE psh2.order.orderId = psh.order.orderId
+            )
+        )
+        """)
+    List<Integer> getPurchasedProductIdsByUserJPQLSimple(@Param("userId") Long userId);
+
+    /**
+     * JPQL Version 3: Sử dụng getCurrentPaymentStatus() method từ Entity
+     */
+    @Query("""
+        SELECT DISTINCT pv.pvProduct.prodId 
+        FROM Order o 
+        JOIN o.orderDetails od 
+        JOIN od.odProductVariant pv 
+        WHERE o.orderUser.userId = :userId 
+        AND SIZE(o.paymentStatusHistories) > 0
+        """)
+    List<Integer> getPurchasedProductIdsByUserSimple(@Param("userId") Long userId);
 
     // Doanh thu tháng hiện tại (chỉ tính đơn giao thành công ở trạng thái hiện tại)
     @Query("SELECT COALESCE(SUM(o.orderTotalAmount), 0) FROM Order o " +

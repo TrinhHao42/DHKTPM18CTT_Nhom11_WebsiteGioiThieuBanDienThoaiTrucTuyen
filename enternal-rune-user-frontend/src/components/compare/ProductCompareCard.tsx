@@ -2,26 +2,24 @@
 
 import Image from 'next/image'
 import { Product } from '@/types/Product'
-import { CommentsPageResponse } from '@/types/Comment'
+
 import { formatPrice } from '@/lib/format'
 import { Star } from 'lucide-react'
 
 interface ProductCompareCardProps {
   product: Product
-  commentData: Map<string, CommentsPageResponse>
   index: number
   getCurrentPrice: (product: Product) => number
 }
 
 export const ProductCompareCard = ({
   product,
-  commentData,
   index,
   getCurrentPrice
 }: ProductCompareCardProps) => {
-  const productCommentData = commentData.get(product.prodId)
-  const averageRating = productCommentData?.averageRating || product.prodRating
-  const totalRatings = productCommentData?.totalRatings || 0
+  // ✅ Use rating data from product response (no more individual API calls)
+  const ratingsTotal = product.ratingDistribution ? Object.values(product.ratingDistribution).reduce((s, v) => s + (Number(v) || 0), 0) : (product.totalComments || 0)
+  const averageRating = ratingsTotal > 0 ? (product.averageRating || product.prodRating) : 0
 
   const renderRating = () => (
     <div className="flex items-center gap-2">
@@ -29,7 +27,7 @@ export const ProductCompareCard = ({
         {[1, 2, 3, 4, 5].map((i) => (
           <Star
             key={i}
-            className={`w-4 h-4 ${i <= Math.floor(averageRating)
+            className={`w-4 h-4 ${ratingsTotal > 0 && i <= Math.floor(averageRating)
               ? 'text-yellow-400 fill-yellow-400'
               : 'text-gray-200 fill-gray-200'
               }`}
@@ -38,7 +36,7 @@ export const ProductCompareCard = ({
       </div>
       <span className="text-sm font-semibold text-gray-900">{averageRating.toFixed(1)}</span>
       <span className="text-gray-500 text-sm">
-        ({totalRatings > 0 ? `${totalRatings.toLocaleString()} đánh giá` : 'Chưa có đánh giá'})
+        ({ratingsTotal > 0 ? `${ratingsTotal.toLocaleString()} đánh giá` : 'Chưa có đánh giá'})
       </span>
     </div>
   )

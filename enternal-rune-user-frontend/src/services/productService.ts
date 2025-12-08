@@ -23,7 +23,7 @@ export class ProductService {
    */
   static async getFilteredProducts(params: FilterParams): Promise<Product[]> {
     try {
-      const response = await AxiosInstance.get<Product[]>(API_ROUTES.PRODUCTS_FILTER, {
+      const response = await AxiosInstance.get(API_ROUTES.PRODUCTS_FILTER, {
         params: {
           brands: params.brands?.join(','),
           priceRange: params.priceRange?.join(','),
@@ -35,17 +35,37 @@ export class ProductService {
         }
       })
       
-  // Backend may return a paginated response (Page) or a raw array.
-  // If it's paginated, the array of items is in `response.data.content`.
-  const maybeArray = response.data as Product[]
-  if (Array.isArray(maybeArray)) return maybeArray
+      // Backend trả về một Page object với structure: { content: Product[], ... }
+      const data = response.data
+      
+      // Kiểm tra nếu response có structure của Page object
+      if (data && typeof data === 'object' && Array.isArray(data.content)) {
+        return data.content as Product[]
+      }
+      
+      // Fallback: nếu trực tiếp là array
+      if (Array.isArray(data)) {
+        return data as Product[]
+      }
 
-  const maybePage = response.data as { content?: Product[] }
-  if (maybePage && Array.isArray(maybePage.content)) return maybePage.content!
-
-  return []
-    } catch {
-      throw new Error('Không thể tải danh sách sản phẩm. Vui lòng thử lại.')
+      return []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      console.error('Error fetching filtered products:', error)
+      
+      // Cung cấp thông tin lỗi chi tiết hơn
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status
+        const message = error.response.data?.message || 'Lỗi từ server'
+        throw new Error(`Lỗi ${status}: ${message}`)
+      } else if (error.request) {
+        // Request was made but no response received
+        throw new Error('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.')
+      } else {
+        // Something else happened
+        throw new Error(`Lỗi không xác định: ${error.message}`)
+      }
     }
   }
 
@@ -54,12 +74,20 @@ export class ProductService {
    */
   static async getProductById(id: string | number): Promise<Product | null> {
     try {
-      // API_ROUTES.PRODUCTS_BY_ID is a function
-  const url = `/products/${id}/active-price`
+      const url = `/products/${id}/active-price`
       const response = await AxiosInstance.get<Product>(url)
+      
       // response.data should be a single Product object
-      return response.data as Product
-    } catch {
+      if (response.data && typeof response.data === 'object') {
+        return response.data as Product
+      }
+      
+      return null
+    } catch (error: unknown) {
+      console.error(`Error fetching product ${id}:`, error)
+      
+      // Có thể throw error hoặc return null tùy theo requirement
+      // Hiện tại return null để không break UI
       return null
     }
   }

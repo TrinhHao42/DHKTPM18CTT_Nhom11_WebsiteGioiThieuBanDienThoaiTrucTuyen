@@ -34,6 +34,22 @@ export interface OrderDetail {
     statusCode: string;
     statusName: string;
   };
+  paymentStatusHistory?: Array<{
+    statusId: number;
+    statusCode: string;
+    statusName: string;
+    description: string;
+    createdAt: string;
+    note: string;
+  }>;
+  shippingStatusHistory?: Array<{
+    statusId: number;
+    statusCode: string;
+    statusName: string;
+    description: string;
+    createdAt: string;
+    note: string;
+  }>;
   orderUser: {
     userId?: number;
     userName: string;
@@ -124,6 +140,7 @@ export const getAvailableShippingStatuses = async (): Promise<Array<{code: strin
       { code: 'PROCESSING', name: 'Đang xử lý' },
       { code: 'SHIPPED', name: 'Đang giao' },
       { code: 'DELIVERED', name: 'Đã giao' },
+      { code: 'RECIVED', name: 'Đã nhận hàng' },
       { code: 'CANCELLED', name: 'Đã hủy' }
     ];
   }

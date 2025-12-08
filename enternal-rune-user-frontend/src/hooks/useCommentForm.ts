@@ -75,7 +75,7 @@ export const useCommentForm = ({
   }
 
   const handleSubmit = async (e: React.FormEvent, formData?: {
-    rating: number
+    rating: number | null
     comment: string
     displayName: string
   }) => {
@@ -97,10 +97,10 @@ export const useCommentForm = ({
       toast.error('ID sản phẩm phải là số dương')
       return
     }
-    if (!submitRating || submitRating < 1 || submitRating > 5) {
-      toast.error('Vui lòng chọn số sao đánh giá từ 1-5')
-      return
-    }
+    // if (!submitRating || submitRating < 1 || submitRating > 5) {
+    //   toast.error('Vui lòng chọn số sao đánh giá từ 1-5')
+    //   return
+    // }
     if (!submitComment || !submitComment.trim()) {
       toast.error('Vui lòng nhập nội dung bình luận')
       return
