@@ -82,7 +82,7 @@ export default function ShippingTracking() {
     status: string
   ): "success" | "error" | "warning" | "info" => {
     const upperStatus = status.toUpperCase();
-    if (upperStatus.includes('RECIVED')) return "success";
+    if (upperStatus.includes('RECEIVED')) return "success";
     if (upperStatus.includes('DELIVERED')) return "info";
     if (upperStatus.includes('CANCEL')) return "error";
     if (upperStatus.includes('PENDING')) return "warning";
