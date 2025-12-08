@@ -1,178 +1,273 @@
 -- =====================================================
--- FILE 0: PRODUCT VARIANTS - Biến thể sản phẩm
--- Tạo các biến thể sản phẩm từ products để có thể tạo order_detail
--- Cần chạy file này TRƯỚC khi chạy sample_orders
+-- FILE 01: PRODUCT VARIANTS - Tạo biến thể sản phẩm từ dữ liệu thực
+-- Link với: products, product_price, images có sẵn trong products.sql
+-- Cấu trúc: product_variants(product_variant_id, prodv_name, prodv_model, prodv_version, prodv_color, product_id, pp_price, image_id)
 -- =====================================================
 
--- Xóa dữ liệu cũ nếu có
--- TRUNCATE TABLE product_variants CASCADE;
+-- Tạo product variants từ dữ liệu thực trong database
+-- Mỗi sản phẩm có nhiều màu (tương ứng với nhiều images), cùng 1 giá
 
--- Insert product variants (mỗi sản phẩm tạo 1 variant với version và color mặc định)
-INSERT INTO product_variants (product_variant_id, prodv_name, prodv_model, prodv_version, prodv_color, product_id, pp_price, image_id)
-VALUES
--- Samsung Galaxy A Series
-(1, 'Samsung Galaxy A34 5G 8GB 128GB - Bạc', 'samsung-galaxy-a', 'A36', 'Bạc', 1, 1, 1),
-(2, 'Samsung Galaxy A06 4GB 128GB - Xanh lá', 'samsung-galaxy-a', 'A06 4G', 'Xanh lá', 2, 2, 4),
-(3, 'Samsung Galaxy A15 LTE 8GB 128GB - Xanh', 'samsung-galaxy-a', 'A15 LTE', 'Xanh', 3, 3, 7),
-(4, 'Samsung Galaxy A55 5G 8GB 128GB - Đen', 'samsung-galaxy-a', 'Galaxy A55', 'Đen', 4, 4, 10),
-(5, 'Samsung Galaxy A23 4G - Cam', 'samsung-galaxy-a', 'A23 4G', 'Cam', 5, 5, 13),
-(6, 'Samsung Galaxy A05 4GB 128GB - Xanh', 'samsung-galaxy-a', 'A05', 'Xanh', 6, 6, 16),
-(7, 'Samsung Galaxy A23 5G - Đen', 'samsung-galaxy-a', 'A23 5G', 'Đen', 7, 7, 19),
-(8, 'Samsung Galaxy A56 5G 8GB 128GB - Hồng', 'samsung-galaxy-a', 'A56', 'Hồng', 8, 8, 21),
-(9, 'Samsung Galaxy A05S 4GB 128GB - Xanh', 'samsung-galaxy-a', 'A05S', 'Xanh', 9, 9, NULL),
-(10, 'Samsung Galaxy A25 5G 6GB 128GB - Xanh', 'samsung-galaxy-a', 'A25 5G', 'Xanh', 10, 10, NULL),
-(11, 'Samsung Galaxy A35 5G 8GB 128GB - Đen', 'samsung-galaxy-a', 'Galaxy A35', 'Đen', 11, 11, NULL),
-(12, 'Samsung Galaxy A21s - Đen', 'samsung-galaxy-a', '6GB - 64GB', 'Đen', 12, 12, NULL),
-(13, 'Samsung Galaxy A72 - Đen', 'samsung-galaxy-a', 'Galaxy A72', 'Đen', 13, 13, NULL),
-(14, 'Samsung Galaxy A04 - Đen', 'samsung-galaxy-a', 'A04', 'Đen', 14, 14, NULL),
-(15, 'Samsung Galaxy A06 5G 4GB 128GB - Xanh', 'samsung-galaxy-a', 'A06 5G', 'Xanh', 15, 15, NULL),
-(16, 'Samsung Galaxy A36 5G 8GB 128GB - Đen', 'samsung-galaxy-a', 'A36', 'Đen', 16, 16, NULL),
-(17, 'Samsung Galaxy A14 4G - Đen', 'samsung-galaxy-a', 'Galaxy A14 4G', 'Đen', 17, 17, NULL),
-(18, 'Samsung Galaxy A04s 4GB 64GB - Đen', 'samsung-galaxy-a', 'A04s', 'Đen', 18, 18, NULL),
-(19, 'Samsung Galaxy A14 5G - Đen', 'samsung-galaxy-a', 'Galaxy A14 5G', 'Đen', 19, 19, NULL),
-(20, 'Samsung Galaxy A33 5G - Đen', 'samsung-galaxy-a', 'A33', 'Đen', 20, 20, NULL),
-(21, 'Samsung Galaxy A52 - Đen', 'samsung-galaxy-a', 'Galaxy A52', 'Đen', 21, 21, NULL),
-(22, 'Samsung Galaxy A07 4GB 128GB - Đen', 'samsung-galaxy-a', 'A07', 'Đen', 22, 22, NULL),
-(23, 'Samsung Galaxy A17 5G 8GB 128GB - Đen', 'samsung-galaxy-a', 'A17 5G', 'Đen', 23, 23, NULL),
-(24, 'Samsung Galaxy A54 5G 8GB 128GB - Đen', 'samsung-galaxy-a', '8GB 128GB', 'Đen', 24, 24, NULL),
-(25, 'Samsung Galaxy A73 128GB - Đen', 'samsung-galaxy-a', '8GB 128GB', 'Đen', 25, 25, NULL),
-(26, 'Samsung Galaxy A73 256GB - Đen', 'samsung-galaxy-a', '8GB 256GB', 'Đen', 26, 26, NULL),
+INSERT INTO product_variants (product_variant_id, prodv_name, prodv_model, prodv_version, prodv_color, product_id, pp_price, image_id) VALUES
+-- Samsung Galaxy A34 5G 8GB 128GB (product_id=1, pp_price=1, images: 1-Bạc, 2-Xanh, 3-Đen)
+(1, 'Samsung Galaxy A34 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Bạc', 1, 1, 1),
+(2, 'Samsung Galaxy A34 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Xanh', 1, 1, 2),
+(3, 'Samsung Galaxy A34 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Đen', 1, 1, 3),
 
--- Samsung Galaxy S Series
-(27, 'Samsung Galaxy S23 Ultra 256GB - Đen', 'samsung-galaxy-s', '8GB - 256GB', 'Đen', 27, 27, NULL),
-(28, 'Samsung Galaxy S22 Ultra 8GB 128GB - Đen', 'samsung-galaxy-s', '8GB - 128GB', 'Đen', 28, 28, NULL),
-(29, 'Samsung Galaxy S21 FE 5G 6GB 128GB - Xanh', 'samsung-galaxy-s', '6GB - 128GB', 'Xanh', 29, 29, NULL),
-(30, 'Samsung Galaxy S21 Ultra 5G 256GB - Đen', 'samsung-galaxy-s', '256GB', 'Đen', 30, 30, NULL),
-(31, 'Samsung Galaxy S21 Ultra 5G 128GB - Đen', 'samsung-galaxy-s', '128 GB', 'Đen', 31, 31, NULL),
-(32, 'Samsung Galaxy S24 Ultra 12GB 1TB - Titan', 'samsung-galaxy-s', '12GB 1TB', 'Titan', 32, 32, NULL),
-(33, 'Samsung Galaxy S24 Ultra 12GB 512GB - Titan', 'samsung-galaxy-s', '12GB 512GB', 'Titan', 33, 33, NULL),
-(34, 'Samsung Galaxy S24 Ultra 12GB 256GB - Titan', 'samsung-galaxy-s', '12GB 256GB', 'Titan', 34, 34, NULL),
-(35, 'Samsung Galaxy S21 256GB - Đen', 'samsung-galaxy-s', '256GB', 'Đen', 35, 35, NULL),
-(36, 'Samsung Galaxy S21 128GB - Đen', 'samsung-galaxy-s', '128GB', 'Đen', 36, 36, NULL),
-(37, 'Samsung Galaxy S22 Plus 256GB - Đen', 'samsung-galaxy-s', '8GB - 256GB', 'Đen', 37, 37, NULL),
-(38, 'Samsung Galaxy S22 Plus 128GB - Đen', 'samsung-galaxy-s', '8GB - 128GB', 'Đen', 38, 38, NULL),
-(39, 'Samsung Galaxy S22 256GB - Đen', 'samsung-galaxy-s', '8GB - 256GB', 'Đen', 39, 39, NULL),
-(40, 'Samsung Galaxy S22 128GB - Đen', 'samsung-galaxy-s', '8GB - 128GB', 'Đen', 40, 40, NULL),
-(41, 'Samsung Galaxy S22 512GB - Đen', 'samsung-galaxy-s', '512GB', 'Đen', 41, 41, NULL),
-(42, 'Samsung Galaxy S23 FE 8GB 128GB - Đen', 'samsung-galaxy-s', '8GB 128GB', 'Đen', 42, 42, NULL),
-(43, 'Samsung Galaxy S23 256GB - Đen', 'samsung-galaxy-s', '8GB 256GB', 'Đen', 43, 43, NULL),
-(44, 'Samsung Galaxy S24 Plus 512GB - Titan', 'samsung-galaxy-s', '12GB 512GB', 'Titan', 44, 44, NULL),
-(45, 'Samsung Galaxy S24 Plus 256GB - Titan', 'samsung-galaxy-s', '12GB 256GB', 'Titan', 45, 45, NULL),
-(46, 'Samsung Galaxy S25 Ultra 1TB - Titan', 'samsung-galaxy-s', 'S25 Ultra 1TB', 'Titan', 46, 46, NULL),
-(47, 'Samsung Galaxy S25 Ultra 512GB - Titan', 'samsung-galaxy-s', 'S25 Ultra 512GB', 'Titan', 47, 47, NULL),
-(48, 'Samsung Galaxy S25 Ultra 256GB - Titan', 'samsung-galaxy-s', 'S25 Ultra 256GB', 'Titan', 48, 48, NULL),
-(49, 'Samsung Galaxy S20 Ultra - Đen', 'samsung-galaxy-s', 'Samsung Galaxy S20 Ultra', 'Đen', 49, 49, NULL),
-(50, 'Samsung Galaxy S23 FE 512GB - Đen', 'samsung-galaxy-s', '8GB 512GB', 'Đen', 50, 50, NULL),
-(51, 'Samsung Galaxy S23 FE 128GB - Đen', 'samsung-galaxy-s', '8GB 128GB', 'Đen', 51, 51, NULL),
-(52, 'Samsung Galaxy S25 512GB - Titan', 'samsung-galaxy-s', 'S25 512GB', 'Titan', 52, 52, NULL),
-(53, 'Samsung Galaxy S25 256GB - Titan', 'samsung-galaxy-s', 'S25 256GB', 'Titan', 53, 53, NULL),
-(54, 'Samsung Galaxy S25 Plus 512GB - Titan', 'samsung-galaxy-s', 'S25 Plus 512GB', 'Titan', 54, 54, NULL),
-(55, 'Samsung Galaxy S25 Plus 256GB - Titan', 'samsung-galaxy-s', 'S25 Plus 256GB', 'Titan', 55, 55, NULL),
+-- Samsung Galaxy A06 4GB 128GB (product_id=2, pp_price=2, images: 4-Xanh lá, 5-Xanh dương, 6-Đen)
+(4, 'Samsung Galaxy A06 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Xanh lá', 2, 2, 4),
+(5, 'Samsung Galaxy A06 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Xanh dương', 2, 2, 5),
+(6, 'Samsung Galaxy A06 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Đen', 2, 2, 6),
 
--- Samsung Galaxy Tab Series
-(56, 'Samsung Galaxy Tab S9 Ultra - Xám', 'samsung-galaxy-tab', '16GB 1TB', 'Xám', 56, 56, NULL),
-(57, 'Samsung Galaxy Tab S9 Ultra - Xám', 'samsung-galaxy-tab', '12GB 512GB', 'Xám', 57, 57, NULL),
-(58, 'Samsung Galaxy Tab S9 Ultra - Xám', 'samsung-galaxy-tab', '12GB 256GB', 'Xám', 58, 58, NULL),
-(59, 'Samsung Galaxy Tab S9 5G 128GB - Xám', 'samsung-galaxy-tab', '5G 8GB 128GB', 'Xám', 59, 59, NULL),
-(60, 'Samsung Galaxy Tab S9 FE Plus WIFI - Xám', 'samsung-galaxy-tab', 'Tab S9 FE Plus WIFI', 'Xám', 60, 60, NULL),
-(61, 'Samsung Galaxy Tab S9 WIFI - Xám', 'samsung-galaxy-tab', 'WIFI 8GB 128GB', 'Xám', 61, 61, NULL),
-(62, 'Samsung Galaxy Tab S8 Ultra - Xám', 'samsung-galaxy-tab', 'Tab S8 Ultra', 'Xám', 62, 62, NULL),
-(63, 'Samsung Galaxy Tab A9+ WIFI - Xám', 'samsung-galaxy-tab', 'Tab A9+ WIFI', 'Xám', 63, 63, NULL),
-(64, 'Samsung Galaxy Tab S8 - Xám', 'samsung-galaxy-tab', 'Tab S8', 'Xám', 64, 64, NULL),
-(65, 'Samsung Galaxy Tab S9 FE WIFI - Xám', 'samsung-galaxy-tab', 'Tab S9 FE WIFI', 'Xám', 65, 65, NULL),
-(66, 'Samsung Galaxy Tab S7 FE WiFi - Đen', 'samsung-galaxy-tab', 'Tab S7 FE WiFi', 'Đen', 66, 66, NULL),
-(67, 'Samsung Galaxy Tab S9 Plus 5G 512GB - Xám', 'samsung-galaxy-tab', '5G 12GB 512GB', 'Xám', 67, 67, NULL),
-(68, 'Samsung Galaxy Tab S9 Plus WIFI 256GB - Xám', 'samsung-galaxy-tab', 'WIFI 12GB 256GB', 'Xám', 68, 68, NULL),
-(69, 'Samsung Galaxy Tab S7 - Đen', 'samsung-galaxy-tab', 'Galaxy Tab S7', 'Đen', 69, 69, NULL),
-(70, 'Samsung Galaxy Tab S7 FE 4G - Đen', 'samsung-galaxy-tab', 'Tab S7 FE 4G', 'Đen', 70, 70, NULL),
-(71, 'Samsung Galaxy Tab A7 - Xám', 'samsung-galaxy-tab', 'Tab A7 (2020)', 'Xám', 71, 71, NULL),
-(72, 'Samsung Galaxy Tab S7 Plus - Đen', 'samsung-galaxy-tab', 'Galaxy Tab S7 Plus', 'Đen', 72, 72, NULL),
-(73, 'Samsung Galaxy Tab S8 5G - Xám', 'samsung-galaxy-tab', 'Tab S8', 'Xám', 73, 73, NULL),
-(74, 'Samsung Galaxy Tab S9 Plus 5G 256GB - Xám', 'samsung-galaxy-tab', '5G 12GB 256GB', 'Xám', 74, 74, NULL),
-(75, 'Samsung Galaxy Tab S9 Plus WIFI 512GB - Xám', 'samsung-galaxy-tab', 'WIFI 12GB 512GB', 'Xám', 75, 75, NULL),
-(76, 'Samsung Galaxy Tab S6 - Xanh', 'samsung-galaxy-tab', 'Galaxy Tab S6', 'Xanh', 76, 76, NULL),
-(77, 'Samsung Galaxy Tab S9 FE Plus WIFI 128GB - Xám', 'samsung-galaxy-tab', '8GB 128GB', 'Xám', 77, 77, NULL),
-(78, 'Samsung Galaxy Tab A9 WIFI - Xám', 'samsung-galaxy-tab', 'Tab A9 WIFI', 'Xám', 78, 78, NULL),
-(79, 'Samsung Galaxy Tab S6 Trầy xước - Xám', 'samsung-galaxy-tab', 'Trầy xước', 'Xám', 79, 79, NULL),
-(80, 'Samsung Galaxy Tab S6 Trầy xước - Xanh', 'samsung-galaxy-tab', 'Trầy xước', 'Xanh', 80, 80, NULL),
+-- Samsung Galaxy A15 LTE 8GB 128GB (product_id=3, pp_price=3, images: 7-Xanh, 8-Đen, 9-Vàng)
+(7, 'Samsung Galaxy A15 LTE 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Xanh', 3, 3, 7),
+(8, 'Samsung Galaxy A15 LTE 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Đen', 3, 3, 8),
+(9, 'Samsung Galaxy A15 LTE 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Vàng', 3, 3, 9),
 
--- Samsung Galaxy M Series
-(81, 'Samsung Galaxy M14 - Xanh dương đậm', 'samsung-galaxy-m', 'M14', 'Xanh dương đậm', 81, 81, NULL),
-(82, 'Samsung Galaxy M34 - Xanh nhạt', 'samsung-galaxy-m', 'M34', 'Xanh nhạt', 82, 82, NULL),
-(83, 'Samsung Galaxy M55 - Xanh lá', 'samsung-galaxy-m', '12GB 256GB', 'Xanh lá', 83, 83, NULL),
+-- Samsung Galaxy A55 5G 8GB 128GB (product_id=4, pp_price=4, images: 10-Đen, 11-Xanh nhạt, 12-Tím)
+(10, 'Samsung Galaxy A55 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Đen', 4, 4, 10),
+(11, 'Samsung Galaxy A55 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Xanh nhạt', 4, 4, 11),
+(12, 'Samsung Galaxy A55 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Tím', 4, 4, 12),
 
--- Samsung Galaxy Z Series
-(84, 'Samsung Galaxy Z Flip4 128GB - Vàng', 'samsung-galaxy-z', '128GB', 'Vàng', 84, 84, NULL),
-(85, 'Samsung Galaxy Z Fold5 1TB - Đen', 'samsung-galaxy-z', '1TB', 'Đen', 85, 85, NULL),
-(86, 'Samsung Galaxy Z Fold5 256GB - Đen', 'samsung-galaxy-z', '256GB', 'Đen', 86, 86, NULL),
-(87, 'Samsung Galaxy Z Fold5 512GB - Đen', 'samsung-galaxy-z', '512GB', 'Đen', 87, 87, NULL),
-(88, 'Samsung Galaxy Z Fold6 1TB - Xám', 'samsung-galaxy-z', '12GB 1TB', 'Xám', 88, 88, NULL),
-(89, 'Samsung Galaxy Z Fold6 512GB - Xám', 'samsung-galaxy-z', '12GB 512GB', 'Xám', 89, 89, NULL),
-(90, 'Samsung Galaxy Z Fold6 256GB - Xám', 'samsung-galaxy-z', '12GB 256GB', 'Xám', 90, 90, NULL),
-(91, 'Samsung Galaxy Z Flip5 512GB - Tím', 'samsung-galaxy-z', '512GB', 'Tím', 91, 91, NULL),
-(92, 'Samsung Galaxy Z Fold3 256GB - Đen', 'samsung-galaxy-z', '256GB', 'Đen', 92, 92, NULL),
-(93, 'Samsung Galaxy Z Flip5 256GB - Tím', 'samsung-galaxy-z', '256GB', 'Tím', 93, 93, NULL),
-(94, 'Samsung Galaxy Z Fold4 512GB - Đen', 'samsung-galaxy-z', '512GB', 'Đen', 94, 94, NULL),
-(95, 'Samsung Galaxy Z Flip6 512GB - Tím', 'samsung-galaxy-z', '512GB', 'Tím', 95, 95, NULL),
-(96, 'Samsung Galaxy Z Flip6 256GB - Tím', 'samsung-galaxy-z', '256GB', 'Tím', 96, 96, NULL),
-(97, 'Samsung Galaxy Z Fold7 256GB - Đen', 'samsung-galaxy-z', '12GB 256GB', 'Đen', 97, 97, NULL),
-(98, 'Samsung Galaxy Z Flip7 256GB - Đen', 'samsung-galaxy-z', '256GB', 'Đen', 98, 98, NULL),
-(99, 'Samsung Galaxy Z Fold2 Mùa hè - Đen', 'samsung-galaxy-z', 'Special', 'Đen', 99, 99, NULL),
-(100, 'Samsung Galaxy Z Fold 2 Thom Browne - Đen', 'samsung-galaxy-z', 'Special', 'Đen', 100, 100, NULL),
+-- Samsung Galaxy A23 4G (product_id=5, pp_price=5, images: 13-Cam, 14-Xanh dương, 15-Đen)
+(13, 'Samsung Galaxy A23 4G', 'samsung-galaxy-a', '4G', 'Cam', 5, 5, 13),
+(14, 'Samsung Galaxy A23 4G', 'samsung-galaxy-a', '4G', 'Xanh dương', 5, 5, 14),
+(15, 'Samsung Galaxy A23 4G', 'samsung-galaxy-a', '4G', 'Đen', 5, 5, 15),
 
--- Samsung Galaxy Note Series
-(101, 'Samsung Galaxy Note 20 5G - Đen', 'samsung-galaxy-note', '256GB', 'Đen', 101, 101, NULL),
-(102, 'Samsung Galaxy Note 10 Plus - Đen', 'samsung-galaxy-note', '256GB', 'Đen', 102, 102, NULL),
-(103, 'Samsung Galaxy Note 20 Ultra - Đen', 'samsung-galaxy-note', '256GB', 'Đen', 103, 103, NULL),
-(104, 'Samsung Galaxy Note 20 Ultra 5G - Đen', 'samsung-galaxy-note', '256GB', 'Đen', 104, 104, NULL),
+-- Samsung Galaxy A05 4GB 128GB (product_id=6, pp_price=6, images: 16-Xanh, 17-Bạc, 18-Đen)
+(16, 'Samsung Galaxy A05 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Xanh', 6, 6, 16),
+(17, 'Samsung Galaxy A05 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Bạc', 6, 6, 17),
+(18, 'Samsung Galaxy A05 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Đen', 6, 6, 18),
 
--- iPhone Series
-(105, 'iPhone 6 32GB - Vàng', 'iphone', '32GB', 'Vàng', 105, 105, NULL),
-(106, 'iPhone SE 2022 128GB - Đen', 'iphone', '128GB', 'Đen', 106, 106, NULL),
-(107, 'iPhone 11 128GB - Đen', 'iphone', '128GB', 'Đen', 107, 107, NULL),
-(108, 'iPhone 11 64GB - Đen', 'iphone', '64GB', 'Đen', 108, 108, NULL),
-(109, 'iPhone 11 Pro Max 256GB - Xanh', 'iphone', '256GB', 'Xanh', 109, 109, NULL),
-(110, 'iPhone 11 Pro Max 64GB - Xanh', 'iphone', '64GB', 'Xanh', 110, 110, NULL),
-(111, 'iPhone 11 Pro 256GB - Xanh', 'iphone', '256GB', 'Xanh', 111, 111, NULL),
-(112, 'iPhone 11 Pro 64GB - Xanh', 'iphone', '64GB', 'Xanh', 112, 112, NULL),
-(113, 'iPhone 12 128GB - Đen', 'iphone', '128GB', 'Đen', 113, 113, NULL),
-(114, 'iPhone 12 64GB - Đen', 'iphone', '64GB', 'Đen', 114, 114, NULL),
-(115, 'iPhone 13 64GB - Đen', 'iphone', '64GB', 'Đen', 115, 115, NULL),
-(116, 'iPhone 13 128GB - Đen', 'iphone', '128GB', 'Đen', 116, 116, NULL),
-(117, 'iPhone 13 Pro 128GB - Xanh', 'iphone', '128GB', 'Xanh', 117, 117, NULL),
-(118, 'iPhone 13 Pro Max 128GB - Xanh', 'iphone', '128GB', 'Xanh', 118, 118, NULL),
-(119, 'iPhone 13 mini 128GB - Đen', 'iphone', '128GB', 'Đen', 119, 119, NULL),
-(120, 'iPhone 14 Pro Max 1TB - Tím', 'iphone', '1TB', 'Tím', 120, 120, NULL),
-(121, 'iPhone 14 Pro Max 512GB - Tím', 'iphone', '512GB', 'Tím', 121, 121, NULL),
-(122, 'iPhone 16 Pro 1TB - Titan', 'iphone', '1TB', 'Titan', 122, 122, NULL),
-(123, 'iPhone 16 Pro 256GB - Titan', 'iphone', '256GB', 'Titan', 123, 123, NULL),
-(124, 'iPhone 16 Pro 128GB - Titan', 'iphone', '128GB', 'Titan', 124, 124, NULL),
-(125, 'iPhone 16 Pro 512GB - Titan', 'iphone', '512GB', 'Titan', 125, 125, NULL),
-(126, 'iPhone 16 256GB - Đen', 'iphone', '256GB', 'Đen', 126, 126, NULL),
-(127, 'iPhone 16 512GB - Đen', 'iphone', '512GB', 'Đen', 127, 127, NULL),
-(128, 'iPhone 16 128GB - Đen', 'iphone', '128GB', 'Đen', 128, 128, NULL),
-(129, 'iPhone 16 Pro Max 256GB - Titan', 'iphone', '256GB', 'Titan', 129, 129, NULL),
-(130, 'iPhone 16 Pro Max 512GB - Titan', 'iphone', '512GB', 'Titan', 130, 130, NULL),
-(131, 'iPhone 16 Pro Max 1TB - Titan', 'iphone', '1TB', 'Titan', 131, 131, NULL),
-(132, 'iPhone 15 128GB - Đen', 'iphone', '128GB', 'Đen', 132, 132, NULL),
-(133, 'iPhone 14 Plus 128GB - Tím', 'iphone', '128GB', 'Tím', 133, 133, NULL),
-(134, 'iPhone 15 Plus 256GB - Đen', 'iphone', '256GB', 'Đen', 134, 134, NULL),
-(135, 'iPhone 16e 256GB - Đen', 'iphone', '256GB', 'Đen', 135, 135, NULL),
-(136, 'iPhone 14 128GB - Đen', 'iphone', '128GB', 'Đen', 136, 136, NULL),
-(137, 'iPhone 16e 128GB - Đen', 'iphone', '128GB', 'Đen', 137, 137, NULL),
-(138, 'iPhone 12 Pro 128GB - Xanh', 'iphone', '128GB', 'Xanh', 138, 138, NULL),
-(139, 'iPhone 12 mini 256GB - Đen', 'iphone', '256GB', 'Đen', 139, 139, NULL),
-(140, 'iPhone 12 Pro 256GB - Xanh', 'iphone', '256GB', 'Xanh', 140, 140, NULL),
-(141, 'iPhone 12 Pro Max 128GB - Xanh', 'iphone', '128GB', 'Xanh', 141, 141, NULL),
-(142, 'iPhone 12 Pro Max 512GB - Xanh', 'iphone', '512GB', 'Xanh', 142, 142, NULL),
-(143, 'iPhone 12 Pro Max 128GB - Xanh', 'iphone', '128GB', 'Xanh', 143, 143, NULL),
-(144, 'iPhone 12 mini 128GB Cũ Đẹp - Đen', 'iphone', '128GB - Cũ Đẹp', 'Đen', 144, 144, NULL),
-(145, 'iPhone 14 Pro Max 256GB - Tím', 'iphone', '256GB', 'Tím', 145, 145, NULL),
-(146, 'iPhone 14 Pro 1TB - Tím', 'iphone', '1TB', 'Tím', 146, 146, NULL),
-(147, 'iPhone 14 Pro 512GB - Tím', 'iphone', '512GB', 'Tím', 147, 147, NULL),
-(148, 'iPhone 14 Pro Max 128GB - Tím', 'iphone', '128GB', 'Tím', 148, 148, NULL),
-(149, 'iPhone 15 Plus 128GB - Đen', 'iphone', '128GB', 'Đen', 149, 149, NULL),
-(150, 'iPhone 15 Pro 1TB - Titan', 'iphone', '1TB', 'Titan', 150, 150, NULL);
+-- Samsung Galaxy A23 5G (product_id=7, pp_price=7, images: 19-Đen, 20-Xanh)
+(19, 'Samsung Galaxy A23 5G', 'samsung-galaxy-a', '5G', 'Đen', 7, 7, 19),
+(20, 'Samsung Galaxy A23 5G', 'samsung-galaxy-a', '5G', 'Xanh', 7, 7, 20),
 
--- Reset sequence
-SELECT setval('product_variants_product_variant_id_seq', 150, true);
+-- Samsung Galaxy A56 5G 8GB 128GB (product_id=8, pp_price=8, images: 21-Hồng, 22-Đen, 23-Xám, 24-Xanh)
+(21, 'Samsung Galaxy A56 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Hồng', 8, 8, 21),
+(22, 'Samsung Galaxy A56 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Đen', 8, 8, 22),
+(23, 'Samsung Galaxy A56 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Xám', 8, 8, 23),
+(24, 'Samsung Galaxy A56 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Xanh', 8, 8, 24),
+
+-- Samsung Galaxy A05S 4GB 128GB (product_id=9, pp_price=9, images: 25-Xanh, 26-Đen, 27-Bạc)
+(25, 'Samsung Galaxy A05S 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Xanh', 9, 9, 25),
+(26, 'Samsung Galaxy A05S 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Đen', 9, 9, 26),
+(27, 'Samsung Galaxy A05S 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Bạc', 9, 9, 27),
+
+-- Samsung Galaxy A25 5G 6GB 128GB (product_id=10, pp_price=10, images: 28-Vàng, 29-Đen, 30-Xanh)
+(28, 'Samsung Galaxy A25 5G 6GB 128GB', 'samsung-galaxy-a', '6GB 128GB', 'Vàng', 10, 10, 28),
+(29, 'Samsung Galaxy A25 5G 6GB 128GB', 'samsung-galaxy-a', '6GB 128GB', 'Đen', 10, 10, 29),
+(30, 'Samsung Galaxy A25 5G 6GB 128GB', 'samsung-galaxy-a', '6GB 128GB', 'Xanh', 10, 10, 30),
+
+-- Samsung Galaxy A35 5G 8GB 128GB (product_id=11, pp_price=11, images: 31-Vàng, 32-Đen, 33-Xanh nhạt)
+(31, 'Samsung Galaxy A35 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Vàng', 11, 11, 31),
+(32, 'Samsung Galaxy A35 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Đen', 11, 11, 32),
+(33, 'Samsung Galaxy A35 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Xanh nhạt', 11, 11, 33),
+
+-- Samsung Galaxy A21s (product_id=12, pp_price=12, images: 34-Đen, 35-Xanh, 36-Trắng)
+(34, 'Samsung Galaxy A21s', 'samsung-galaxy-a', 'A21s', 'Đen', 12, 12, 34),
+(35, 'Samsung Galaxy A21s', 'samsung-galaxy-a', 'A21s', 'Xanh', 12, 12, 35),
+(36, 'Samsung Galaxy A21s', 'samsung-galaxy-a', 'A21s', 'Trắng', 12, 12, 36),
+
+-- Samsung Galaxy A72 (product_id=13, pp_price=13, images: 37-Tím, 38-Đen, 39-Trắng, 40-Xanh)
+(37, 'Samsung Galaxy A72', 'samsung-galaxy-a', 'A72', 'Tím', 13, 13, 37),
+(38, 'Samsung Galaxy A72', 'samsung-galaxy-a', 'A72', 'Đen', 13, 13, 38),
+(39, 'Samsung Galaxy A72', 'samsung-galaxy-a', 'A72', 'Trắng', 13, 13, 39),
+(40, 'Samsung Galaxy A72', 'samsung-galaxy-a', 'A72', 'Xanh', 13, 13, 40),
+
+-- Samsung Galaxy A04 (product_id=14, pp_price=14, images: 41-Đồng, 42-Đen, 43-Xanh)
+(41, 'Samsung Galaxy A04', 'samsung-galaxy-a', 'A04', 'Đồng', 14, 14, 41),
+(42, 'Samsung Galaxy A04', 'samsung-galaxy-a', 'A04', 'Đen', 14, 14, 42),
+(43, 'Samsung Galaxy A04', 'samsung-galaxy-a', 'A04', 'Xanh', 14, 14, 43),
+
+-- Samsung Galaxy A06 5G 4GB 128GB (product_id=15, pp_price=15, images: 44-Xanh, 45-Đen, 46-Xám)
+(44, 'Samsung Galaxy A06 5G 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Xanh', 15, 15, 44),
+(45, 'Samsung Galaxy A06 5G 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Đen', 15, 15, 45),
+(46, 'Samsung Galaxy A06 5G 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Xám', 15, 15, 46),
+
+-- Samsung Galaxy A36 5G 8GB 128GB (product_id=16, pp_price=16, images: 47-Xanh, 48-Tím, 49-Đen)
+(47, 'Samsung Galaxy A36 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Xanh', 16, 16, 47),
+(48, 'Samsung Galaxy A36 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Tím', 16, 16, 48),
+(49, 'Samsung Galaxy A36 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Đen', 16, 16, 49),
+
+-- Samsung Galaxy A14 4G (product_id=17, pp_price=17, images: 50-Đỏ, 51-Đen, 52-Bạc)
+(50, 'Samsung Galaxy A14 4G', 'samsung-galaxy-a', '4G', 'Đỏ', 17, 17, 50),
+(51, 'Samsung Galaxy A14 4G', 'samsung-galaxy-a', '4G', 'Đen', 17, 17, 51),
+(52, 'Samsung Galaxy A14 4G', 'samsung-galaxy-a', '4G', 'Bạc', 17, 17, 52),
+
+-- Samsung Galaxy A04s 4GB 64GB (product_id=18, pp_price=18, images: 53-Đen, 54-Đồng, 55-Xanh)
+(53, 'Samsung Galaxy A04s 4GB 64GB', 'samsung-galaxy-a', '4GB 64GB', 'Đen', 18, 18, 53),
+(54, 'Samsung Galaxy A04s 4GB 64GB', 'samsung-galaxy-a', '4GB 64GB', 'Đồng', 18, 18, 54),
+(55, 'Samsung Galaxy A04s 4GB 64GB', 'samsung-galaxy-a', '4GB 64GB', 'Xanh', 18, 18, 55),
+
+-- Samsung Galaxy A14 5G (product_id=19, pp_price=19, images: 56-Bạc, 57-Đỏ, 58-Đen)
+(56, 'Samsung Galaxy A14 5G', 'samsung-galaxy-a', '5G', 'Bạc', 19, 19, 56),
+(57, 'Samsung Galaxy A14 5G', 'samsung-galaxy-a', '5G', 'Đỏ', 19, 19, 57),
+(58, 'Samsung Galaxy A14 5G', 'samsung-galaxy-a', '5G', 'Đen', 19, 19, 58),
+
+-- Samsung Galaxy A33 5G (product_id=20, pp_price=20, images: 59-Trắng, 60-Cam, 61-Đen, 62-Xanh)
+(59, 'Samsung Galaxy A33 5G', 'samsung-galaxy-a', '5G', 'Trắng', 20, 20, 59),
+(60, 'Samsung Galaxy A33 5G', 'samsung-galaxy-a', '5G', 'Cam', 20, 20, 60),
+(61, 'Samsung Galaxy A33 5G', 'samsung-galaxy-a', '5G', 'Đen', 20, 20, 61),
+(62, 'Samsung Galaxy A33 5G', 'samsung-galaxy-a', '5G', 'Xanh', 20, 20, 62),
+
+-- Samsung Galaxy A52 (product_id=21, pp_price=21, images: 63-Đen, 64-Tím, 65-Xanh)
+(63, 'Samsung Galaxy A52', 'samsung-galaxy-a', 'A52', 'Đen', 21, 21, 63),
+(64, 'Samsung Galaxy A52', 'samsung-galaxy-a', 'A52', 'Tím', 21, 21, 64),
+(65, 'Samsung Galaxy A52', 'samsung-galaxy-a', 'A52', 'Xanh', 21, 21, 65),
+
+-- Samsung Galaxy A07 4GB 128GB (product_id=22, pp_price=22, images: 66-Đen, 67-Tím bạc, 68-Xanh)
+(66, 'Samsung Galaxy A07 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Đen huyền', 22, 22, 66),
+(67, 'Samsung Galaxy A07 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Tím bạc', 22, 22, 67),
+(68, 'Samsung Galaxy A07 4GB 128GB', 'samsung-galaxy-a', '4GB 128GB', 'Xanh lục bảo', 22, 22, 68),
+
+-- Samsung Galaxy A17 5G 8GB 128GB (product_id=23, pp_price=23, images: 69-Xanh navy, 70-Đen titan, 71-Xám khói)
+(69, 'Samsung Galaxy A17 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Xanh navy', 23, 23, 69),
+(70, 'Samsung Galaxy A17 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Đen titan', 23, 23, 70),
+(71, 'Samsung Galaxy A17 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Xám khói', 23, 23, 71),
+
+-- Samsung Galaxy A54 5G 8GB 128GB (product_id=24, pp_price=24, images: 72-Xanh lá, 73-Đen, 74-Tím)
+(72, 'Samsung Galaxy A54 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Xanh lá', 24, 24, 72),
+(73, 'Samsung Galaxy A54 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Đen', 24, 24, 73),
+(74, 'Samsung Galaxy A54 5G 8GB 128GB', 'samsung-galaxy-a', '8GB 128GB', 'Tím', 24, 24, 74),
+
+-- Samsung Galaxy A73 128GB (product_id=25, pp_price=25, images: 75-Xám, 76-Trắng, 77-Xanh)
+(75, 'Samsung Galaxy A73 128GB', 'samsung-galaxy-a', '128GB', 'Xám', 25, 25, 75),
+(76, 'Samsung Galaxy A73 128GB', 'samsung-galaxy-a', '128GB', 'Trắng', 25, 25, 76),
+(77, 'Samsung Galaxy A73 128GB', 'samsung-galaxy-a', '128GB', 'Xanh', 25, 25, 77),
+
+-- Samsung Galaxy A73 5G 256GB (product_id=26, pp_price=26, images: 78-Xanh, 79-Xám, 80-Trắng)
+(78, 'Samsung Galaxy A73 5G 256GB', 'samsung-galaxy-a', '256GB', 'Xanh', 26, 26, 78),
+(79, 'Samsung Galaxy A73 5G 256GB', 'samsung-galaxy-a', '256GB', 'Xám', 26, 26, 79),
+(80, 'Samsung Galaxy A73 5G 256GB', 'samsung-galaxy-a', '256GB', 'Trắng', 26, 26, 80),
+
+-- Samsung Galaxy S23 Ultra 256GB (product_id=27, pp_price=27, images: 81-Tím, 82-Trắng, 83-Đen, 84-Xanh)
+(81, 'Samsung Galaxy S23 Ultra 256GB', 'samsung-galaxy-s', '256GB', 'Tím', 27, 27, 81),
+(82, 'Samsung Galaxy S23 Ultra 256GB', 'samsung-galaxy-s', '256GB', 'Trắng', 27, 27, 82),
+(83, 'Samsung Galaxy S23 Ultra 256GB', 'samsung-galaxy-s', '256GB', 'Đen', 27, 27, 83),
+(84, 'Samsung Galaxy S23 Ultra 256GB', 'samsung-galaxy-s', '256GB', 'Xanh', 27, 27, 84),
+
+-- Samsung Galaxy S22 Ultra 8GB 128GB (product_id=28, pp_price=28, images: 85-Xanh, 86-Đen, 87-Trắng, 88-Đỏ)
+(85, 'Samsung Galaxy S22 Ultra 8GB 128GB', 'samsung-galaxy-s', '8GB 128GB', 'Xanh', 28, 28, 85),
+(86, 'Samsung Galaxy S22 Ultra 8GB 128GB', 'samsung-galaxy-s', '8GB 128GB', 'Đen', 28, 28, 86),
+(87, 'Samsung Galaxy S22 Ultra 8GB 128GB', 'samsung-galaxy-s', '8GB 128GB', 'Trắng', 28, 28, 87),
+(88, 'Samsung Galaxy S22 Ultra 8GB 128GB', 'samsung-galaxy-s', '8GB 128GB', 'Đỏ', 28, 28, 88),
+
+-- Samsung Galaxy S21 FE 5G 6GB 128GB (product_id=29, pp_price=29, images: 89-Xanh lá, 90-Tím, 91-Xám, 92-Trắng)
+(89, 'Samsung Galaxy S21 FE 5G 6GB 128GB', 'samsung-galaxy-s', '6GB 128GB', 'Xanh lá', 29, 29, 89),
+(90, 'Samsung Galaxy S21 FE 5G 6GB 128GB', 'samsung-galaxy-s', '6GB 128GB', 'Tím', 29, 29, 90),
+(91, 'Samsung Galaxy S21 FE 5G 6GB 128GB', 'samsung-galaxy-s', '6GB 128GB', 'Xám', 29, 29, 91),
+(92, 'Samsung Galaxy S21 FE 5G 6GB 128GB', 'samsung-galaxy-s', '6GB 128GB', 'Trắng', 29, 29, 92),
+
+-- Samsung Galaxy S21 Ultra 5G 256GB (product_id=30, pp_price=30, images: 93-Bạc, 94-Đen)
+(93, 'Samsung Galaxy S21 Ultra 5G 256GB', 'samsung-galaxy-s', '256GB', 'Bạc', 30, 30, 93),
+(94, 'Samsung Galaxy S21 Ultra 5G 256GB', 'samsung-galaxy-s', '256GB', 'Đen', 30, 30, 94),
+
+-- Samsung Galaxy S21 Ultra 5G (product_id=31, pp_price=31, images: 95-Đen, 96-Bạc)
+(95, 'Samsung Galaxy S21 Ultra 5G', 'samsung-galaxy-s', '5G', 'Đen', 31, 31, 95),
+(96, 'Samsung Galaxy S21 Ultra 5G', 'samsung-galaxy-s', '5G', 'Bạc', 31, 31, 96),
+
+-- Samsung Galaxy S24 Ultra 12GB 1TB (product_id=32, pp_price=32, images: 97-Vàng, 98-Tím, 99-Xám, 100-Đen)
+(97, 'Samsung Galaxy S24 Ultra 12GB 1TB', 'samsung-galaxy-s', '12GB 1TB', 'Vàng', 32, 32, 97),
+(98, 'Samsung Galaxy S24 Ultra 12GB 1TB', 'samsung-galaxy-s', '12GB 1TB', 'Tím', 32, 32, 98),
+(99, 'Samsung Galaxy S24 Ultra 12GB 1TB', 'samsung-galaxy-s', '12GB 1TB', 'Xám', 32, 32, 99),
+(100, 'Samsung Galaxy S24 Ultra 12GB 1TB', 'samsung-galaxy-s', '12GB 1TB', 'Đen', 32, 32, 100),
+
+-- Samsung Galaxy S24 Ultra 12GB 512GB (product_id=33, pp_price=33, images: 101-Xám, 102-Vàng, 103-Đen, 104-Tím)
+(101, 'Samsung Galaxy S24 Ultra 12GB 512GB', 'samsung-galaxy-s', '12GB 512GB', 'Xám', 33, 33, 101),
+(102, 'Samsung Galaxy S24 Ultra 12GB 512GB', 'samsung-galaxy-s', '12GB 512GB', 'Vàng', 33, 33, 102),
+(103, 'Samsung Galaxy S24 Ultra 12GB 512GB', 'samsung-galaxy-s', '12GB 512GB', 'Đen', 33, 33, 103),
+(104, 'Samsung Galaxy S24 Ultra 12GB 512GB', 'samsung-galaxy-s', '12GB 512GB', 'Tím', 33, 33, 104),
+
+-- Samsung Galaxy S24 Ultra 12GB 256GB (product_id=34, pp_price=34, images: 105-Vàng, 106-Xám)
+(105, 'Samsung Galaxy S24 Ultra 12GB 256GB', 'samsung-galaxy-s', '12GB 256GB', 'Vàng', 34, 34, 105),
+(106, 'Samsung Galaxy S24 Ultra 12GB 256GB', 'samsung-galaxy-s', '12GB 256GB', 'Xám', 34, 34, 106),
+
+-- Samsung Galaxy S24+ 12GB 256GB (product_id=35, pp_price=35) - cần check image_id
+(107, 'Samsung Galaxy S24+ 12GB 256GB', 'samsung-galaxy-s', '12GB 256GB', 'Đen', 35, 35, NULL),
+
+-- Samsung Galaxy S24 8GB 256GB (product_id=36, pp_price=36)
+(108, 'Samsung Galaxy S24 8GB 256GB', 'samsung-galaxy-s', '8GB 256GB', 'Đen', 36, 36, NULL),
+
+-- Samsung Galaxy S23 FE 8GB 128GB (product_id=37, pp_price=37)
+(109, 'Samsung Galaxy S23 FE 8GB 128GB', 'samsung-galaxy-s', '8GB 128GB', 'Đen', 37, 37, NULL),
+
+-- Samsung Galaxy S23 8GB 128GB (product_id=38, pp_price=38)
+(110, 'Samsung Galaxy S23 8GB 128GB', 'samsung-galaxy-s', '8GB 128GB', 'Đen', 38, 38, NULL),
+
+-- Samsung Galaxy S23+ 8GB 256GB (product_id=39, pp_price=39)
+(111, 'Samsung Galaxy S23+ 8GB 256GB', 'samsung-galaxy-s', '8GB 256GB', 'Đen', 39, 39, NULL),
+
+-- Samsung Galaxy S23 Ultra 8GB 256GB (product_id=40, pp_price=40)
+(112, 'Samsung Galaxy S23 Ultra 8GB 256GB', 'samsung-galaxy-s', '8GB 256GB', 'Đen', 40, 40, NULL),
+
+-- Samsung Galaxy S22 5G 8GB 128GB (product_id=41, pp_price=41)
+(113, 'Samsung Galaxy S22 5G 8GB 128GB', 'samsung-galaxy-s', '8GB 128GB', 'Đen', 41, 41, NULL),
+
+-- Samsung Galaxy S25 Ultra 12GB 256GB (product_id=42, pp_price=42)
+(114, 'Samsung Galaxy S25 Ultra 12GB 256GB', 'samsung-galaxy-s', '12GB 256GB', 'Đen', 42, 42, NULL),
+
+-- Samsung Galaxy S25+ 12GB 256GB (product_id=43, pp_price=43)
+(115, 'Samsung Galaxy S25+ 12GB 256GB', 'samsung-galaxy-s', '12GB 256GB', 'Đen', 43, 43, NULL),
+
+-- Samsung Galaxy S25 Ultra 12GB 512GB (product_id=44, pp_price=44)
+(116, 'Samsung Galaxy S25 Ultra 12GB 512GB', 'samsung-galaxy-s', '12GB 512GB', 'Đen', 44, 44, NULL),
+
+-- Samsung Galaxy S25 Ultra 12GB 1TB (product_id=45, pp_price=45)
+(117, 'Samsung Galaxy S25 Ultra 12GB 1TB', 'samsung-galaxy-s', '12GB 1TB', 'Đen', 45, 45, NULL),
+
+-- Samsung Galaxy Z Fold 6 12GB 256GB (product_id=46, pp_price=46)
+(118, 'Samsung Galaxy Z Fold 6 12GB 256GB', 'samsung-galaxy-z', '12GB 256GB', 'Đen', 46, 46, NULL),
+
+-- Samsung Galaxy Z Fold 5 12GB 256GB (product_id=47, pp_price=47)
+(119, 'Samsung Galaxy Z Fold 5 12GB 256GB', 'samsung-galaxy-z', '12GB 256GB', 'Đen', 47, 47, NULL),
+
+-- Samsung Galaxy Z Fold 5 12GB 512GB (product_id=48, pp_price=48)
+(120, 'Samsung Galaxy Z Fold 5 12GB 512GB', 'samsung-galaxy-z', '12GB 512GB', 'Đen', 48, 48, NULL),
+
+-- Samsung Galaxy Z Flip 6 12GB 256GB (product_id=49, pp_price=49)
+(121, 'Samsung Galaxy Z Flip 6 12GB 256GB', 'samsung-galaxy-z', '12GB 256GB', 'Đen', 49, 49, NULL),
+
+-- Samsung Galaxy Z Flip 5 8GB 256GB (product_id=50, pp_price=50)
+(122, 'Samsung Galaxy Z Flip 5 8GB 256GB', 'samsung-galaxy-z', '8GB 256GB', 'Đen', 50, 50, NULL),
+
+-- Samsung Galaxy Tab S7 FE 4G (product_id=70, pp_price=70)
+(123, 'Samsung Galaxy Tab S7 FE 4G', 'samsung-galaxy-tab', '4G', 'Đen', 70, 70, NULL),
+
+-- Samsung Galaxy Tab S9 FE+ 5G (product_id=71, pp_price=71)
+(124, 'Samsung Galaxy Tab S9 FE+ 5G', 'samsung-galaxy-tab', '5G', 'Đen', 71, 71, NULL),
+
+-- Samsung Galaxy Tab S10+ 5G (product_id=72, pp_price=72)
+(125, 'Samsung Galaxy Tab S10+ 5G', 'samsung-galaxy-tab', '5G', 'Đen', 72, 72, NULL),
+
+-- Samsung Galaxy Tab S10 Ultra 5G (product_id=73, pp_price=73)
+(126, 'Samsung Galaxy Tab S10 Ultra 5G', 'samsung-galaxy-tab', '5G', 'Đen', 73, 73, NULL),
+
+-- Samsung Galaxy Tab A9+ 5G (product_id=74, pp_price=74)
+(127, 'Samsung Galaxy Tab A9+ 5G', 'samsung-galaxy-tab', '5G', 'Đen', 74, 74, NULL),
+
+-- Samsung Galaxy Tab S9 Ultra 5G (product_id=75, pp_price=75)
+(128, 'Samsung Galaxy Tab S9 Ultra 5G', 'samsung-galaxy-tab', '5G', 'Đen', 75, 75, NULL),
+
+-- Samsung Galaxy Tab S9+ 5G (product_id=76, pp_price=76)
+(129, 'Samsung Galaxy Tab S9+ 5G', 'samsung-galaxy-tab', '5G', 'Đen', 76, 76, NULL),
+
+-- Samsung Galaxy Tab S6 Lite 2024 (product_id=77, pp_price=77)
+(130, 'Samsung Galaxy Tab S6 Lite 2024', 'samsung-galaxy-tab', '2024', 'Đen', 77, 77, NULL),
+
+-- Thêm các variants cho các sản phẩm iPhone, Xiaomi... (tùy theo products có trong db)
+-- iPhone 16 Pro Max (product_id cần check)
+(131, 'iPhone 16 Pro Max 256GB', 'iphone', '256GB', 'Titan sa mạc', 85, 85, NULL),
+(132, 'iPhone 16 Pro Max 256GB', 'iphone', '256GB', 'Titan đen', 85, 85, NULL),
+(133, 'iPhone 16 Pro Max 512GB', 'iphone', '512GB', 'Titan tự nhiên', 86, 86, NULL),
+(134, 'iPhone 16 Pro 256GB', 'iphone', '256GB', 'Titan đen', 87, 87, NULL),
+(135, 'iPhone 16 128GB', 'iphone', '128GB', 'Hồng', 88, 88, NULL),
+(136, 'iPhone 15 Pro Max 256GB', 'iphone', '256GB', 'Titan tự nhiên', 89, 89, NULL),
+(137, 'iPhone 15 Pro 256GB', 'iphone', '256GB', 'Titan đen', 90, 90, NULL),
+(138, 'iPhone 15 128GB', 'iphone', '128GB', 'Hồng', 91, 91, NULL),
+(139, 'iPhone 14 Pro Max 256GB', 'iphone', '256GB', 'Tím đậm', 92, 92, NULL),
+(140, 'iPhone 14 128GB', 'iphone', '128GB', 'Xanh dương', 93, 93, NULL),
+(141, 'iPhone 13 128GB', 'iphone', '128GB', 'Midnight', 94, 94, NULL),
+(142, 'iPhone SE 2022 64GB', 'iphone', '64GB', 'Midnight', 95, 95, NULL);
+
+-- Cập nhật sequence
+SELECT setval('product_variants_product_variant_id_seq', 142, true);
