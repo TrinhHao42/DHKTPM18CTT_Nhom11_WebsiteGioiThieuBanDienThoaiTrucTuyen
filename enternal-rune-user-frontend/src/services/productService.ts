@@ -18,10 +18,35 @@ export interface FilterParams {
 }
 
 export class ProductService {
+  // Cache để tránh gọi API trùng lặp
+  private static inflightRequests = new Map<string, Promise<Product[]>>()
+  private static inflightProductRequests = new Map<string, Promise<Product | null>>()
+
   /**
    * Gọi API filter products từ backend
    */
   static async getFilteredProducts(params: FilterParams): Promise<Product[]> {
+    // Tạo cache key từ params
+    const cacheKey = JSON.stringify(params)
+    
+    // Nếu đang có request với cùng params, trả về promise đó
+    if (this.inflightRequests.has(cacheKey)) {
+      return this.inflightRequests.get(cacheKey)!
+    }
+    // Tạo promise và cache nó
+    const requestPromise = this.executeFilterRequest(params)
+    this.inflightRequests.set(cacheKey, requestPromise)
+    
+    try {
+      const result = await requestPromise
+      return result
+    } finally {
+      // Xóa khỏi cache khi hoàn thành (thành công hoặc lỗi)
+      this.inflightRequests.delete(cacheKey)
+    }
+  }
+
+  private static async executeFilterRequest(params: FilterParams): Promise<Product[]> {
     try {
       const response = await AxiosInstance.get(API_ROUTES.PRODUCTS_FILTER, {
         params: {
@@ -73,6 +98,27 @@ export class ProductService {
    * Fetch a single product by id from the backend (uses active-price endpoint)
    */
   static async getProductById(id: string | number): Promise<Product | null> {
+    const cacheKey = `product_${id}`
+    
+    // Nếu đang có request với cùng id, trả về promise đó
+    if (this.inflightProductRequests.has(cacheKey)) {
+      return this.inflightProductRequests.get(cacheKey)!
+    }
+
+    // Tạo promise và cache nó
+    const requestPromise = this.executeProductRequest(id)
+    this.inflightProductRequests.set(cacheKey, requestPromise)
+    
+    try {
+      const result = await requestPromise
+      return result
+    } finally {
+      // Xóa khỏi cache khi hoàn thành
+      this.inflightProductRequests.delete(cacheKey)
+    }
+  }
+
+  private static async executeProductRequest(id: string | number): Promise<Product | null> {
     try {
       const url = `/products/${id}/active-price`
       const response = await AxiosInstance.get<Product>(url)
