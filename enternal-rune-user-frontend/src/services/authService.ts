@@ -110,3 +110,28 @@ export async function apiActivateAccount(email: string, activateId: string) {
         method: "GET",
     });
 }
+
+// --- User Profile ---
+export interface UserProfile {
+    name: string;
+    email: string;
+    activate: boolean;
+    addresses: Array<{
+        addressId: number;
+        streetName: string;
+        wardName: string;
+        cityName: string;
+        countryName: string;
+    }>;
+    totalOrder: number;
+    totalPrice: number;
+}
+
+export async function apiGetUserProfile(userId: number, token: string): Promise<UserProfile> {
+    const response = await fetchApi(`/api/users/${userId}/profile`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    return response as UserProfile;
+}

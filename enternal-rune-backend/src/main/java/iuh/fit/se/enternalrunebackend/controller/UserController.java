@@ -2,6 +2,7 @@ package iuh.fit.se.enternalrunebackend.controller;
 
 import iuh.fit.se.enternalrunebackend.dto.request.AddressRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.AddressResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.UserDetailResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.UserResponse;
 import iuh.fit.se.enternalrunebackend.entity.User;
 import iuh.fit.se.enternalrunebackend.service.UserService;
@@ -48,6 +49,22 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(
                     new ErrorResponse("Không thể lấy thông tin user: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * Lấy thông tin profile đầy đủ của user (bao gồm totalOrder, activate)
+     * GET /api/users/{userId}/profile
+     */
+    @GetMapping("/{userId}/profile")
+    public ResponseEntity<?> getUserProfile(@PathVariable Long userId) {
+        try {
+            UserDetailResponse response = userService.getUserDetail(userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    new ErrorResponse("Không thể lấy thông tin profile: " + e.getMessage())
             );
         }
     }

@@ -2,7 +2,13 @@ import React from 'react'
 import { Mail, User as UserIcon, Calendar, Edit2 } from 'lucide-react'
 import { User } from '@/types/User'
 
-export const ProfileInfo: React.FC<{ user: User }> = ({ user }) => {
+interface ProfileInfoProps {
+  user: User
+  isVerified?: boolean
+  loading?: boolean
+}
+
+export const ProfileInfo: React.FC<ProfileInfoProps> = ({ user, isVerified = false, loading = false }) => {
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
@@ -38,10 +44,19 @@ export const ProfileInfo: React.FC<{ user: User }> = ({ user }) => {
           <div className="flex-1">
             <p className="text-sm text-gray-500 mb-1">Email</p>
             <p className="text-base font-semibold text-gray-900">{user.userEmail}</p>
-            <span className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-medium">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-              Đã xác thực
-            </span>
+            {loading ? (
+              <div className="mt-2 h-5 w-20 animate-pulse bg-gray-200 rounded" />
+            ) : isVerified ? (
+              <span className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs font-medium">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                Đã xác thực
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-yellow-100 text-yellow-700 rounded-md text-xs font-medium">
+                <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />
+                Chưa xác thực
+              </span>
+            )}
           </div>
         </div>
       </div>
