@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface ProductService {
     List<Product> getAllProductsWithActivePrice();
@@ -41,4 +42,9 @@ public interface ProductService {
     public void deleteProduct(Integer id);
     Product updateProduct(Integer id, ProductRequest request, List<MultipartFile> newFiles) throws IOException;
     Product getProductById(Integer id);
+    
+    // Rating calculation methods
+    Double getAverageRating(Integer productId);
+    Integer getTotalComments(Integer productId);
+    Map<String, Integer> getRatingDistribution(Integer productId);
 }

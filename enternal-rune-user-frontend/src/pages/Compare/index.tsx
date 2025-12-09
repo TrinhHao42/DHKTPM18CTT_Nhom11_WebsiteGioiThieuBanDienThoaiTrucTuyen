@@ -13,7 +13,6 @@ export default function ComparePage() {
     const {
         selectedProduct,
         compareProducts,
-        commentData,
         loading,
         error,
         getCurrentPrice,
@@ -95,7 +94,6 @@ export default function ComparePage() {
                             <ProductCompareCard
                                 key={product.prodId}
                                 product={product}
-                                commentData={commentData}
                                 index={index}
                                 getCurrentPrice={getCurrentPrice}
                             />

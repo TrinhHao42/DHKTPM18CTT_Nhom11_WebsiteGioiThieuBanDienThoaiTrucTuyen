@@ -27,7 +27,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +45,8 @@ public class ProductServiceImpl implements ProductService {
     private ProductPriceRepository productPriceRepository;
     @Autowired
     private DiscountRepository discountRepository;
+    @Autowired
+    private CommentRepository commentRepository;
     private final ImageService imageService;
     @Override
     public List<Product> getAllProductsWithActivePrice() {
@@ -335,5 +339,38 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Product getProductById(Integer id) {
         return productRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public Double getAverageRating(Integer productId) {
+        return commentRepository.getAverageRating(productId);
+    }
+
+    @Override
+    public Integer getTotalComments(Integer productId) {
+        Long count = commentRepository.countByProductId(productId);
+        return count != null ? count.intValue() : 0;
+    }
+
+    @Override
+    public Map<String, Integer> getRatingDistribution(Integer productId) {
+        List<Object[]> results = commentRepository.getRatingDistributionList(productId);
+        Map<String, Integer> distribution = new HashMap<>();
+        
+        // Initialize all ratings to 0
+        for (int i = 1; i <= 5; i++) {
+            distribution.put(String.valueOf(i), 0);
+        }
+        
+        // Fill in actual counts
+        for (Object[] result : results) {
+            Integer rating = (Integer) result[0];
+            Long count = (Long) result[1];
+            if (rating != null && count != null) {
+                distribution.put(String.valueOf(rating), count.intValue());
+            }
+        }
+        
+        return distribution;
     }
 }

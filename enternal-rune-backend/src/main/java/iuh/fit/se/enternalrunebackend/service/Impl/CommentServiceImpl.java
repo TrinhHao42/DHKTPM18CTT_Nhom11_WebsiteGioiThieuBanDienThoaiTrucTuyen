@@ -9,6 +9,7 @@ import iuh.fit.se.enternalrunebackend.entity.enums.CommentStatus;
 import iuh.fit.se.enternalrunebackend.repository.*;
 import iuh.fit.se.enternalrunebackend.service.CommentService;
 import iuh.fit.se.enternalrunebackend.service.ImageService;
+import iuh.fit.se.enternalrunebackend.service.PurchaseCheckService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -35,6 +36,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final CommentImageRepository commentImageRepository;
     private final ProductRepository productRepository;
+    private final PurchaseCheckService purchaseCheckService;
     private final ImageService imageService;
 
     // Business rules constants
@@ -81,8 +83,19 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public CommentResponse createComment(Integer productId, CreateCommentRequest request,
             MultipartFile[] images, Optional<User> currentUser, String ipAddress) {
+        // Xác định đã mua hàng chưa - sử dụng service thay vì trực tiếp repository
+        boolean hasPurchased = false;
+        if (currentUser.isPresent()) {
+            User user = currentUser.get();
+            // Kiểm tra user đã mua hàng với productId hay chưa
+            hasPurchased = purchaseCheckService.hasUserPurchasedProduct(user.getUserId(), productId);
+        }
+        // Nếu chưa mua, không cho phép gửi rating (ép về null)
+        if (!hasPurchased && request.getParentCommentId() == null) {
+            request.setRating(null);
+        }
         // Validate request
-        validateCommentRequest(request, images);
+        validateCommentRequest(request, images, hasPurchased);
 
         // Rate limiting check
         checkRateLimit(ipAddress);
@@ -110,7 +123,12 @@ public class CommentServiceImpl implements CommentService {
         // Create comment entity
         Comment comment = new Comment();
         comment.setCmContent(request.getContent() != null ? request.getContent().trim() : "");
-        comment.setCmRating(request.getRating());
+        // Nếu chưa mua thì không set rating (hoặc set null)
+        if (hasPurchased && request.getRating() != null) {
+            comment.setCmRating(request.getRating());
+        } else {
+            comment.setCmRating(null); // Integer cho phép null
+        }
         comment.setDisplayName(displayName);
         comment.setIpAddress(ipAddress);
         comment.setAnonymous(isAnonymous);
@@ -232,15 +250,28 @@ public class CommentServiceImpl implements CommentService {
      * Validate comment request
      */
     private void validateCommentRequest(CreateCommentRequest request, MultipartFile[] images) {
-        // Allow rating 0 for replies, but require 1-5 for regular comments
+        // Allow rating 0 for replies, cho phép rating = 0 cho comment nếu chưa mua hàng
+        validateCommentRequest(request, images, false);
+    }
+
+    // Overload: validate với hasPurchased
+    private void validateCommentRequest(CreateCommentRequest request, MultipartFile[] images, boolean hasPurchased) {
         if (request.getParentCommentId() == null) {
-            // Regular comment - require rating between 1 and 5
-            if (request.getRating() < 1 || request.getRating() > 5) {
-                throw new IllegalArgumentException("Rating must be between 1 and 5 for comments");
+            // Regular comment
+            if (hasPurchased) {
+                // Đã mua: yêu cầu rating 1-5
+                if (request.getRating() == null || request.getRating() < 1 || request.getRating() > 5) {
+                    throw new IllegalArgumentException("Rating must be between 1 and 5 for comments");
+                }
+            } else {
+                // Chưa mua: không cho phép gửi rating
+                if (request.getRating() != null) {
+                    throw new IllegalArgumentException("Không được gửi rating khi chưa mua hàng");
+                }
             }
         } else {
             // Reply - allow rating 0, but still check upper bound
-            if (request.getRating() < 0 || request.getRating() > 5) {
+            if (request.getRating() != null && (request.getRating() < 0 || request.getRating() > 5)) {
                 throw new IllegalArgumentException("Rating must be between 0 and 5 for replies");
             }
         }
@@ -310,20 +341,45 @@ public class CommentServiceImpl implements CommentService {
      */
     private CommentResponse mapToCommentResponse(Comment comment, Integer productId) {
         List<ImageInfo> imageInfos = new ArrayList<>();
-        if (comment.getImages() != null) {
-            imageInfos = comment.getImages().stream()
-                    .map(img -> ImageInfo.builder()
-                            .id(img.getId())
-                            .fileName(img.getFileName())
-                            .url(img.getUrl())
-                            .size(img.getSize())
-                            .displayOrder(img.getDisplayOrder())
-                            .build())
-                    .collect(Collectors.toList());
+        
+        // Safe access to images - handle lazy loading gracefully
+        try {
+            if (comment.getImages() != null && !comment.getImages().isEmpty()) {
+                imageInfos = comment.getImages().stream()
+                        .map(img -> ImageInfo.builder()
+                                .id(img.getId())
+                                .fileName(img.getFileName())
+                                .url(img.getUrl())
+                                .size(img.getSize())
+                                .displayOrder(img.getDisplayOrder())
+                                .build())
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to load images for comment {}: {}", comment.getCmId(), e.getMessage());
+            imageInfos = new ArrayList<>(); // Return empty list on error
         }
 
-        // Get reply count
-        int replyCount = comment.getCmReplyComment() != null ? comment.getCmReplyComment().size() : 0;
+        // Get reply count safely
+        int replyCount = 0;
+        try {
+            replyCount = comment.getCmReplyComment() != null ? comment.getCmReplyComment().size() : 0;
+        } catch (Exception e) {
+            log.warn("Failed to count replies for comment {}: {}", comment.getCmId(), e.getMessage());
+        }
+
+        // Check purchase status của COMMENT AUTHOR (không phải current user)
+        boolean hasPurchased = false;
+        if (comment.getCmUser() != null && comment.getCmUser().getUserId() != null) {
+            try {
+                Long authorUserId = comment.getCmUser().getUserId();
+                hasPurchased = purchaseCheckService.hasUserPurchasedProduct(authorUserId, productId);
+            } catch (Exception e) {
+                log.warn("Failed to check purchase status for comment author {}: {}", 
+                         comment.getCmUser().getUserId(), e.getMessage());
+                hasPurchased = false;
+            }
+        }
 
         // Get username safely (handle lazy loading and type issues)
         String username = null;
@@ -362,6 +418,8 @@ public class CommentServiceImpl implements CommentService {
                 .parentCommentId(parentCommentId)
                 .images(imageInfos)
                 .replyCount(replyCount)
+                .hasPurchased(hasPurchased) // Purchase status của comment author
                 .build();
     }
+
 }

@@ -2,7 +2,7 @@ import React from 'react'
 import { FaStar, FaRegStar } from 'react-icons/fa'
 
 interface StarRatingProps {
-  rating: number
+  rating: number | null
   interactive?: boolean
   onRatingChange?: (rating: number) => void
   onHover?: (rating: number) => void
@@ -29,7 +29,7 @@ export const StarRating: React.FC<StarRatingProps> = ({
   return (
     <div className={`flex gap-1 ${interactive ? 'cursor-pointer' : ''} ${className}`}>
       {[1, 2, 3, 4, 5].map(star => {
-        const isFilled = star <= rating
+        const isFilled = rating !== null && star <= rating
         return (
           <span
             key={star}

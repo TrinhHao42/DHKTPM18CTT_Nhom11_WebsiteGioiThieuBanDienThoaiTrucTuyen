@@ -62,6 +62,8 @@ public class CartServiceImpl implements CartService {
             newProductVariant.setProdvColor(addToCartRequest.getColor());
             newProductVariant.setProdvModel(addToCartRequest.getStorage());
             newProductVariant.setProdvVersion(addToCartRequest.getVersion());
+            // IMPORTANT: Set the Product object to ensure product_id is correctly set in database
+            newProductVariant.setPvProduct(product);
             System.out.println(addToCartRequest.getProductId());
             
             // Handle image - only set if valid imageId is provided and exists

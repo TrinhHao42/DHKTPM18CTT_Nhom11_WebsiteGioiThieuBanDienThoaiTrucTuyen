@@ -8,7 +8,6 @@ import iuh.fit.se.enternalrunebackend.service.CommentService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -34,10 +33,10 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
-@Slf4j
 public class ProductCommentController {
 
     private final CommentService commentService;
+    private final iuh.fit.se.enternalrunebackend.repository.UserRepository userRepository;
 
     @GetMapping("/{productId}/comments")
     public ResponseEntity<CommentPageResponse> getComments(
@@ -223,9 +222,38 @@ public class ProductCommentController {
                     || "anonymousUser".equals(authentication.getPrincipal())) {
                 return Optional.empty();
             }
+            
+            // Handle different principal types
+            Object principal = authentication.getPrincipal();
+            
+            if (principal instanceof User) {
+                // Direct User entity
+                return Optional.of((User) principal);
+            } else if (principal instanceof org.springframework.security.core.userdetails.User) {
+                // Spring Security UserDetails - lookup user entity by username/email
+                String email = ((org.springframework.security.core.userdetails.User) principal).getUsername();
+                return getUserByEmail(email);
+            }
+            
             return Optional.empty();
 
         } catch (Exception e) {
+            // Swallow and return empty Optional on error
+            return Optional.empty();
+        }
+    }
+    
+    private Optional<User> getUserByEmail(String email) {
+        try {
+            User user = userRepository.findByEmail(email);
+            if (user != null) {
+                // Found user
+                return Optional.of(user);
+            }
+            // User not found for email
+            return Optional.empty();
+        } catch (Exception e) {
+            // Error fetching user
             return Optional.empty();
         }
     }

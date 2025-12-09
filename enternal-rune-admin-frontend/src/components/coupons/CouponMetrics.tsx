@@ -1,7 +1,9 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Badge from "@/components/ui/badge/Badge";
 import { ArrowDownIcon, ArrowUpIcon } from "@/icons";
+import { DiscountStatisticResponse } from "@/types/discount";
+import discountService from "@/services/discountService";
 
 const MetricCard = ({
   icon,
@@ -43,6 +45,13 @@ const MetricCard = ({
 };
 
 export default function CouponMetrics() {
+  const [stats, setStats] = useState<DiscountStatisticResponse | null>(null);
+  
+    useEffect(() => {
+      discountService.getStatistics().then(setStats);
+    }, []);
+  
+    if (!stats) return <p>Đang tải...</p>;
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
       <MetricCard
@@ -62,9 +71,7 @@ export default function CouponMetrics() {
           </svg>
         }
         title="Tổng mã giảm giá"
-        value="156"
-        trend="up"
-        trendValue="12.5%"
+        value={stats.totalDiscounts}
       />
 
       <MetricCard
@@ -84,9 +91,7 @@ export default function CouponMetrics() {
           </svg>
         }
         title="Đang hoạt động"
-        value="89"
-        trend="up"
-        trendValue="8.3%"
+        value={stats.activeDiscounts}
       />
 
       <MetricCard
@@ -105,10 +110,8 @@ export default function CouponMetrics() {
             />
           </svg>
         }
-        title="Đã sử dụng"
-        value="2,547"
-        trend="up"
-        trendValue="15.8%"
+        title="Đơn hàng áp dụng"
+        value={stats.usedCount.toLocaleString()}
       />
 
       <MetricCard
@@ -127,10 +130,9 @@ export default function CouponMetrics() {
             />
           </svg>
         }
-        title="Tổng giảm giá"
-        value="₫458M"
-        trend="up"
-        trendValue="22.4%"
+        title="Doanh thu (giảm giá)"
+        value={"₫" + stats.totalDiscountAmount.toLocaleString()}
+
       />
     </div>
   );
