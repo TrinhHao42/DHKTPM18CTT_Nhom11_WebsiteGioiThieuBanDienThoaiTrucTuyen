@@ -1,7 +1,8 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Badge from "@/components/ui/badge/Badge";
 import { ArrowDownIcon, ArrowUpIcon } from "@/icons";
+import { getOrderStatistics, formatCurrency, OrderStatistics } from "@/services/orderService";
 
 const MetricCard = ({
   icon,
@@ -9,12 +10,14 @@ const MetricCard = ({
   value,
   trend,
   trendValue,
+  loading,
 }: {
   icon: React.ReactNode;
   title: string;
   value: string | number;
   trend?: "up" | "down";
   trendValue?: string;
+  loading?: boolean;
 }) => {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
@@ -27,11 +30,15 @@ const MetricCard = ({
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {title}
           </span>
-          <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-            {value}
-          </h4>
+          {loading ? (
+            <div className="mt-2 h-7 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+          ) : (
+            <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
+              {value}
+            </h4>
+          )}
         </div>
-        {trend && trendValue && (
+        {trend && trendValue && !loading && (
           <Badge color={trend === "up" ? "success" : "error"}>
             {trend === "up" ? <ArrowUpIcon /> : <ArrowDownIcon />}
             {trendValue}
@@ -43,6 +50,35 @@ const MetricCard = ({
 };
 
 export default function OrderMetrics() {
+  const [statistics, setStatistics] = useState<OrderStatistics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStatistics = async () => {
+      try {
+        setLoading(true);
+        const data = await getOrderStatistics();
+        setStatistics(data);
+      } catch (err) {
+        console.error("Error fetching order statistics:", err);
+        setError("Không thể tải dữ liệu thống kê");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStatistics();
+  }, []);
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+        {error}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
       <MetricCard
@@ -62,9 +98,8 @@ export default function OrderMetrics() {
           </svg>
         }
         title="Tổng đơn hàng"
-        value="2,847"
-        trend="up"
-        trendValue="18.2%"
+        value={statistics?.totalOrders?.toLocaleString('vi-VN') ?? 0}
+        loading={loading}
       />
       
       <MetricCard
@@ -84,9 +119,8 @@ export default function OrderMetrics() {
           </svg>
         }
         title="Doanh thu"
-        value="₫2.8B"
-        trend="up"
-        trendValue="25.3%"
+        value={statistics ? formatCurrency(statistics.totalRevenue) : "₫0"}
+        loading={loading}
       />
 
       <MetricCard
@@ -106,9 +140,8 @@ export default function OrderMetrics() {
           </svg>
         }
         title="Đơn hoàn thành"
-        value="2,145"
-        trend="up"
-        trendValue="12.8%"
+        value={statistics?.completedOrders?.toLocaleString('vi-VN') ?? 0}
+        loading={loading}
       />
 
       <MetricCard
@@ -128,9 +161,8 @@ export default function OrderMetrics() {
           </svg>
         }
         title="Đang xử lý"
-        value="89"
-        trend="down"
-        trendValue="5.2%"
+        value={statistics?.processingOrders?.toLocaleString('vi-VN') ?? 0}
+        loading={loading}
       />
     </div>
   );

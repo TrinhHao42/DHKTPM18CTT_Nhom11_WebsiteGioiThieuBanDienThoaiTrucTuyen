@@ -29,21 +29,21 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
     @Query("SELECT COUNT(o) FROM Order o")
     long countTotalOrders();
 
-    // Tổng số đơn hoàn thành (trạng thái giao hàng hiện tại = DELIVERED)
+    // Đơn đang xử lý (trạng thái giao hàng hiện tại thuộc PROCESSING hoặc SHIPPED)
     @Query("SELECT COUNT(DISTINCT o) FROM Order o " +
            "JOIN o.shippingStatusHistories ssh " +
            "JOIN ssh.shippingStatus ss " +
            "WHERE ssh.createdAt = (SELECT MAX(ssh2.createdAt) FROM OrderShippingHistory ssh2 WHERE ssh2.order = o) " +
-           "AND ss.statusCode = 'DELIVERED'")
-    long countCompletedOrders();
-
-    // Đơn đang xử lý (trạng thái giao hàng hiện tại thuộc PENDING hoặc PROCESSING)
-    @Query("SELECT COUNT(DISTINCT o) FROM Order o " +
-           "JOIN o.shippingStatusHistories ssh " +
-           "JOIN ssh.shippingStatus ss " +
-           "WHERE ssh.createdAt = (SELECT MAX(ssh2.createdAt) FROM OrderShippingHistory ssh2 WHERE ssh2.order = o) " +
-           "AND ss.statusCode IN ('PENDING', 'PROCESSING')")
+           "AND ss.statusCode IN ('PROCESSING', 'SHIPPED')")
     long countProcessingOrders();
+
+    // Đơn hoàn thành (trạng thái giao hàng = DELIVERED hoặc RECEIVED)
+    @Query("SELECT COUNT(DISTINCT o) FROM Order o " +
+           "JOIN o.shippingStatusHistories ssh " +
+           "JOIN ssh.shippingStatus ss " +
+           "WHERE ssh.createdAt = (SELECT MAX(ssh2.createdAt) FROM OrderShippingHistory ssh2 WHERE ssh2.order = o) " +
+           "AND ss.statusCode IN ('DELIVERED', 'RECEIVED')")
+    long countCompletedOrders();
 
     /**
      * Kiểm tra user đã mua sản phẩm cụ thể hay chưa (đơn hàng đã thanh toán)
