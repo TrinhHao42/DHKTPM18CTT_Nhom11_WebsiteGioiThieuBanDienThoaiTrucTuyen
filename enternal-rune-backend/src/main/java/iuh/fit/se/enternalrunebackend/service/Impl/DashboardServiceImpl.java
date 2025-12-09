@@ -134,11 +134,13 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private List<EcommerceDashboardResponse.DemographicData> getDemographics() {
-        // Lấy danh sách user với địa chỉ
+        // Lấy danh sách user với địa chỉ (chỉ ROLE_USER, không tính admin)
         List<User> users = userRepository.findAll();
         
-        // Đếm theo quốc gia
+        // Đếm theo quốc gia (chỉ user có role ROLE_USER)
         Map<String, Long> countryCount = users.stream()
+                .filter(user -> user.getRoles() != null && 
+                        user.getRoles().stream().anyMatch(role -> "ROLE_USER".equals(role.getRoleName())))
                 .filter(user -> user.getAddresses() != null && !user.getAddresses().isEmpty())
                 .flatMap(user -> user.getAddresses().stream())
                 .collect(Collectors.groupingBy(
