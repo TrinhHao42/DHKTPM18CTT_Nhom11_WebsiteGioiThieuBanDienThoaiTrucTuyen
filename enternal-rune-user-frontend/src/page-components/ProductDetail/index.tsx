@@ -139,7 +139,7 @@ export default function ProductDetail() {
         // Set initial selected color
         if (p?.prodColor && p.prodColor.length > 0) {
           setSelectedColor(p.prodColor[0])
-          setSelectedImage(p.images[0])
+          setSelectedImage(p?.images?.[0])
         }
       })
       .catch(err => {
@@ -187,8 +187,8 @@ export default function ProductDetail() {
 
   const handleColorChange = (color: string) => {
     setSelectedColor(color)
-    const colorIndex = product.prodColor.indexOf(color)
-    setSelectedImage(product.images[colorIndex])
+    const colorIndex = product.prodColor?.indexOf(color) ?? -1
+    setSelectedImage(colorIndex >= 0 ? product?.images?.[colorIndex] : undefined)
   }
 
   const images = product?.images?.map(img => img.imageData) || ['/images/iphone.png']

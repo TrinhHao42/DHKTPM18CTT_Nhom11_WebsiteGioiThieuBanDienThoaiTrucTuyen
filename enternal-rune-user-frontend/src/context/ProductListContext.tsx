@@ -124,7 +124,7 @@ export const ProductListProvider = ({ children }: ProductListProviderProps) => {
     setFilters(resetState)
     setSearchTerm('')
     // Reset triggers refetch of default API list
-    ProductService.getFilteredProducts({ page: 1, size: 100 })
+    ProductService.getFilteredProducts({ page: 1, size: 20 })
       .then(setApiProducts)
       .catch(err => setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi'))
     setCurrentPage(1)

@@ -12,13 +12,14 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-    const currentPrice = product.productPrices?.[0]?.ppPrice || 0;
-    const originalPrice = currentPrice * 1.15;
+    // Use optimized API pricing - prioritize activePrice from ProductListResponse, then currentPrice, then fallback
+    const currentPrice = product.activePrice || product.currentPrice || product.productPrices?.[0]?.ppPrice || 0;
+    const originalPrice = product.originalPrice || (currentPrice * 1.15);
     const [showBuyNowModal, setShowBuyNowModal] = useState(false);
 
-    // Use rating data from product response (no more individual API calls)
-    const ratingsTotal = product.ratingDistribution ? Object.values(product.ratingDistribution).reduce((s, v) => s + (Number(v) || 0), 0) : (product.totalComments || 0)
-    const averageRating = ratingsTotal > 0 ? (product.averageRating || product.prodRating) : 0
+    // Use optimized rating data from backend - prioritize averageRating from API
+    const ratingsTotal = product.totalComments || (product.ratingDistribution ? Object.values(product.ratingDistribution).reduce((s, v) => s + (Number(v) || 0), 0) : 0);
+    const averageRating = product.averageRating !== undefined ? product.averageRating : (product.prodRating || 0);
 
     const handleProductClick = (e: React.MouseEvent) => {
         // Prevent navigation if clicking on buttons or links
@@ -32,8 +33,12 @@ export default function ProductCard({ product }: ProductCardProps) {
     const handleBuyNowClick = (e: React.MouseEvent) => {
         e.stopPropagation();
         
-        // Since product doesn't have productVariant array, we need to create variant data from available info
-        if (!product.prodColor || product.prodColor.length === 0) {
+        // Get available colors from optimized API or fallback to legacy structure
+        const availableColors = product.availableColors ? 
+            product.availableColors.split(', ').filter(color => color.trim()) :
+            (product.prodColor || []);
+            
+        if (!availableColors || availableColors.length === 0) {
             console.error('No color variants available for this product');
             return;
         }
@@ -49,7 +54,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {/* Image Container */}
             <div className="relative p-4 bg-gradient-to-br from-blue-50 to-white group-hover:from-blue-100 group-hover:to-blue-50 transition-colors duration-300">
                 <Image
-                    src={product.images[0].imageData || "/images/iphone.png"}
+                    src={product.primaryImageUrl || product.images?.[0]?.imageData || product.imageUrl || "/images/iphone.png"}
                     alt={product.prodName}
                     className="mx-auto w-32 h-32 object-contain rounded-2xl group-hover:scale-110 transition-transform duration-500"
                     width={128}
@@ -85,7 +90,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                         {[1, 2, 3, 4, 5].map((i) => (
                             <Star
                                 key={i}
-                                className={`w-4 h-4 ${ratingsTotal > 0 && i <= Math.floor(averageRating)
+                                className={`w-4 h-4 ${averageRating > 0 && i <= Math.floor(averageRating)
                                     ? 'text-yellow-400 fill-yellow-400'
                                     : 'text-gray-200 fill-gray-200'
                                     }`}
@@ -94,7 +99,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     </div>
                     <span className="text-sm font-semibold text-gray-900">{averageRating.toFixed(1)}</span>
                     <span className="text-gray-500 text-sm">
-                        ({ratingsTotal > 0 ? `${ratingsTotal.toLocaleString()} đánh giá` : 'Chưa có đánh giá'})
+                        ({averageRating > 0 ? `${ratingsTotal.toLocaleString()} đánh giá` : 'Chưa có đánh giá'})
                     </span>
                     <div className="ml-auto">
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -150,14 +155,20 @@ export default function ProductCard({ product }: ProductCardProps) {
                         variantId: 0,
                         variantName: `${product.prodName}`,
                         price: currentPrice,
-                        imageUrl: product.images[0]?.imageData,
+                        imageUrl: product.primaryImageUrl || product.imageUrl || product.images?.[0]?.imageData || "/images/iphone.png",
                         stock: 100
                     }}
                     productId={Number(product.prodId)}
-                    availableColors={product.prodColor || []}
+                    availableColors={product.availableColors ? 
+                        product.availableColors.split(', ').filter(color => color.trim()) :
+                        (product.prodColor || [])
+                    }
                     availableStorages={['64GB', '128GB', '256GB', '512GB', '1TB']}
                     availableImages={product.images || []}
-                    defaultColor={product.prodColor?.[0]}
+                    defaultColor={product.availableColors ? 
+                        product.availableColors.split(', ')[0] :
+                        product.prodColor?.[0]
+                    }
                     defaultStorage="256GB"
                 />
             )}
