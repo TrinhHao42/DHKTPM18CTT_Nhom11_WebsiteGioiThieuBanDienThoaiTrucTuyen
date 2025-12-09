@@ -16,15 +16,15 @@ import { CommentsPageResponse } from '@/types/Comment'
 const RelatedProducts = React.memo(function RelatedProducts({ product }: { product?: Product }) {
   const [items, setItems] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
+  const productId = product?.prodId?.toString()
+  const brandId = product?.prodBrand?.brandId
 
   useEffect(() => {
     let mounted = true
 
-    // Only load once per product (product.prodId as dependency) or if brand changes
-    if (!product) return
+    // Only load if product exists and we haven't loaded for this product yet
+    if (!product || !productId) return
     setLoading(true)
-
-    const brandId = product?.prodBrand?.brandId
 
     const params: FilterParams = { page: 0, size: 4 }
     if (brandId) params.brands = [brandId]
@@ -41,7 +41,7 @@ const RelatedProducts = React.memo(function RelatedProducts({ product }: { produ
       })
 
     return () => { mounted = false }
-  }, [product])
+  }, [product, productId, brandId])
 
   if (!product) return null
 

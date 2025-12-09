@@ -30,7 +30,7 @@ export const createOrder = async (request: CreateOrderRequest): Promise<CreateOr
         console.error('❌ Error response:', error.response?.data);
         console.error('❌ Error status:', error.response?.status);
         console.error('❌ Error message:', error.message);
-        
+
         // Throw lại với message rõ ràng hơn
         if (error.response?.data?.message) {
             throw new Error(error.response.data.message);
@@ -89,9 +89,9 @@ export const cancelOrder = async (orderId: number, userId: number): Promise<any>
 }
 
 export const createRefundRequest = async (
-    orderId: number, 
-    userId: number, 
-    reason: string, 
+    orderId: number,
+    userId: number,
+    reason: string,
     refundType: 'CANCEL' | 'RETURN'
 ): Promise<any> => {
     try {
@@ -119,7 +119,7 @@ export const createReturnRequest = async (
 ): Promise<any> => {
     try {
         console.log('📦 Tạo yêu cầu trả hàng:', { orderId, userId, reason, imageUrl });
-        const response = await AxiosInstance.post('/return-requests', 
+        const response = await AxiosInstance.post('/return-requests',
             {
                 orderId,
                 reason,
@@ -173,14 +173,14 @@ export const uploadImage = async (file: File): Promise<string> => {
     try {
         const formData = new FormData();
         formData.append('file', file);
-        
+
         // Sử dụng API upload có sẵn hoặc tạo mới
         const response = await AxiosInstance.post('/upload/image', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
         });
-        
+
         return response.data.imageUrl || response.data.url;
     } catch (error: any) {
         console.error('❌ Lỗi upload ảnh:', error);

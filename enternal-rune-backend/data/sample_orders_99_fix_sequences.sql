@@ -25,8 +25,8 @@ SELECT setval('order_payment_history_history_id_seq', COALESCE((SELECT MAX(histo
 -- Fix sequence cho bảng order_shipping_history
 SELECT setval('order_shipping_history_history_id_seq', COALESCE((SELECT MAX(history_id) FROM order_shipping_history), 0) + 1, false);
 
--- Fix sequence cho bảng transactions
-SELECT setval('transactions_transaction_id_seq', COALESCE((SELECT MAX(transaction_id) FROM transactions), 0) + 1, false);
+-- Fix sequence cho bảng transactions (primary key là trans_id, không phải transaction_id)
+SELECT setval('transactions_trans_id_seq', COALESCE((SELECT MAX(trans_id) FROM transactions), 0) + 1, false);
 
 -- Fix sequence cho bảng cancel_requests
 SELECT setval('cancel_requests_cancel_request_id_seq', COALESCE((SELECT MAX(cancel_request_id) FROM cancel_requests), 0) + 1, false);

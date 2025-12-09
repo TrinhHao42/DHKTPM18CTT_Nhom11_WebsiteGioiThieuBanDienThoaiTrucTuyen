@@ -153,8 +153,8 @@ INSERT INTO order_detail (od_id, quantity, total_price, product_variant_id, orde
 -- Order 6: Samsung Galaxy S25 256GB - variant 53, giá 16,690,000
 (6, 1, 16690000, 53, 6),
 
--- Order 7: iPhone 14 Pro Max 128GB - variant 148, giá 27,990,000
-(7, 1, 27990000, 148, 7),
+-- Order 7: iPhone 15 Pro Max 256GB - variant 107, giá 27,990,000
+(7, 1, 27990000, 107, 7),
 
 -- Order 8: Samsung Galaxy A06 - variant 2, giá 3,090,000
 (8, 1, 3090000, 2, 8),
@@ -394,8 +394,8 @@ INSERT INTO order_detail (od_id, quantity, total_price, product_variant_id, orde
 -- Order 86: iPhone 12 Pro Max 512GB - variant 142, giá 12,690,000
 (87, 1, 12690000, 142, 86),
 
--- Order 87: iPhone 12 Pro Max 128GB - variant 143, giá 41,790,000
-(88, 1, 41790000, 143, 87),
+-- Order 87: iPhone 12 Pro Max 128GB - variant 141, giá 41,790,000
+(88, 1, 41790000, 141, 87),
 
 -- Order 88: Samsung Galaxy A14 4G - variant 17, giá 2,990,000
 (89, 1, 2990000, 17, 88),

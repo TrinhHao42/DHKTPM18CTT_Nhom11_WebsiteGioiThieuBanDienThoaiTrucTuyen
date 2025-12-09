@@ -9,7 +9,7 @@ import { CommentList } from '@/components/comments/CommentList'
 import { RatingBreakdown } from '@/components/comments/RatingBreakdown'
 import { CommentExamples } from '@/components/comments/CommentExamples'
 import { useAuth } from '@/context/AuthContext'
-import { getUserOrders } from '@/services/checkoutService'
+import { useHasPurchasedProduct } from '@/hooks/useHasPurchasedProduct'
 
 interface ProductRatingProps {
   productId: string | number
@@ -25,7 +25,7 @@ interface ProductRatingProps {
 
 }
 
-export default function ProductRating({ productId, initialData, externalCommentsData, externalSetCommentsData, externalLoading, externalLoadingMore, externalLoadMoreComments, externalRefreshComments }: ProductRatingProps) {
+export default function ProductRating({ productId, productInfo, initialData, externalCommentsData, externalSetCommentsData, externalLoading, externalLoadingMore, externalLoadMoreComments, externalRefreshComments }: ProductRatingProps) {
   // Refs
   const formRef = useRef<HTMLDivElement>(null)
 
@@ -62,48 +62,25 @@ export default function ProductRating({ productId, initialData, externalComments
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null)
   const [showExamples, setShowExamples] = useState(false)
 
-  const [isPaid, setIsPaid] = useState(false)
-  const lastOrdersUserIdRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    const loadUserOrders = async () => {
-      if (!user?.userId) {
-        // Clear last user when logged out
-        lastOrdersUserIdRef.current = null
-        setIsPaid(false)
-        return
-      }
-      // If we've already fetched for this user, don't fetch again
-      if (lastOrdersUserIdRef.current === user.userId) return
-      lastOrdersUserIdRef.current = user.userId
-      try {
-        const res = await getUserOrders(user.userId, 0, 100)
-        // Kiểm tra bất kỳ order nào có statusCode = "PAID"
-        const hasPaidOrder = res?.content?.some(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (order: any) => order?.currentPaymentStatus?.statusCode === "PAID"
-        )
-        setIsPaid(hasPaidOrder)
-      } catch (error) {
-        console.error("Error loading orders:", error)
-      }
-    }
-    loadUserOrders()
-  }, [user?.userId])
-
+  // Sử dụng custom hook để kiểm tra user có mua sản phẩm này không
+  // Truyền cả productName (nếu có) để hook có thể so sánh theo tên variant
+  const { hasPurchased: isPaid } = useHasPurchasedProduct({ productId, productName: productInfo?.prodName })
+  
   // Set hasPurchased based on user's purchase history from comments data
   useEffect(() => {
-    // For form display: assume user has purchased if they have any comments with hasPurchased=true
+    // For form display: assume user has purchased if either the hook says so or
+    // they have any comments with hasPurchased=true
+    let hasUserPurchasedFromComments = false
     if (commentsData?.comments && user?.userId) {
       const userComments = commentsData.comments.filter(comment =>
         comment.username === user.userName || comment.displayName === user.userName
       )
-      const hasUserPurchased = userComments.some(comment => comment.hasPurchased)
-      setHasPurchased(hasUserPurchased)
-    } else {
-      setHasPurchased(false)
+      hasUserPurchasedFromComments = userComments.some(comment => comment.hasPurchased)
     }
-  }, [commentsData, user])
+
+    // Merge the results: if the hook (isPaid) says true OR comments say purchased -> true
+    setHasPurchased(Boolean(isPaid) || Boolean(hasUserPurchasedFromComments))
+  }, [commentsData, user, isPaid])
 
   // Helper functions
   const handleImageClick = (url: string) => {
