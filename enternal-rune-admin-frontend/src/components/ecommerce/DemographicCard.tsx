@@ -74,7 +74,7 @@ export default function DemographicCard({ data, loading }: DemographicCardProps)
                   <Image
                     width={48}
                     height={48}
-                    src={`https://upload.wikimedia.org/wikipedia/commons/2/21/Flag_of_Vietnam.svg`}
+                    src={`/${demo.country === "Unknown" ? "images/country/unknown" : "images/country/country-10"}.svg`}
                     alt={demo.country}
                     className="w-full"
                   />
