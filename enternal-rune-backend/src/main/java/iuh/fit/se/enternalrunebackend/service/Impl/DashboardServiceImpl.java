@@ -2,11 +2,11 @@ package iuh.fit.se.enternalrunebackend.service.Impl;
 
 import iuh.fit.se.enternalrunebackend.dto.response.EcommerceDashboardResponse;
 import iuh.fit.se.enternalrunebackend.entity.Order;
-import iuh.fit.se.enternalrunebackend.entity.User;
 import iuh.fit.se.enternalrunebackend.repository.OrderRepository;
 import iuh.fit.se.enternalrunebackend.repository.UserRepository;
 import iuh.fit.se.enternalrunebackend.service.DashboardService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -24,33 +24,75 @@ public class DashboardServiceImpl implements DashboardService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
 
+    /**
+     * OPTIMIZED: Batch load monthly data to reduce DB queries from 37+ to ~6
+     * Added caching with 5-minute TTL
+     */
     @Override
+    @Cacheable(value = "dashboardCache", key = "#year", unless = "#result == null")
     public EcommerceDashboardResponse getEcommerceDashboard(int year) {
+        // Batch load all monthly data in ONE query instead of 24+ queries
+        Map<Integer, MonthlySummary> monthlySummaries = getMonthlySummariesBatch(year);
+        
         return EcommerceDashboardResponse.builder()
-                .metrics(getMetrics())
-                .monthlySales(getMonthlySales(year))
-                .monthlyTarget(getMonthlyTarget(year))
-                .statistics(getStatistics(year))
-                .demographics(getDemographics())
+                .metrics(getMetrics(monthlySummaries))
+                .monthlySales(getMonthlySales(monthlySummaries))
+                .monthlyTarget(getMonthlyTarget(monthlySummaries))
+                .statistics(getStatistics(monthlySummaries))
+                .demographics(getDemographicsOptimized())
                 .recentOrders(getRecentOrders())
                 .build();
     }
+    
+    // Inner class to hold monthly data
+    private static class MonthlySummary {
+        BigDecimal revenue;
+        int orderCount;
+        
+        MonthlySummary(BigDecimal revenue, int orderCount) {
+            this.revenue = revenue != null ? revenue : BigDecimal.ZERO;
+            this.orderCount = orderCount;
+        }
+    }
+    
+    /**
+     * Batch load all monthly data for the year in ONE query instead of 24+ queries
+     * This reduces database calls from O(n) to O(1)
+     */
+    private Map<Integer, MonthlySummary> getMonthlySummariesBatch(int year) {
+        List<Object[]> results = orderRepository.getMonthlySummariesForYear(year);
+        
+        Map<Integer, MonthlySummary> summaries = new HashMap<>();
+        for (Object[] row : results) {
+            Integer month = (Integer) row[0];
+            BigDecimal revenue = (BigDecimal) row[1];
+            Long orderCount = (Long) row[2];
+            
+            summaries.put(month, new MonthlySummary(revenue, orderCount.intValue()));
+        }
+        
+        // Fill missing months with zero data
+        for (int month = 1; month <= 12; month++) {
+            summaries.putIfAbsent(month, new MonthlySummary(BigDecimal.ZERO, 0));
+        }
+        
+        return summaries;
+    }
 
-    private EcommerceDashboardResponse.MetricsData getMetrics() {
+    private EcommerceDashboardResponse.MetricsData getMetrics(Map<Integer, MonthlySummary> monthlySummaries) {
         // Tổng số khách hàng hiện tại (chỉ tính ROLE_USER, không tính admin)
         long totalCustomers = userRepository.countByRole("ROLE_USER");
         
         // Tổng số đơn hàng
         long totalOrders = orderRepository.count();
         
-        // Tính growth rate cho orders (so với tháng trước)
+        // Tính growth rate cho orders (so với tháng trước) - use cached monthly data
         LocalDate now = LocalDate.now();
-        LocalDate lastMonth = now.minusMonths(1);
+        int currentMonth = now.getMonthValue();
+        int lastMonth = currentMonth == 1 ? 12 : currentMonth - 1;
         
-        long ordersThisMonth = orderRepository.countOrdersInMonth(
-                now.getYear(), now.getMonthValue());
-        long ordersLastMonth = orderRepository.countOrdersInMonth(
-                lastMonth.getYear(), lastMonth.getMonthValue());
+        long ordersThisMonth = monthlySummaries.getOrDefault(currentMonth, new MonthlySummary(BigDecimal.ZERO, 0)).orderCount;
+        long ordersLastMonth = monthlySummaries.getOrDefault(lastMonth, new MonthlySummary(BigDecimal.ZERO, 0)).orderCount;
         
         double orderGrowthRate = calculateGrowthRate(ordersLastMonth, ordersThisMonth);
         
@@ -65,24 +107,23 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
-    private List<EcommerceDashboardResponse.MonthlySalesData> getMonthlySales(int year) {
+    private List<EcommerceDashboardResponse.MonthlySalesData> getMonthlySales(Map<Integer, MonthlySummary> monthlySummaries) {
         List<EcommerceDashboardResponse.MonthlySalesData> monthlySales = new ArrayList<>();
         
         for (int month = 1; month <= 12; month++) {
-            BigDecimal amount = orderRepository.getTotalRevenueInMonth(year, month);
-            int orderCount = orderRepository.countOrdersInMonth(year, month);
+            MonthlySummary summary = monthlySummaries.get(month);
             
             monthlySales.add(EcommerceDashboardResponse.MonthlySalesData.builder()
                     .month(Month.of(month).name().substring(0, 3))
-                    .amount(amount != null ? amount : BigDecimal.ZERO)
-                    .orderCount(orderCount)
+                    .amount(summary.revenue)
+                    .orderCount(summary.orderCount)
                     .build());
         }
         
         return monthlySales;
     }
 
-    private EcommerceDashboardResponse.MonthlyTargetData getMonthlyTarget(int year) {
+    private EcommerceDashboardResponse.MonthlyTargetData getMonthlyTarget(Map<Integer, MonthlySummary> monthlySummaries) {
         int currentMonth = LocalDate.now().getMonthValue();
         
         // Target: trung bình doanh thu 3 tháng gần nhất * 1.1
@@ -92,15 +133,16 @@ public class DashboardServiceImpl implements DashboardService {
         if (monthsToCheck > 0) {
             for (int i = 0; i < monthsToCheck; i++) {
                 int month = currentMonth - i;
-                BigDecimal revenue = orderRepository.getTotalRevenueInMonth(year, month);
-                avgRevenue = avgRevenue.add(revenue != null ? revenue : BigDecimal.ZERO);
+                if (month > 0) {
+                    BigDecimal revenue = monthlySummaries.get(month).revenue;
+                    avgRevenue = avgRevenue.add(revenue);
+                }
             }
             avgRevenue = avgRevenue.divide(BigDecimal.valueOf(monthsToCheck), 2, RoundingMode.HALF_UP);
         }
         
         BigDecimal target = avgRevenue.multiply(BigDecimal.valueOf(1.1));
-        BigDecimal achieved = orderRepository.getTotalRevenueInMonth(year, currentMonth);
-        achieved = achieved != null ? achieved : BigDecimal.ZERO;
+        BigDecimal achieved = monthlySummaries.get(currentMonth).revenue;
         
         double percentage = target.compareTo(BigDecimal.ZERO) > 0
                 ? achieved.divide(target, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100)).doubleValue()
@@ -113,12 +155,11 @@ public class DashboardServiceImpl implements DashboardService {
                 .build();
     }
 
-    private List<EcommerceDashboardResponse.StatisticsData> getStatistics(int year) {
+    private List<EcommerceDashboardResponse.StatisticsData> getStatistics(Map<Integer, MonthlySummary> monthlySummaries) {
         List<EcommerceDashboardResponse.StatisticsData> statistics = new ArrayList<>();
         
         for (int month = 1; month <= 12; month++) {
-            BigDecimal revenue = orderRepository.getTotalRevenueInMonth(year, month);
-            revenue = revenue != null ? revenue : BigDecimal.ZERO;
+            BigDecimal revenue = monthlySummaries.get(month).revenue;
             
             // Giả sử profit = 20% của revenue (có thể tính toán phức tạp hơn)
             BigDecimal profit = revenue.multiply(BigDecimal.valueOf(0.20));
@@ -133,39 +174,35 @@ public class DashboardServiceImpl implements DashboardService {
         return statistics;
     }
 
-    private List<EcommerceDashboardResponse.DemographicData> getDemographics() {
-        // Lấy danh sách user với địa chỉ (chỉ ROLE_USER, không tính admin)
-        List<User> users = userRepository.findAll();
+    /**
+     * OPTIMIZED: Use native query to get country distribution without loading all users
+     * Old method loaded ALL users into memory - very inefficient!
+     */
+    private List<EcommerceDashboardResponse.DemographicData> getDemographicsOptimized() {
+        // Use native query to get country distribution directly from database
+        List<Object[]> countryData = userRepository.getCustomerCountryDistribution();
         
-        // Đếm theo quốc gia (chỉ user có role ROLE_USER)
-        Map<String, Long> countryCount = users.stream()
-                .filter(user -> user.getRoles() != null && 
-                        user.getRoles().stream().anyMatch(role -> "ROLE_USER".equals(role.getRoleName())))
-                .filter(user -> user.getAddresses() != null && !user.getAddresses().isEmpty())
-                .flatMap(user -> user.getAddresses().stream())
-                .collect(Collectors.groupingBy(
-                        address -> address.getCountryName() != null ? address.getCountryName() : "Unknown",
-                        Collectors.counting()
-                ));
-        
-        long totalCustomers = countryCount.values().stream().mapToLong(Long::longValue).sum();
+        long totalCustomers = countryData.stream()
+                .mapToLong(row -> ((Number) row[1]).longValue())
+                .sum();
         
         // Convert to response
-        return countryCount.entrySet().stream()
-                .map(entry -> {
+        return countryData.stream()
+                .map(row -> {
+                    String countryName = (String) row[0];
+                    long count = ((Number) row[1]).longValue();
+                    
                     double percentage = totalCustomers > 0
-                            ? (entry.getValue() * 100.0) / totalCustomers
+                            ? (count * 100.0) / totalCustomers
                             : 0.0;
                     
                     return EcommerceDashboardResponse.DemographicData.builder()
-                            .country(entry.getKey())
-                            .countryCode(getCountryCode(entry.getKey()))
-                            .customerCount(entry.getValue())
+                            .country(countryName != null ? countryName : "Unknown")
+                            .countryCode(getCountryCode(countryName))
+                            .customerCount(count)
                             .percentage(Math.round(percentage * 100.0) / 100.0)
                             .build();
                 })
-                .sorted((a, b) -> Long.compare(b.getCustomerCount(), a.getCustomerCount()))
-                .limit(5)
                 .collect(Collectors.toList());
     }
 
