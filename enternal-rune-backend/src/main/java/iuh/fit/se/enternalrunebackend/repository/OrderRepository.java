@@ -29,21 +29,21 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
     @Query("SELECT COUNT(o) FROM Order o")
     long countTotalOrders();
 
-    // Tổng số đơn hoàn thành (trạng thái giao hàng hiện tại = DELIVERED)
+    // Đơn đang xử lý (trạng thái giao hàng hiện tại thuộc PROCESSING hoặc SHIPPED)
     @Query("SELECT COUNT(DISTINCT o) FROM Order o " +
            "JOIN o.shippingStatusHistories ssh " +
            "JOIN ssh.shippingStatus ss " +
            "WHERE ssh.createdAt = (SELECT MAX(ssh2.createdAt) FROM OrderShippingHistory ssh2 WHERE ssh2.order = o) " +
-           "AND ss.statusCode = 'DELIVERED'")
-    long countCompletedOrders();
-
-    // Đơn đang xử lý (trạng thái giao hàng hiện tại thuộc PENDING hoặc PROCESSING)
-    @Query("SELECT COUNT(DISTINCT o) FROM Order o " +
-           "JOIN o.shippingStatusHistories ssh " +
-           "JOIN ssh.shippingStatus ss " +
-           "WHERE ssh.createdAt = (SELECT MAX(ssh2.createdAt) FROM OrderShippingHistory ssh2 WHERE ssh2.order = o) " +
-           "AND ss.statusCode IN ('PENDING', 'PROCESSING')")
+           "AND ss.statusCode IN ('PROCESSING', 'SHIPPED')")
     long countProcessingOrders();
+
+    // Đơn hoàn thành (trạng thái giao hàng = DELIVERED hoặc RECEIVED)
+    @Query("SELECT COUNT(DISTINCT o) FROM Order o " +
+           "JOIN o.shippingStatusHistories ssh " +
+           "JOIN ssh.shippingStatus ss " +
+           "WHERE ssh.createdAt = (SELECT MAX(ssh2.createdAt) FROM OrderShippingHistory ssh2 WHERE ssh2.order = o) " +
+           "AND ss.statusCode IN ('DELIVERED', 'RECEIVED')")
+    long countCompletedOrders();
 
     /**
      * Kiểm tra user đã mua sản phẩm cụ thể hay chưa (đơn hàng đã thanh toán)
@@ -206,4 +206,19 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
     long countByCurrentShippingStatus(@Param("statusCode") String statusCode);
 
     List<Order> findByOrderUser_UserId(Long userId);
+    
+    // Dashboard queries
+    @Query("SELECT COUNT(o) FROM Order o " +
+           "WHERE EXTRACT(YEAR FROM o.orderDate) = :year " +
+           "AND EXTRACT(MONTH FROM o.orderDate) = :month")
+    int countOrdersInMonth(@Param("year") int year, @Param("month") int month);
+    
+    @Query("SELECT COALESCE(SUM(o.orderTotalAmount), 0) FROM Order o " +
+           "JOIN o.paymentStatusHistories psh " +
+           "JOIN psh.paymentStatus ps " +
+           "WHERE psh.createdAt = (SELECT MAX(psh2.createdAt) FROM OrderPaymentHistory psh2 WHERE psh2.order = o) " +
+           "AND ps.statusCode IN ('PAID', 'COMPLETED') " +
+           "AND EXTRACT(YEAR FROM o.orderDate) = :year " +
+           "AND EXTRACT(MONTH FROM o.orderDate) = :month")
+    BigDecimal getTotalRevenueInMonth(@Param("year") int year, @Param("month") int month);
 }
