@@ -41,24 +41,6 @@ export default function DemographicCard({ data, loading }: DemographicCardProps)
           <button onClick={toggleDropdown} className="dropdown-toggle">
             <MoreDotIcon className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" />
           </button>
-          <Dropdown
-            isOpen={isOpen}
-            onClose={closeDropdown}
-            className="w-40 p-2"
-          >
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-            >
-              View More
-            </DropdownItem>
-            <DropdownItem
-              onItemClick={closeDropdown}
-              className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-            >
-              Delete
-            </DropdownItem>
-          </Dropdown>
         </div>
       </div>
       <div className="px-4 py-6 my-6 overflow-hidden border border-gary-200 rounded-2xl bg-gray-50 dark:border-gray-800 dark:bg-gray-900 sm:px-6">
@@ -92,7 +74,7 @@ export default function DemographicCard({ data, loading }: DemographicCardProps)
                   <Image
                     width={48}
                     height={48}
-                    src={`/images/country/country-0${Math.min(index + 1, 5)}.svg`}
+                    src={`https://upload.wikimedia.org/wikipedia/commons/2/21/Flag_of_Vietnam.svg`}
                     alt={demo.country}
                     className="w-full"
                   />

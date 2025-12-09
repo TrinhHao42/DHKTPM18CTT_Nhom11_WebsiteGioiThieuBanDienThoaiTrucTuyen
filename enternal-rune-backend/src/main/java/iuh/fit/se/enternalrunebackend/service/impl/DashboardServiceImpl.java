@@ -37,8 +37,8 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     private EcommerceDashboardResponse.MetricsData getMetrics() {
-        // Tổng số khách hàng hiện tại
-        long totalCustomers = userRepository.count();
+        // Tổng số khách hàng hiện tại (chỉ tính ROLE_USER, không tính admin)
+        long totalCustomers = userRepository.countByRole("ROLE_USER");
         
         // Tổng số đơn hàng
         long totalOrders = orderRepository.count();
