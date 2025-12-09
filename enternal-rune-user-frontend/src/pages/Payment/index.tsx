@@ -260,7 +260,7 @@ const Payment = () => {
                                     disabled={!isStepValid() || isCreatingOrder}
                                     className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 active:scale-95 transition-all duration-150 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-400"
                                 >
-                                    {currentStep === 1 && (isCreatingOrder ? "Đang đặt hàng..." : "Đặt hàng")}
+                                    {currentStep === 1 && (isCreatingOrder ? "Đang Thanh toán..." : "Thanh toán")}
                                 </button>
                             )}
                         </div>
