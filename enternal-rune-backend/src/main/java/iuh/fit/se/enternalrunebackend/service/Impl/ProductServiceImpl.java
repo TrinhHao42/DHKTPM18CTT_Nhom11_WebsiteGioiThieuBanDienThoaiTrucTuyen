@@ -591,6 +591,9 @@ public class ProductServiceImpl implements ProductService {
         String[] colorArray = colors != null && !colors.isEmpty() ? 
             colors.toArray(new String[0]) : new String[0];
         
+        String[] memoryArray = memory != null && !memory.isEmpty() ? 
+            memory.toArray(new String[0]) : new String[0];
+        
         // Parse price range
         Integer minPrice = null;
         Integer maxPrice = null;
@@ -616,12 +619,12 @@ public class ProductServiceImpl implements ProductService {
         
         // Get filtered results
         List<Object[]> results = productRepository.findProductsFilteredOptimized(
-            brandIds, minPrice, maxPrice, colorArray, searchParam, size, offset
+            brandIds, minPrice, maxPrice, colorArray, memoryArray, searchParam, size, offset
         );
         
         // Get total count
         Long totalCount = productRepository.countProductsFilteredOptimized(
-            brandIds, minPrice, maxPrice, colorArray, searchParam
+            brandIds, minPrice, maxPrice, colorArray, memoryArray, searchParam
         );
         
         // Convert to ProductListResponse

@@ -294,6 +294,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
         AND (:minPrice IS NULL OR pp.pp_price >= :minPrice)
         AND (:maxPrice IS NULL OR pp.pp_price <= :maxPrice)
         AND (ARRAY_LENGTH(:colors, 1) IS NULL OR 1=1)
+        AND (ARRAY_LENGTH(:memory, 1) IS NULL OR EXISTS (
+            SELECT 1 FROM product_specifications ps 
+            WHERE ps.prod_id = p.prod_id 
+            AND ps.storage = ANY(:memory)
+        ))
         AND (:search IS NULL OR 
              p.product_name ILIKE CONCAT('%', :search, '%') OR
              p.product_model ILIKE CONCAT('%', :search, '%') OR
@@ -306,6 +311,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
         @Param("minPrice") Integer minPrice,
         @Param("maxPrice") Integer maxPrice,
         @Param("colors") String[] colors,
+        @Param("memory") String[] memory,
         @Param("search") String search,
         @Param("size") int size,
         @Param("offset") int offset
@@ -323,6 +329,11 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
         AND (:minPrice IS NULL OR pp.pp_price >= :minPrice)
         AND (:maxPrice IS NULL OR pp.pp_price <= :maxPrice)
         AND (ARRAY_LENGTH(:colors, 1) IS NULL OR 1=1)
+        AND (ARRAY_LENGTH(:memory, 1) IS NULL OR EXISTS (
+            SELECT 1 FROM product_specifications ps 
+            WHERE ps.prod_id = p.prod_id 
+            AND ps.storage = ANY(:memory)
+        ))
         AND (:search IS NULL OR 
              p.product_name ILIKE CONCAT('%', :search, '%') OR
              p.product_model ILIKE CONCAT('%', :search, '%') OR
@@ -333,6 +344,7 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
         @Param("minPrice") Integer minPrice,
         @Param("maxPrice") Integer maxPrice,
         @Param("colors") String[] colors,
+        @Param("memory") String[] memory,
         @Param("search") String search
     );
 
