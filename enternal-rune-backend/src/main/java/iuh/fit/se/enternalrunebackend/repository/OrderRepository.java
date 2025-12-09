@@ -221,4 +221,19 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
            "AND EXTRACT(YEAR FROM o.orderDate) = :year " +
            "AND EXTRACT(MONTH FROM o.orderDate) = :month")
     BigDecimal getTotalRevenueInMonth(@Param("year") int year, @Param("month") int month);
+    
+    /**
+     * OPTIMIZED: Get all monthly summaries in ONE query instead of 24+ queries
+     * Returns: [month, revenue, orderCount] for each month in the year
+     */
+    @Query("SELECT EXTRACT(MONTH FROM o.orderDate) as month, " +
+           "COALESCE(SUM(CASE WHEN ps.statusCode IN ('PAID', 'COMPLETED') THEN o.orderTotalAmount ELSE 0 END), 0) as revenue, " +
+           "COUNT(o) as orderCount " +
+           "FROM Order o " +
+           "LEFT JOIN o.paymentStatusHistories psh ON psh.createdAt = (SELECT MAX(psh2.createdAt) FROM OrderPaymentHistory psh2 WHERE psh2.order = o) " +
+           "LEFT JOIN psh.paymentStatus ps " +
+           "WHERE EXTRACT(YEAR FROM o.orderDate) = :year " +
+           "GROUP BY EXTRACT(MONTH FROM o.orderDate) " +
+           "ORDER BY month")
+    List<Object[]> getMonthlySummariesForYear(@Param("year") int year);
 }

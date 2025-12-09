@@ -15,9 +15,79 @@ import java.util.List;
 @RepositoryRestResource(path = "products")
 public interface ProductRepository extends JpaRepository<Product, Integer>, JpaSpecificationExecutor<Product> {
 
+  // Optimized: Query only necessary fields for list view (no specs, no full details)
   @Query("""
-          SELECT p FROM Product p
-          JOIN FETCH p.productPrices pp
+      SELECT DISTINCT p.prodId, p.prodName, p.prodModel, p.productStatus, 
+             p.prodDescription, p.prodRating,
+             b.brandId, b.brandName
+      FROM Product p
+      JOIN p.prodBrand b
+      JOIN p.productPrices pp
+      WHERE pp.ppPriceStatus = 'ACTIVE'
+      """)
+  List<Object[]> findProductSummaryWithActivePrice();
+  
+  // Get images for specific products (native query vì không có relationship từ Image -> Product)
+  @Query(value = """
+      SELECT i.product_id, i.image_id, i.image_name, i.image_data
+      FROM images i
+      WHERE i.product_id IN :productIds
+      """, nativeQuery = true)
+  List<Object[]> findImagesByProductIds(@Param("productIds") List<Integer> productIds);
+  
+  // Get active prices for specific products (native query vì không có relationship từ ProductPrice -> Product)
+  @Query(value = """
+      SELECT pp.product_id, pp.pp_id, pp.pp_price, pp.pp_price_status,
+             pp.pp_start_date, pp.pp_end_date,
+             pp.discount_id, d.discount_name
+      FROM product_price pp
+      LEFT JOIN discounts d ON d.discount_id = pp.discount_id
+      WHERE pp.product_id IN :productIds
+      AND pp.pp_price_status = 'ACTIVE'
+      """, nativeQuery = true)
+  List<Object[]> findActivePricesByProductIds(@Param("productIds") List<Integer> productIds);
+  
+  // Get versions and colors
+  @Query("""
+      SELECT p.prodId, p.prodVersion, p.prodColor
+      FROM Product p
+      WHERE p.prodId IN :productIds
+      """)
+  List<Object[]> findVersionsAndColorsByProductIds(@Param("productIds") List<Integer> productIds);
+
+  // Step 1: Get product IDs with active price
+  @Query("""
+          SELECT DISTINCT p.prodId FROM Product p
+          JOIN p.productPrices pp
+          WHERE pp.ppPriceStatus = 'ACTIVE'
+      """)
+  List<Integer> findProductIdsWithActivePrice();
+  
+  // Step 2: Fetch products with all relations using IN query
+  @Query("""
+          SELECT DISTINCT p FROM Product p
+          LEFT JOIN FETCH p.prodBrand
+          LEFT JOIN FETCH p.images
+          LEFT JOIN FETCH p.productSpecifications
+          WHERE p.prodId IN :ids
+      """)
+  List<Product> findProductsByIdsWithRelations(@Param("ids") List<Integer> ids);
+  
+  // Step 3: Fetch product prices separately
+  @Query("""
+          SELECT DISTINCT p FROM Product p
+          LEFT JOIN FETCH p.productPrices pp
+          WHERE p.prodId IN :ids
+      """)
+  List<Product> findProductsByIdsWithPrices(@Param("ids") List<Integer> ids);
+
+  // Original method - keep for compatibility
+  @Query("""
+          SELECT DISTINCT p FROM Product p
+          LEFT JOIN FETCH p.productPrices pp
+          LEFT JOIN FETCH p.images
+          LEFT JOIN FETCH p.prodBrand
+          LEFT JOIN FETCH p.productSpecifications
           WHERE pp.ppPriceStatus = 'ACTIVE'
       """)
   List<Product> findAllWithActivePrice();
@@ -98,6 +168,5 @@ public interface ProductRepository extends JpaRepository<Product, Integer>, JpaS
     );
     @Query("SELECT COUNT(p) FROM Product p WHERE p.prodBrand.brandId = :brandId")
     Long countByBrandId(@Param("brandId") int brandId);
-
 
 }

@@ -1,12 +1,14 @@
 'use client'
-import ActivateAccountPage from '@/pages/ActivateAccount';
-import React from 'react'
+import ActivateAccountPage from '@/page-components/ActivateAccount';
+import React, { Suspense } from 'react'
+
+export const dynamic = 'force-dynamic'
 
 const ActivateAccountScreen = () => {
     return (
-        <div>
+        <Suspense fallback={<div>Loading...</div>}>
             <ActivateAccountPage />
-        </div>
+        </Suspense>
     )
 }
 

@@ -2,7 +2,9 @@
 
 import React from 'react'
 import { moonDance } from '@/lib/fonts'
-import Cart from '@/pages/Cart'
+import Cart from '@/page-components/Cart'
+
+export const dynamic = 'force-dynamic'
 
 const CartPage = () => {
   return (
@@ -18,3 +20,4 @@ const CartPage = () => {
 }
 
 export default CartPage
+

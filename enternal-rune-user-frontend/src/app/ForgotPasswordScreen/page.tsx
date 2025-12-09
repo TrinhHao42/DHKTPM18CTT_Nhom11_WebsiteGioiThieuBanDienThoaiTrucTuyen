@@ -1,5 +1,5 @@
 'use client'
-import ForgotPassword from '@/pages/ForgotPassword'
+import ForgotPassword from '@/page-components/ForgotPassword'
 import React from 'react'
 
 const HomeScreen = () => {

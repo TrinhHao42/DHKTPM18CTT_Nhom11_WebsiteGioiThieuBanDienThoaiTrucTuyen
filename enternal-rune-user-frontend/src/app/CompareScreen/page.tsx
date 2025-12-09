@@ -1,10 +1,14 @@
 'use client'
-import ComparePage from '@/pages/Compare'
-import React from 'react'
+import ComparePage from '@/page-components/Compare'
+import React, { Suspense } from 'react'
+
+export const dynamic = 'force-dynamic'
 
 const CompareScreen = () => {
   return (
-    <ComparePage />
+    <Suspense fallback={<div>Loading...</div>}>
+      <ComparePage />
+    </Suspense>
   )
 }
 

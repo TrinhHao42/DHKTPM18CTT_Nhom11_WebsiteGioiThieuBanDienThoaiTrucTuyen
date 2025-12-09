@@ -34,26 +34,26 @@ public class ProductController {
     public ResponseEntity<List<ProductResponse>> getFeaturedProducts(
             @RequestParam(defaultValue = "8") int limit) {
         List<Product> products = productService.getFeaturedProducts(limit);
-        List<ProductResponse> dto = products.stream().map(this::toDto).toList();
+        // Không cần rating stats cho danh sách featured (tối ưu performance)
+        List<ProductResponse> dto = products.stream().map(p -> toDto(p, false)).toList();
         return ResponseEntity.ok(dto);
     }
 
-    // Lấy danh sách sản phẩm với giá ACTIVE
+    // Lấy danh sách sản phẩm với giá ACTIVE (tối ưu - chỉ load fields cần thiết)
     @GetMapping("/active-price")
     public List<ProductResponse> getProductsWithActivePrice() {
-        List<Product> products = productService.getAllProductsWithActivePrice();
-        return products.stream().map(this::toDto).toList();
+        // Sử dụng DTO projection thay vì load full entity
+        return productService.getProductSummaryWithActivePrice();
     }
 
-    // (Tuỳ chọn) Lấy sản phẩm theo ID — chỉ lấy giá ACTIVE
+    // Lấy sản phẩm theo ID — tối ưu hơn, query trực tiếp 1 sản phẩm (có đầy đủ rating stats)
     @GetMapping("/{id}/active-price")
-    public ProductResponse getProductWithActivePrice(@PathVariable int id) {
-        List<Product> products = productService.getAllProductsWithActivePrice();
-        return products.stream()
-                .filter(p -> p.getProdId() == id)
-                .findFirst()
-                .map(this::toDto)
-                .orElse(null);
+    public ResponseEntity<ProductResponse> getProductWithActivePrice(@PathVariable int id) {
+        Product product = productService.getProductById(id);
+        if (product == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(toDto(product, true));
     }
 
     @GetMapping("/latest")
@@ -61,7 +61,8 @@ public class ProductController {
             @RequestParam(defaultValue = "iPhone") String brand,
             @RequestParam(defaultValue = "4") int limit) {
         List<Product> products = productService.getProductsByBrand(brand, limit);
-        return products.stream().map(this::toDto).toList();
+        // Không cần rating stats cho danh sách latest
+        return products.stream().map(p -> toDto(p, false)).toList();
     }
 
     @GetMapping("/filter")
@@ -75,7 +76,8 @@ public class ProductController {
             @RequestParam(defaultValue = "20") int size
     ) {
         Page<Product> products = productService.filterProducts(brands, priceRange, colors, memory, search, page, size);
-        List<ProductResponse> dtoList = products.getContent().stream().map(this::toDto).toList();
+        // Không cần rating stats cho danh sách filter (tối ưu performance)
+        List<ProductResponse> dtoList = products.getContent().stream().map(p -> toDto(p, false)).toList();
         org.springframework.data.domain.Page<ProductResponse> dtoPage = new org.springframework.data.domain.PageImpl<>(
                 dtoList, products.getPageable(), products.getTotalElements()
         );
@@ -84,6 +86,10 @@ public class ProductController {
 
     // --- Mapping helper ---
     private ProductResponse toDto(Product p) {
+        return toDto(p, true);
+    }
+    
+    private ProductResponse toDto(Product p, boolean includeRatingStats) {
         BrandResponse brandDto = null;
         Brand b = p.getProdBrand();
         if (b != null) {
@@ -126,10 +132,16 @@ public class ProductController {
         );
     }
 
-    // Calculate rating statistics
-    Integer totalComments = productService.getTotalComments(p.getProdId());
-    Double averageRating = productService.getAverageRating(p.getProdId());
-    Map<String, Integer> ratingDistribution = productService.getRatingDistribution(p.getProdId());
+    // Calculate rating statistics only if needed (expensive operation)
+    Integer totalComments = null;
+    Double averageRating = null;
+    Map<String, Integer> ratingDistribution = null;
+    
+    if (includeRatingStats) {
+        totalComments = productService.getTotalComments(p.getProdId());
+        averageRating = productService.getAverageRating(p.getProdId());
+        ratingDistribution = productService.getRatingDistribution(p.getProdId());
+    }
 
     return new ProductResponse(
         p.getProdId(),
