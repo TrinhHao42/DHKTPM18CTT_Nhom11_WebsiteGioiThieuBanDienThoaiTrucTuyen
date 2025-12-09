@@ -46,4 +46,7 @@ public class CommentResponse {
     
     // Metadata
     private Integer replyCount;
+    
+    // Purchase status của comment author (kiểm tra xem user tạo comment đã mua product chưa)
+    private Boolean hasPurchased;
 }

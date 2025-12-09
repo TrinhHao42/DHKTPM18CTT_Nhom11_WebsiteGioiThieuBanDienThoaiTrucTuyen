@@ -1,5 +1,13 @@
 import axiosInstance from '@/lib/axiosInstance';
 
+// Order Statistics Response
+export interface OrderStatistics {
+  totalOrders: number;
+  totalRevenue: number;
+  completedOrders: number;
+  processingOrders: number;
+}
+
 export interface OrderListItem {
   orderId: number;
   totalAmount: number;
@@ -34,6 +42,22 @@ export interface OrderDetail {
     statusCode: string;
     statusName: string;
   };
+  paymentStatusHistory?: Array<{
+    statusId: number;
+    statusCode: string;
+    statusName: string;
+    description: string;
+    createdAt: string;
+    note: string;
+  }>;
+  shippingStatusHistory?: Array<{
+    statusId: number;
+    statusCode: string;
+    statusName: string;
+    description: string;
+    createdAt: string;
+    note: string;
+  }>;
   orderUser: {
     userId?: number;
     userName: string;
@@ -124,7 +148,31 @@ export const getAvailableShippingStatuses = async (): Promise<Array<{code: strin
       { code: 'PROCESSING', name: 'Đang xử lý' },
       { code: 'SHIPPED', name: 'Đang giao' },
       { code: 'DELIVERED', name: 'Đã giao' },
+      { code: 'RECEIVED', name: 'Đã nhận hàng' },
       { code: 'CANCELLED', name: 'Đã hủy' }
     ];
   }
+};
+
+// Lấy thống kê đơn hàng
+export const getOrderStatistics = async (): Promise<OrderStatistics> => {
+  try {
+    const response = await axiosInstance.get('/api/dashboard-order/statistics');
+    return response.data;
+  } catch (error: any) {
+    console.error('Error fetching order statistics:', error);
+    throw error;
+  }
+};
+
+// Format tiền tệ
+export const formatCurrency = (value: number): string => {
+  if (value >= 1_000_000_000) {
+    return `₫${(value / 1_000_000_000).toFixed(1)}B`;
+  } else if (value >= 1_000_000) {
+    return `₫${(value / 1_000_000).toFixed(1)}M`;
+  } else if (value >= 1_000) {
+    return `₫${(value / 1_000).toFixed(1)}K`;
+  }
+  return `₫${value.toLocaleString('vi-VN')}`;
 };

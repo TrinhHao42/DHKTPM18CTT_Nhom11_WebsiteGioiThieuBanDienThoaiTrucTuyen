@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogOut, Settings, Shield, Bell } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
@@ -11,6 +11,7 @@ import { ProfileStats } from './components/ProfileStats'
 import { AddressList } from './components/AddressList'
 import { AddAddressModal } from './components/AddAddressModal'
 import { Address } from '@/types/Address'
+import { apiGetUserProfile, UserProfile } from '@/services/authService'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -18,11 +19,32 @@ export default function ProfilePage() {
   const toast = useToast()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!user) {
       router.push('/LoginScreen')
+      return
     }
+
+    // Fetch user profile from API
+    const fetchProfile = async () => {
+      try {
+        setIsLoadingProfile(true)
+        const token = localStorage.getItem('token')
+        if (token && user.userId) {
+          const profile = await apiGetUserProfile(user.userId, token)
+          setUserProfile(profile)
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error)
+      } finally {
+        setIsLoadingProfile(false)
+      }
+    }
+
+    fetchProfile()
   }, [user, router])
 
   const handleLogout = async () => {
@@ -95,9 +117,10 @@ export default function ProfilePage() {
         {/* Stats */}
         <div className="mb-8">
           <ProfileStats
-            totalOrders={0}
+            totalOrders={userProfile?.totalOrder ?? 0}
             totalAddresses={user.userAddress.length}
             memberSince={memberSince.toString()}
+            loading={isLoadingProfile}
           />
         </div>
 
@@ -105,7 +128,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Profile Info */}
           <div className="lg:col-span-1 space-y-6">
-            <ProfileInfo user={user} />
+            <ProfileInfo user={user} isVerified={userProfile?.activate ?? false} loading={isLoadingProfile} />
 
             {/* Quick Actions */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">

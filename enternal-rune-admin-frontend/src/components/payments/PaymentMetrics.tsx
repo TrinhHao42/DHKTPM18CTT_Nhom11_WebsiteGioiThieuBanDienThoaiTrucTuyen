@@ -1,7 +1,9 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Badge from "@/components/ui/badge/Badge";
 import { ArrowDownIcon, ArrowUpIcon } from "@/icons";
+import { paymentService } from "@/services/paymentService";
+import { PaymentMetrics as PaymentMetricsType } from "@/types/payment";
 
 const MetricCard = ({
   icon,
@@ -43,6 +45,56 @@ const MetricCard = ({
 };
 
 export default function PaymentMetrics() {
+  const [metrics, setMetrics] = useState<PaymentMetricsType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        setLoading(true);
+        const data = await paymentService.getPaymentMetrics();
+        setMetrics(data);
+      } catch (err) {
+        console.error("Error fetching payment metrics:", err);
+        setError("Không thể tải dữ liệu thống kê");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6 animate-pulse"
+          >
+            <div className="w-12 h-12 bg-gray-200 rounded-xl dark:bg-gray-700"></div>
+            <div className="mt-5 space-y-3">
+              <div className="h-4 bg-gray-200 rounded dark:bg-gray-700 w-2/3"></div>
+              <div className="h-6 bg-gray-200 rounded dark:bg-gray-700 w-1/2"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error || !metrics) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 dark:border-red-800 dark:bg-red-900/20">
+        <p className="text-red-600 dark:text-red-400">
+          {error || "Không thể tải dữ liệu thống kê"}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
       <MetricCard
@@ -62,9 +114,9 @@ export default function PaymentMetrics() {
           </svg>
         }
         title="Tổng giao dịch"
-        value="3,247"
-        trend="up"
-        trendValue="22.5%"
+        value={metrics.totalTransactions.toLocaleString("vi-VN")}
+        trend={metrics.transactionsTrend >= 0 ? "up" : "down"}
+        trendValue={`${Math.abs(metrics.transactionsTrend)}%`}
       />
       
       <MetricCard
@@ -84,9 +136,9 @@ export default function PaymentMetrics() {
           </svg>
         }
         title="Tổng thu"
-        value="₫3.2B"
-        trend="up"
-        trendValue="28.3%"
+        value={paymentService.formatCurrency(metrics.totalRevenue)}
+        trend={metrics.revenueTrend >= 0 ? "up" : "down"}
+        trendValue={`${Math.abs(metrics.revenueTrend)}%`}
       />
 
       <MetricCard
@@ -106,9 +158,9 @@ export default function PaymentMetrics() {
           </svg>
         }
         title="Đã thanh toán"
-        value="2,891"
-        trend="up"
-        trendValue="15.8%"
+        value={metrics.paidTransactions.toLocaleString("vi-VN")}
+        trend={metrics.paidTrend >= 0 ? "up" : "down"}
+        trendValue={`${Math.abs(metrics.paidTrend)}%`}
       />
 
       <MetricCard
@@ -128,9 +180,9 @@ export default function PaymentMetrics() {
           </svg>
         }
         title="Chờ xử lý"
-        value="356"
-        trend="down"
-        trendValue="7.2%"
+        value={metrics.pendingTransactions.toLocaleString("vi-VN")}
+        trend={metrics.pendingTrend >= 0 ? "up" : "down"}
+        trendValue={`${Math.abs(metrics.pendingTrend)}%`}
       />
     </div>
   );

@@ -11,6 +11,7 @@ public class Endpoints {
             "/brands/names",
             "/notifications",
             "/api/dashboard/**",
+            "/orders/*/pending-requests",
             // ==== CHAT HISTORY (user xem lại) ====
             "/api/conversations/**",
             "/api/messages/**",
@@ -19,7 +20,9 @@ public class Endpoints {
             "/api/products/*/comments/*/replies",
             "/api/products/*/rating-distribution",
             "/api/products/*/average-rating",
-            "/api/chat/**"
+            "/api/chat/**",
+            // ==== ADMIN COMMENTS (không cần auth) ====
+            "/api/admin/comments/**"
     };
 
     // POST không cần đăng nhập
@@ -35,7 +38,10 @@ public class Endpoints {
             "/api/products/*/comments",
             "/api/products/*/comments/text",
             "/api/products/*/comments/*/replies",
-            "/api/chat/**"
+            "/api/chat/**",
+            "/upload/**",
+            // ==== ADMIN COMMENTS (không cần auth) ====
+            "/api/admin/comments/**"
     };
 
     // PATCH không cần đăng nhập
@@ -45,6 +51,9 @@ public class Endpoints {
 
     // PUT không cần đăng nhập
     public static final String[] PUBLIC_PUT_ENDPOINTS = {
+            "/orders/*/confirm-received",
+            // ==== ADMIN COMMENTS (không cần auth) ====
+            "/api/admin/comments/**"
     };
 
     // DELETE không cần đăng nhập
@@ -62,25 +71,32 @@ public class Endpoints {
             "/products/dashboard/**",
             "/api/discounts/**",
             "/orders/admin/**",
-            "/shipping-status"
+            "/shipping-status",
+            "/api/notifications/**",
+            "/api/admin/payments/**",
+            "/api/staff/**"
     };
     
     public static final String[] ADMIN_POST_ENDPOINTS = {
             "/products/dashboard/**",
-            "/api/discounts/**"
+            "/api/discounts/**",
+            "/api/staff/**"
     };
     
     public static final String[] ADMIN_PUT_ENDPOINTS = {
             "/api/dashboard-order/**",
             "/products/dashboard/**",
             "/api/discounts/**",
-            "/orders/admin/*/shipping-status"
+            "/orders/admin/*/shipping-status",
+            "/api/notifications/**",
+            "/api/staff/**"
     };
     
     public static final String[] ADMIN_DELETE_ENDPOINTS = {
             "/api/dashboard-order/**",
             "/api/dashboard-user/**",
             "/products/dashboard/**",
-            "/api/discounts/**"
+            "/api/discounts/**",
+            "/api/staff/**"
     };
 }

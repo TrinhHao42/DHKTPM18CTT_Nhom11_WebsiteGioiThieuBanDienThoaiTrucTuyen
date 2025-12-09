@@ -8,7 +8,7 @@ import { useCart } from '@/context/CartContext'
 import { useToast } from '@/hooks/useToast'
 import { CommentsPageResponse } from '@/types/Comment'
 import { Image } from '@/types/Image'
-import { number } from 'yup'
+// ...existing code... (removed unused import 'number')
 import BuyNowModal from '@/components/BuyNowModal'
 
 // Type definition for umami analytics
@@ -110,6 +110,27 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
             return;
         }
 
+        // Track buy now event (keep this consistent with add to cart tracking)
+        try {
+            if (typeof window !== 'undefined' && window.umami && typeof window.umami.track === 'function') {
+                window.umami.track('buy_now', {
+                    product_id: product.prodId,
+                    product_name: product.prodName,
+                    product_brand: product.prodBrand || 'Unknown',
+                    product_price: unitPrice,
+                    quantity: quantity,
+                    selected_color: selectedColor,
+                    selected_storage: selectedStorage,
+                    selected_protection_plan: selectedPlan,
+                    total_price: totalPrice,
+                    currency: 'đ'
+                })
+            }
+        } catch (err) {
+            // Don't let tracking failures impact the user flow
+            console.error('Umami tracking failed for buy_now', err)
+        }
+
         setShowBuyNowModal(true);
     }
 
@@ -133,8 +154,9 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
     }
 
     const renderRating = () => {
-        const totalRatings = commentData?.totalRatings || 0
-        const averageRating = totalRatings > 0 ? (commentData?.averageRating || product.prodRating) : 0
+        // Compute total number of actual ratings from ratingDistribution (defensive fallback to commentData.totalRatings)
+        const ratingsTotal = commentData?.ratingDistribution ? Object.values(commentData.ratingDistribution).reduce((s, v) => s + (Number(v) || 0), 0) : (commentData?.totalRatings || 0)
+        const averageRating = ratingsTotal > 0 ? (commentData?.averageRating || product.prodRating) : 0
 
         return (
             <div className="flex items-center gap-3">
@@ -142,7 +164,7 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
                     {[1, 2, 3, 4, 5].map((i) => (
                         <Star
                             key={i}
-                            className={`w-5 h-5 ${totalRatings > 0 && i <= Math.floor(averageRating)
+                            className={`w-5 h-5 ${ratingsTotal > 0 && i <= Math.floor(averageRating)
                                 ? 'text-yellow-400 fill-yellow-400'
                                 : 'text-gray-200 fill-gray-200'
                                 }`}
@@ -151,7 +173,7 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
                 </div>
                 <span className="text-md font-semibold text-gray-900">{averageRating.toFixed(1)}</span>
                 <span className="text-gray-500">
-                    ({totalRatings > 0 ? `${totalRatings.toLocaleString()} đánh giá` : 'Chưa có đánh giá'})
+                    ({ratingsTotal > 0 ? `${ratingsTotal.toLocaleString()} đánh giá` : 'Chưa có đánh giá'})
                 </span>
             </div>
         )
@@ -319,23 +341,6 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
                 <button
                     onClick={handleBuyNow}
                     className="cursor-pointer bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-2xl font-semibold text-md shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-3 group hover:scale-102"
-                    // onClick={() => {
-                    //     // Track buy now event
-                    //     if (typeof window !== 'undefined' && window.umami) {
-                    //         window.umami.track('buy_now', {
-                    //             product_id: product.prodId,
-                    //             product_name: product.prodName,
-                    //             product_brand: product.prodBrand || 'Unknown',
-                    //             product_price: unitPrice,
-                    //             quantity: quantity,
-                    //             selected_color: selectedColor,
-                    //             selected_storage: selectedStorage,
-                    //             selected_protection_plan: selectedPlan,
-                    //             total_price: totalPrice,
-                    //             currency: 'VND'
-                    //         })
-                    //     }
-                    // }}
                 >
                     Mua ngay - {formatPrice(totalPrice)}
                 </button>

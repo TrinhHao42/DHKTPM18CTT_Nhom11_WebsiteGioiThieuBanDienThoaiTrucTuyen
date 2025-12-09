@@ -9,6 +9,7 @@ import iuh.fit.se.enternalrunebackend.repository.OrderRepository;
 import iuh.fit.se.enternalrunebackend.repository.ReturnRequestRepository;
 import iuh.fit.se.enternalrunebackend.repository.UserRepository;
 import iuh.fit.se.enternalrunebackend.repository.NotificationRespository;
+import iuh.fit.se.enternalrunebackend.repository.ShippingStatusRepository;
 import iuh.fit.se.enternalrunebackend.service.ReturnRequestService;
 import iuh.fit.se.enternalrunebackend.service.NotificationService;
 import iuh.fit.se.enternalrunebackend.dto.notification.OrderNotification;
@@ -32,6 +33,7 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
     private final UserRepository userRepository;
     private final NotificationRespository notificationRepository;
     private final NotificationService notificationService;
+    private final ShippingStatusRepository shippingStatusRepository;
 
     @Override
     @Transactional
@@ -61,8 +63,11 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
         // Create notification for admin
         Notification notification = new Notification();
         notification.setNotiUser(user);
+        notification.setNotiUserName(user.getName());
+        notification.setNotiType("RETURN_REQUEST");
         notification.setNotiMessage("Khách hàng " + user.getName() + " đã gửi yêu cầu trả hàng cho đơn hàng #" + order.getOrderId());
         notification.setNotiTime(LocalDateTime.now());
+        notification.setTargetRole("ADMIN"); // This notification is for admin
         notificationRepository.save(notification);
         
         // Send real-time notification to admin via WebSocket
@@ -120,20 +125,24 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
         // Create notification for customer
         Notification notification = new Notification();
         notification.setNotiUser(returnRequest.getUser());
+        notification.setNotiType("RETURN_REQUEST");
         String message = newStatus == RequestStatus.APPROVED 
                 ? "Yêu cầu trả hàng của bạn cho đơn hàng #" + returnRequest.getOrder().getOrderId() + " đã được chấp nhận"
                 : "Yêu cầu trả hàng của bạn cho đơn hàng #" + returnRequest.getOrder().getOrderId() + " đã bị từ chối";
         notification.setNotiMessage(message);
         notification.setNotiTime(LocalDateTime.now());
+        notification.setTargetRole("USER"); // This notification is for customer
         notificationRepository.save(notification);
         
         // If approved, update order status
         if (newStatus == RequestStatus.APPROVED) {
-            // Add logic to handle return - update order status, inventory, etc.
-            returnRequest.getOrder().addShippingStatus(
-                returnRequest.getOrder().getCurrentShippingStatus(), 
-                "Đơn hàng được trả lại"
-            );
+            // Get RETURNED shipping status
+            ShippingStatus returnedStatus = shippingStatusRepository.findByStatusCode("RETURNED")
+                    .orElseThrow(() -> new RuntimeException("Shipping status RETURNED not found"));
+            
+            // Update order shipping status to RETURNED
+            returnRequest.getOrder().addShippingStatus(returnedStatus, "Đơn hàng đã được trả lại");
+            orderRepository.save(returnRequest.getOrder());
         }
         
         return mapToResponse(returnRequest);

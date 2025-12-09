@@ -67,21 +67,21 @@ export class AnalyticsService {
     }
 
     try {
-      console.log('[Analytics] getOverallMetrics called with:', { websiteId, startDate, endDate, where });
+      
 
       // Get basic counts
-      console.log('[Analytics] Fetching basic counts...');
+      
       const [totalPageViews, totalUsers] = await Promise.all([
         prisma.pageView.count({ where }),
-        prisma.userSession.count({ where })
+        this.getTotalUsers(websiteId!, startDate!, endDate!)
       ]);
 
-      console.log('[Analytics] Basic counts:', { totalPageViews, totalUsers });
+      
 
       const uniqueVisitors = totalUsers;
 
       // Calculate bounce rate (sessions with only 1 page view)
-      console.log('[Analytics] Calculating bounce rate...');
+      
       const sessionsWithPageViews = await prisma.userSession.findMany({
         where,
         include: { pageViews: true }
@@ -89,16 +89,16 @@ export class AnalyticsService {
 
       const singlePageSessions = sessionsWithPageViews.filter(session => session.pageViews.length === 1).length;
       const bounceRate = totalUsers > 0 ? Number((singlePageSessions / totalUsers).toFixed(2)) : 0;
-      console.log('[Analytics] Bounce rate calculated:', { singlePageSessions, totalUsers, bounceRate });
+      
 
       // Get average session duration
-      console.log('[Analytics] Getting average session duration...');
+      
       const averageSessionDuration = await this.getAverageSessionDuration(
         websiteId || '',
         startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         endDate || new Date()
       );
-      console.log('[Analytics] Average session duration:', averageSessionDuration);
+      
 
       // Get top pages
       const topPagesData = await prisma.pageView.groupBy({
@@ -159,7 +159,7 @@ export class AnalyticsService {
         deviceTypes: deviceData
       };
 
-      console.log('[Analytics] getOverallMetrics completed successfully');
+      
       return result;
     } catch (error) {
       console.error('[Analytics] Error getting overall metrics:', error);
@@ -172,7 +172,7 @@ export class AnalyticsService {
    * Get total unique users (visitors)
    */
   async getTotalUsers(websiteId: string, startDate: Date, endDate: Date): Promise<number> {
-    const result = await prisma.userSession.count({
+    const sessions = await prisma.userSession.findMany({
       where: {
         websiteId,
         createdAt: {
@@ -180,9 +180,15 @@ export class AnalyticsService {
           lte: endDate,
         },
       },
+      select: {
+        distinctId: true,
+      },
     });
 
-    return result;
+    const uniqueUsers = new Set(sessions.map(s => s.distinctId)).size;
+    
+    
+    return uniqueUsers;
   }
 
   /**
@@ -329,8 +335,8 @@ export class AnalyticsService {
       const sessions = await prisma.$queryRaw<Array<{ month: string; users: bigint }>>`
         SELECT 
           TO_CHAR(created_at, 'YYYY-MM') as month,
-          COUNT(DISTINCT session_id) as users
-        FROM user_sessions
+          COUNT(DISTINCT id) as users
+        FROM "UserSession"
         WHERE website_id = ${websiteId}
           AND created_at >= ${startDate}
           AND created_at <= ${endDate}
@@ -345,6 +351,120 @@ export class AnalyticsService {
     } catch (error) {
       console.error('Error getting user growth by month:', error);
       return [];
+    }
+  }
+
+  /**
+   * Get user growth with detailed new/churned users calculation
+   */
+  async getUserGrowthWithDetails(websiteId: string, startDate: Date, endDate: Date): Promise<Array<{ 
+    month: string; 
+    totalUsers: number; 
+    newUsers: number; 
+    churnedUsers: number; 
+  }>> {
+    try {
+      // Debug: log total sessions first
+      
+      
+      // Get all sessions grouped by month and user
+      const sessions = await prisma.userSession.findMany({
+        where: {
+          websiteId,
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+        select: {
+          id: true,
+          distinctId: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      });
+
+      
+      if (sessions.length > 0) {
+        
+      }
+
+      // Group sessions by month and track unique users
+      const monthlyUserMap = new Map<string, Set<string>>();
+      const allUniqueUsers = new Set<string>();
+      
+      sessions.forEach(session => {
+        const month = session.createdAt.toISOString().slice(0, 7); // YYYY-MM format
+        const userId = session.distinctId || session.id;
+        
+        
+        
+        if (!monthlyUserMap.has(month)) {
+          monthlyUserMap.set(month, new Set());
+        }
+        monthlyUserMap.get(month)!.add(userId);
+        allUniqueUsers.add(userId);
+      });
+
+      
+      
+
+      // Convert to sorted array and calculate growth metrics
+      const sortedMonths = Array.from(monthlyUserMap.keys()).sort();
+      const result = [];
+      let allPreviousUsers: Set<string> = new Set(); // Cumulative users across all previous months
+      let previousMonthUsers: Set<string> = new Set(); // Users from just the previous month
+
+      for (let i = 0; i < sortedMonths.length; i++) {
+        const month = sortedMonths[i];
+        const currentMonthUsers = monthlyUserMap.get(month)!;
+        
+        // Calculate new users (users who have NEVER appeared before)
+        const newUsers = [...currentMonthUsers].filter(user => !allPreviousUsers.has(user)).length;
+        
+        // Calculate churned users (users who were in previous month but not current)
+        const churnedUsers = previousMonthUsers.size === 0
+          ? 0 // First month, no churn
+          : [...previousMonthUsers].filter(user => !currentMonthUsers.has(user)).length;
+
+        // Calculate cumulative total users (all users ever seen up to this month)
+        const cumulativeUsers = new Set([...allPreviousUsers, ...currentMonthUsers]);
+
+        const monthResult = {
+          month: month,
+          totalUsers: cumulativeUsers.size, // Cumulative total users
+          newUsers: newUsers, // New users this month
+          churnedUsers: churnedUsers, // Users who left this month
+        };
+
+        
+        
+        result.push(monthResult);
+
+        // Update for next iteration
+        allPreviousUsers = cumulativeUsers; // Add all current users to the cumulative set
+        previousMonthUsers = new Set(currentMonthUsers); // Set current as previous for churn calculation
+      }
+
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting detailed user growth:', error);
+      // Fallback to basic calculation with simple logic
+      const basicGrowth = await this.getUserGrowthByMonth(websiteId, startDate, endDate);
+      return basicGrowth.map((item, index) => {
+        const prevUsers = index > 0 ? basicGrowth[index - 1]?.users || 0 : 0;
+        const currentUsers = item.users;
+        
+        return {
+          month: item.month,
+          totalUsers: currentUsers,
+          newUsers: index === 0 ? currentUsers : Math.max(0, currentUsers - prevUsers),
+          churnedUsers: index === 0 ? 0 : Math.max(0, prevUsers - currentUsers),
+        };
+      });
     }
   }
 
@@ -978,7 +1098,7 @@ export class AnalyticsService {
 
         const roundedChange = Math.round(change * 100) / 100;
         
-        console.log(`Event Change - ${event.eventName}: current=${event._count.id}, previous=${previousCount}, change=${roundedChange}%`);
+        
         
         userBehavior.push({
           action: event.eventName,
@@ -1030,7 +1150,7 @@ export class AnalyticsService {
 
         const roundedChange = Math.round(change * 100) / 100;
         
-        console.log(`E-commerce Event Change - ${key}: current=${current.count}, previous=${previousCount}, change=${roundedChange}%`);
+        
         
         userBehavior.push({
           action: current.eventName,

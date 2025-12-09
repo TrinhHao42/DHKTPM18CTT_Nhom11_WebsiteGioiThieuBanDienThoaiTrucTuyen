@@ -1,3 +1,4 @@
+'use-client'
 import React from "react";
 import { CouponMetrics, CouponTable } from "@/components/coupons";
 

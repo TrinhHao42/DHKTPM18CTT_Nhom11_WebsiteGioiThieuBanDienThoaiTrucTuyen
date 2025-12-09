@@ -75,24 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      if (email == "admin@gmail.com" && password == "123") {
-        const data: AuthResponse = {
-          token: "dummy-admin-token",
-          roles: ["ROLE_ADMIN"],
-          user: {
-            userId: 1,
-            userEmail: "admin@example.com",
-            userName: "Admin User",
-            userAddress: []
-          }
-        };
-        setToken(data.token);
-        setUser(data.user);
-        setRoles(data.roles);
-        return;
-      }
 
       const data: AuthResponse = await authService.login(email, password);
+      
       if (!data) {
         throw new Error("Đăng nhập không thành công");
       }

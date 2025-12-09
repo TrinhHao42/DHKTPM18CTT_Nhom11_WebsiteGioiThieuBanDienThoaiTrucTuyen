@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import ProductImageGallery from '@/pages/ProductDetail/ProductImageGallery'
@@ -7,29 +7,60 @@ import ProductInfoPanel from '@/pages/ProductDetail/ProductInfoPanel'
 import SpecificationsSection from '@/pages/ProductDetail/SpecificationsSection'
 import { Product } from '@/types/Product'
 import { renderBestSellers } from '../Home/components/ProductList'
-import { ProductService } from '@/services/productService'
+import { ProductService, FilterParams } from '@/services/productService'
 import ProductRating from '@/components/ProductRating'
-import { useComments } from '@/hooks/useComments'
 import { Image } from '@/types/Image'
-import { select } from 'motion/react-client'
+import { CommentService } from '@/services/commentService'
+import { CommentsPageResponse } from '@/types/Comment'
 
-const RelatedProducts = () => {
+const RelatedProducts = React.memo(function RelatedProducts({ product }: { product?: Product }) {
   const [items, setItems] = useState<Product[]>([])
+  const [loading, setLoading] = useState(false)
+  const productId = product?.prodId?.toString()
+  const brandId = product?.prodBrand?.brandId
 
   useEffect(() => {
     let mounted = true
-    ProductService.getFilteredProducts({ page: 0, size: 4 })
-      .then(data => { if (mounted) setItems(data) })
-      .catch(() => { })
+
+    // Only load if product exists and we haven't loaded for this product yet
+    if (!product || !productId) return
+    setLoading(true)
+
+    const params: FilterParams = { page: 0, size: 4 }
+    if (brandId) params.brands = [brandId]
+
+    ProductService.getFilteredProducts(params)
+      .then(data => {
+        if (mounted && data) {
+          setItems(data)
+        }
+      })
+      .catch((err) => { console.error('Error loading related products:', err) })
+      .finally(() => {
+        if (mounted) setLoading(false)
+      })
+
     return () => { mounted = false }
-  }, [])
+  }, [product, productId, brandId])
+
+  if (!product) return null
+
+  if (loading) {
+    return <div className="pt-6 text-center py-6">Đang tải sản phẩm liên quan...</div>
+  }
+
+  if (!items || items.length === 0) {
+    return (
+      <div className="pt-6 text-center py-6 text-gray-500">Không có sản phẩm liên quan</div>
+    )
+  }
 
   return (
     <div className="pt-6">
-      {renderBestSellers(items, false)}
+      {renderBestSellers(items, true)}
     </div>
   )
-}
+})
 
 export default function ProductDetail() {
   const params = useParams()
@@ -39,11 +70,56 @@ export default function ProductDetail() {
   const [selectedColor, setSelectedColor] = useState<string>('')
   const [selectedImage, setSelectedImage] = useState<Image | undefined>(undefined)
 
-  // Fetch comment data for the product and share it with ProductRating
-  const { commentsData, setCommentsData, loading: commentsLoading, loadingMore: commentsLoadingMore, loadMoreComments, refreshComments } = useComments({
-    productId: params?.id as string,
-    initialData: undefined
-  })
+  // State để quản lý comments data
+  const [commentsData, setCommentsData] = useState<CommentsPageResponse | null>(null)
+  const [commentsLoading, setCommentsLoading] = useState(false)
+  const [commentsLoadingMore, setCommentsLoadingMore] = useState(false)
+  const [commentsInitialized, setCommentsInitialized] = useState(false)
+
+  // Functions để thay thế useComments hook
+  const loadComments = useCallback(async (page = 0, append = false) => {
+    try {
+      if (!append) setCommentsLoading(true)
+      const data = await CommentService.getComments(params?.id as string, page, 10)
+
+      if (append && commentsData) {
+        setCommentsData({
+          ...data,
+          comments: [...commentsData.comments, ...data.comments]
+        })
+      } else {
+        setCommentsData(data)
+      }
+
+      // ✅ Mark as initialized after first successful load
+      if (!append) setCommentsInitialized(true)
+    } catch (error) {
+      console.error('Error loading comments:', error)
+    } finally {
+      setCommentsLoading(false)
+      setCommentsLoadingMore(false)
+    }
+  }, [params?.id, commentsData])
+
+  const loadMoreComments = useCallback(async () => {
+    if (!commentsData?.hasNext || commentsLoadingMore) return
+
+    setCommentsLoadingMore(true)
+    const nextPage = commentsData.currentPage + 1
+    await loadComments(nextPage, true)
+  }, [commentsData, commentsLoadingMore, loadComments])
+
+  const refreshComments = useCallback(() => {
+    loadComments(0, false)
+  }, [loadComments])
+
+  // Load comments chỉ khi ProductRating component được render và cần data
+  useEffect(() => {
+    // ✅ Load comments chỉ một lần khi product được load
+    if (product && !commentsInitialized && !commentsLoading) {
+      loadComments()
+    }
+  }, [product, commentsInitialized, commentsLoading, loadComments])
 
   useEffect(() => {
     const id = params?.id as string | undefined
@@ -207,10 +283,11 @@ export default function ProductDetail() {
           externalLoadingMore={commentsLoadingMore}
           externalLoadMoreComments={loadMoreComments}
           externalRefreshComments={refreshComments}
+          productInfo={{ prodId: product.prodId, prodName: product.prodName }}
         />
       </div>
 
-      <RelatedProducts />
+      <RelatedProducts product={product} />
     </div>
   )
 }

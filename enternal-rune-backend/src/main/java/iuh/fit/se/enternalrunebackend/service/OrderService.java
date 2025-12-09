@@ -8,6 +8,8 @@ import iuh.fit.se.enternalrunebackend.entity.OrderRefund;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Map;
+
 public interface OrderService {
     DashboardSummaryResponse getSummaryForMonth(int year, int month);
     Order createOrder(CreateOrderRequest request);
@@ -19,4 +21,6 @@ public interface OrderService {
     Order cancelOrder(int orderId, Long userId);
     Page<OrderListResponse> getOrderList(String keyword, String paymentStatusCode, String shippingStatusCode, Pageable pageable);
     void updateShippingStatus(int orderId, String statusCode);
+    void confirmReceivedOrder(int orderId, Long userId);
+    Map<String, Boolean> checkPendingRequests(int orderId);
 }

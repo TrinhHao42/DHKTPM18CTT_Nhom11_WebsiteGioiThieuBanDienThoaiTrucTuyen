@@ -2,14 +2,18 @@ import React from 'react'
 import { Package, MapPin, Calendar, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 
-export const ProfileStats: React.FC<{
+interface ProfileStatsProps {
   totalOrders: number
   totalAddresses: number
   memberSince: string
-}> = ({
+  loading?: boolean
+}
+
+export const ProfileStats: React.FC<ProfileStatsProps> = ({
   totalOrders,
   totalAddresses,
   memberSince,
+  loading = false,
 }) => {
     const stats = [
       {
@@ -57,9 +61,13 @@ export const ProfileStats: React.FC<{
                 <div className={`p-2.5 ${stat.bgColor} rounded-lg`}>
                   <Icon className={`w-5 h-5 ${stat.iconColor}`} />
                 </div>
-                <p className="text-lg font-bold text-gray-700">
-                  {stat?.value}
-                </p>
+                {loading ? (
+                  <div className="h-6 w-24 animate-pulse bg-gray-200 rounded" />
+                ) : (
+                  <p className="text-lg font-bold text-gray-700">
+                    {stat?.value}
+                  </p>
+                )}
               </div>
               <div>
                 <p className="text-sm text-gray-600 font-medium">

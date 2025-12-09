@@ -16,6 +16,7 @@ public interface UserRepository extends JpaRepository<User,Long> {
 
 
     boolean existsByEmail(String email);
+
     @Query("""
             SELECT DISTINCT u FROM User u
             JOIN u.roles r
@@ -31,6 +32,24 @@ public interface UserRepository extends JpaRepository<User,Long> {
             @Param("activated") Boolean activated,
             Pageable pageable
     );
+
+    //========STAFF
+    @Query("""
+            SELECT DISTINCT u FROM User u
+            JOIN u.roles r
+            WHERE
+            r.roleName = 'ROLE_STAFF' AND
+            (LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  OR :keyword IS NULL)
+            AND (u.userActive = :activated OR :activated IS NULL)
+            """)
+    Page<User> searchStaff(
+            @Param("keyword") String keyword,
+            @Param("activated") Boolean activated,
+            Pageable pageable
+    );
+
 
     @Query("""
             SELECT COUNT(u)
@@ -48,6 +67,15 @@ public interface UserRepository extends JpaRepository<User,Long> {
           AND u.userActive = :active
     """)
         Integer countActiveCustomer(boolean active);
+    // =================STAFF==============
+    @Query("""
+        SELECT COUNT(u)
+        FROM User u
+        JOIN u.roles r
+        WHERE r.roleName = 'ROLE_STAFF'
+          AND u.userActive = :active
+    """)
+    Integer countActiveStaff(boolean active);
 
         @Query("""
         SELECT COUNT(u)
@@ -57,6 +85,9 @@ public interface UserRepository extends JpaRepository<User,Long> {
           AND u.authProvider = :provider
     """)
     Integer countCustomerByProvider(@Param("provider") User.AuthProvider provider);
+
+
+
 
 
 

@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/products")
@@ -125,6 +126,11 @@ public class ProductController {
         );
     }
 
+    // Calculate rating statistics
+    Integer totalComments = productService.getTotalComments(p.getProdId());
+    Double averageRating = productService.getAverageRating(p.getProdId());
+    Map<String, Integer> ratingDistribution = productService.getRatingDistribution(p.getProdId());
+
     return new ProductResponse(
         p.getProdId(),
         p.getProdName(),
@@ -136,8 +142,11 @@ public class ProductController {
         p.getProdRating(),
         brandDto,
         images,
-    productPrices,
-    specsDto
+        productPrices,
+        specsDto,
+        totalComments,
+        averageRating,
+        ratingDistribution
     );
     }
     @PostMapping(value = "/dashboard/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -15,12 +15,14 @@ export const useComments = ({ productId, initialData }: UseCommentsProps) => {
 
   // Load initial comments
   useEffect(() => {
-    if (!initialData) {
+    if (!initialData && productId) {
       loadComments()
     }
   }, [productId, initialData]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadComments = async (page = 0, append = false) => {
+    if (!productId) return // ✅ Không call API nếu productId trống
+    
     try {
       if (!append) setLoading(true)
       const data = await CommentService.getComments(productId, page, 10)

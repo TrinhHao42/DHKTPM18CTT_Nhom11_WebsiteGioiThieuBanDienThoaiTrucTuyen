@@ -53,16 +53,18 @@ export default function OrderTable() {
 
   const getStatusBadgeColor = (status: string): 'success' | 'error' | 'warning' | 'info' => {
     const upperStatus = status.toUpperCase();
-    if (upperStatus.includes('DELIVERED') || upperStatus.includes('COMPLETE')) return 'success';
-    if (upperStatus.includes('CANCEL')) return 'error';
-    if (upperStatus.includes('PENDING')) return 'warning';
+    if (upperStatus.includes('DELIVERED') || upperStatus.includes('RECEIVED')) return 'success';
+    if (upperStatus.includes('CANCEL') || upperStatus.includes('RETURNED') || upperStatus.includes('FAILED')) return 'error';
+    if (upperStatus.includes('PENDING') || upperStatus.includes('PROCESSING')) return 'warning';
+    if (upperStatus.includes('SHIPPED')) return 'info';
     return 'info';
   };
 
-  const getPaymentStatusBadgeColor = (status: string): 'success' | 'error' | 'warning' => {
+  const getPaymentStatusBadgeColor = (status: string): 'success' | 'error' | 'warning' | 'info' => {
     const upperStatus = status.toUpperCase();
-    if (upperStatus.includes('PAID') || upperStatus.includes('COMPLETE')) return 'success';
-    if (upperStatus.includes('REFUND')) return 'error';
+    if (upperStatus.includes('PAID')) return 'success';
+    if (upperStatus.includes('REFUND') || upperStatus.includes('CANCEL') || upperStatus.includes('FAILED')) return 'error';
+    if (upperStatus.includes('EXPIRED')) return 'info';
     return 'warning';
   };
 
@@ -148,11 +150,13 @@ export default function OrderTable() {
               }}
               className="focus:border-brand-500 focus:ring-brand-500/20 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:ring-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="PENDING">Chờ xử lý</option>
+              <option value="all">Trạng thái giao hàng</option>
               <option value="PROCESSING">Đang xử lý</option>
-              <option value="SHIPPED">Đang giao</option>
-              <option value="DELIVERED">Đã giao</option>
+              <option value="SHIPPED">Đã giao cho vận chuyển</option>
+              <option value="DELIVERED">Đã giao hàng</option>
+              <option value="FAILED_DELIVERY">Giao hàng thất bại</option>
+              <option value="RECEIVED">Đã nhận hàng</option>
+              <option value="RETURNED">Đã trả hàng</option>
               <option value="CANCELLED">Đã hủy</option>
             </select>
 
@@ -165,10 +169,13 @@ export default function OrderTable() {
               }}
               className="focus:border-brand-500 focus:ring-brand-500/20 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm focus:ring-2 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
-              <option value="all">Thanh toán</option>
-              <option value="PENDING">Chưa thanh toán</option>
+              <option value="all">Trạng thái thanh toán</option>
+              <option value="PENDING">Chờ thanh toán</option>
               <option value="PAID">Đã thanh toán</option>
+              <option value="FAILED">Thanh toán thất bại</option>
               <option value="REFUNDED">Đã hoàn tiền</option>
+              <option value="EXPIRED">Hết hạn</option>
+              <option value="CANCELLED">Đã hủy</option>
             </select>
           </div>
         </div>

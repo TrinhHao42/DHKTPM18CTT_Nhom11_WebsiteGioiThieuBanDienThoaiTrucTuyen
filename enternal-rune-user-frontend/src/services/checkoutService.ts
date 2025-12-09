@@ -30,7 +30,7 @@ export const createOrder = async (request: CreateOrderRequest): Promise<CreateOr
         console.error('❌ Error response:', error.response?.data);
         console.error('❌ Error status:', error.response?.status);
         console.error('❌ Error message:', error.message);
-        
+
         // Throw lại với message rõ ràng hơn
         if (error.response?.data?.message) {
             throw new Error(error.response.data.message);
@@ -89,9 +89,9 @@ export const cancelOrder = async (orderId: number, userId: number): Promise<any>
 }
 
 export const createRefundRequest = async (
-    orderId: number, 
-    userId: number, 
-    reason: string, 
+    orderId: number,
+    userId: number,
+    reason: string,
     refundType: 'CANCEL' | 'RETURN'
 ): Promise<any> => {
     try {
@@ -119,7 +119,7 @@ export const createReturnRequest = async (
 ): Promise<any> => {
     try {
         console.log('📦 Tạo yêu cầu trả hàng:', { orderId, userId, reason, imageUrl });
-        const response = await AxiosInstance.post('/return-requests', 
+        const response = await AxiosInstance.post('/return-requests',
             {
                 orderId,
                 reason,
@@ -173,18 +173,50 @@ export const uploadImage = async (file: File): Promise<string> => {
     try {
         const formData = new FormData();
         formData.append('file', file);
-        
+
         // Sử dụng API upload có sẵn hoặc tạo mới
         const response = await AxiosInstance.post('/upload/image', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
         });
-        
+
         return response.data.imageUrl || response.data.url;
     } catch (error: any) {
         console.error('❌ Lỗi upload ảnh:', error);
         throw new Error('Không thể tải ảnh lên. Vui lòng thử lại.');
+    }
+}
+
+// Xác nhận đã nhận hàng
+export const confirmReceivedOrder = async (orderId: number, userId: number): Promise<any> => {
+    try {
+        console.log('✅ Xác nhận nhận hàng:', { orderId, userId });
+        const response = await AxiosInstance.put(`/orders/${orderId}/confirm-received`, null, {
+            params: { userId }
+        });
+        console.log('✅ Xác nhận nhận hàng thành công:', response.data);
+        return response.data;
+    } catch (error: any) {
+        console.error('❌ Lỗi xác nhận nhận hàng:', error);
+        if (error.response?.data?.message) {
+            throw new Error(error.response.data.message);
+        }
+        throw error;
+    }
+}
+
+// Kiểm tra đơn hàng có pending request không
+export const checkPendingRequest = async (orderId: number): Promise<{
+    hasPendingCancelRequest: boolean;
+    hasPendingReturnRequest: boolean;
+}> => {
+    try {
+        const response = await AxiosInstance.get(`/orders/${orderId}/pending-requests`);
+        return response.data;
+    } catch (error: any) {
+        console.error('❌ Lỗi kiểm tra pending request:', error);
+        return { hasPendingCancelRequest: false, hasPendingReturnRequest: false };
     }
 }
 

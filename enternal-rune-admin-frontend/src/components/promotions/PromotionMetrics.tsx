@@ -1,7 +1,9 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Badge from "@/components/ui/badge/Badge";
 import { ArrowDownIcon, ArrowUpIcon } from "@/icons";
+import { discountService } from "@/services/discountService";
+import { DiscountStatisticResponse } from "@/types/discount";
 
 const MetricCard = ({
   icon,
@@ -43,8 +45,17 @@ const MetricCard = ({
 };
 
 export default function PromotionMetrics() {
+  const [stats, setStats] = useState<DiscountStatisticResponse | null>(null);
+
+  useEffect(() => {
+    discountService.getStatistics().then(setStats);
+  }, []);
+
+  if (!stats) return <p>Đang tải...</p>;
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 md:gap-6">
+      {/* Tổng chương trình */}
       <MetricCard
         icon={
           <svg
@@ -62,11 +73,12 @@ export default function PromotionMetrics() {
           </svg>
         }
         title="Tổng chương trình"
-        value="24"
+        value={stats.totalDiscounts}
         trend="up"
-        trendValue="18.2%"
+        trendValue="+0%" // nếu chưa có logic trend
       />
 
+      {/* Đang hoạt động */}
       <MetricCard
         icon={
           <svg
@@ -84,11 +96,12 @@ export default function PromotionMetrics() {
           </svg>
         }
         title="Đang hoạt động"
-        value="8"
+        value={stats.activeDiscounts}
         trend="up"
-        trendValue="25.0%"
+        trendValue="+0%"
       />
 
+      {/* Số đơn hàng áp dụng (usedCount) */}
       <MetricCard
         icon={
           <svg
@@ -106,11 +119,12 @@ export default function PromotionMetrics() {
           </svg>
         }
         title="Đơn hàng áp dụng"
-        value="3,847"
+        value={stats.usedCount.toLocaleString()}
         trend="up"
-        trendValue="32.5%"
+        trendValue="+0%"
       />
 
+      {/* Tổng tiền giảm giá đã sử dụng */}
       <MetricCard
         icon={
           <svg
@@ -127,10 +141,10 @@ export default function PromotionMetrics() {
             />
           </svg>
         }
-        title="Doanh thu"
-        value="₫1.2B"
+        title="Doanh thu (giảm giá)"
+        value={"₫" + stats.totalDiscountAmount.toLocaleString()}
         trend="up"
-        trendValue="28.7%"
+        trendValue="+0%"
       />
     </div>
   );
