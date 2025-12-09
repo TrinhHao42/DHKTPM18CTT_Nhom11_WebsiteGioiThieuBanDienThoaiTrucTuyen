@@ -36,6 +36,6 @@ public class Brand {
     @Column(name = "brand_status", length = 20)
     private String brandStatus;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY, mappedBy = "prodBrand")
     private List<Product> products = new ArrayList<>();
 }
