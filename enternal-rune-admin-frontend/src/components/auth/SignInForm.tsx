@@ -5,11 +5,13 @@ import Label from "@/components/form/Label";
 import Button from "@/components/ui/button/Button";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "@/icons";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/useToast";
 
 export default function SignInForm() {
+  const toast = useToast()
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,6 +20,12 @@ export default function SignInForm() {
   
   const { login } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,9 +83,7 @@ export default function SignInForm() {
           
             <form onSubmit={handleSubmit}>
               {error && (
-                <div className="p-3 mb-4 text-sm text-red-600 bg-red-100 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-900 dark:text-red-400">
-                  {error}
-                </div>
+                toast.error( error )
               )}
               
               <div className="space-y-6">

@@ -4,13 +4,25 @@ import React from "react";
 import { ApexOptions } from "apexcharts";
 import ChartTab from "../common/ChartTab";
 import dynamic from "next/dynamic";
+import { StatisticsData } from "@/types/dashboard";
 
 // Dynamically import the ReactApexChart component
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-export default function StatisticsChart() {
+interface StatisticsChartProps {
+  data?: StatisticsData[];
+  loading?: boolean;
+}
+
+export default function StatisticsChart({ data, loading }: StatisticsChartProps) {
+  const revenueData = data?.map(d => Number((d.revenue / 1000).toFixed(0))) || [];
+  const profitData = data?.map(d => Number((d.profit / 1000).toFixed(0))) || [];
+  const months = data?.map(d => d.month) || [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
   const options: ApexOptions = {
     legend: {
       show: false, // Hide legend
@@ -69,20 +81,7 @@ export default function StatisticsChart() {
     },
     xaxis: {
       type: "category", // Category-based x-axis
-      categories: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ],
+      categories: months,
       axisBorder: {
         show: false, // Hide x-axis border
       },
@@ -111,12 +110,12 @@ export default function StatisticsChart() {
 
   const series = [
     {
-      name: "Sales",
-      data: [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
+      name: "Doanh thu (k)",
+      data: revenueData,
     },
     {
-      name: "Revenue",
-      data: [40, 30, 50, 40, 55, 40, 70, 100, 110, 120, 150, 140],
+      name: "Lợi nhuận (k)",
+      data: profitData,
     },
   ];
   return (
@@ -124,10 +123,10 @@ export default function StatisticsChart() {
       <div className="flex flex-col gap-5 mb-6 sm:flex-row sm:justify-between">
         <div className="w-full">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-            Statistics
+            Thống kê doanh thu
           </h3>
           <p className="mt-1 text-gray-500 text-theme-sm dark:text-gray-400">
-            Target you’ve set for each month
+            Doanh thu và lợi nhuận theo từng tháng
           </p>
         </div>
         <div className="flex items-start w-full gap-3 sm:justify-end">

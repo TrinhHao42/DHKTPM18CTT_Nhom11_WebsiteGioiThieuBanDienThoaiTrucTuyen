@@ -206,4 +206,19 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
     long countByCurrentShippingStatus(@Param("statusCode") String statusCode);
 
     List<Order> findByOrderUser_UserId(Long userId);
+    
+    // Dashboard queries
+    @Query("SELECT COUNT(o) FROM Order o " +
+           "WHERE EXTRACT(YEAR FROM o.orderDate) = :year " +
+           "AND EXTRACT(MONTH FROM o.orderDate) = :month")
+    int countOrdersInMonth(@Param("year") int year, @Param("month") int month);
+    
+    @Query("SELECT COALESCE(SUM(o.orderTotalAmount), 0) FROM Order o " +
+           "JOIN o.paymentStatusHistories psh " +
+           "JOIN psh.paymentStatus ps " +
+           "WHERE psh.createdAt = (SELECT MAX(psh2.createdAt) FROM OrderPaymentHistory psh2 WHERE psh2.order = o) " +
+           "AND ps.statusCode IN ('PAID', 'COMPLETED') " +
+           "AND EXTRACT(YEAR FROM o.orderDate) = :year " +
+           "AND EXTRACT(MONTH FROM o.orderDate) = :month")
+    BigDecimal getTotalRevenueInMonth(@Param("year") int year, @Param("month") int month);
 }

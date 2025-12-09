@@ -1,6 +1,5 @@
 package iuh.fit.se.enternalrunebackend.controller;
 
-
 import iuh.fit.se.enternalrunebackend.dto.assistanceChat.ChatMessageDto;
 import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Message;
 import iuh.fit.se.enternalrunebackend.repository.repositoriesForAssistanceChat.MessageRepository;
@@ -25,7 +24,6 @@ public class ChatWebSocketController {
             @DestinationVariable String conversationId,
             @Payload ChatMessageDto chatMessageDto
     ) {
-        // 1. Lưu message vào MongoDB
         Message message = new Message();
         message.setConversationId(conversationId);
         message.setSenderId(chatMessageDto.getSenderId());
@@ -33,10 +31,7 @@ public class ChatWebSocketController {
         message.setContent(chatMessageDto.getContent());
         message.setType("TEXT");
         message.setCreatedAt(Instant.now());
-
         Message saved = messageRepository.save(message);
-
-        // 2. Broadcast message đã lưu ra cho tất cả client subscribe
         messagingTemplate.convertAndSend(
                 "/topic/conversations/" + conversationId,
                 saved

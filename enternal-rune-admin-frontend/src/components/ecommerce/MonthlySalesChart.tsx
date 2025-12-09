@@ -5,13 +5,25 @@ import { MoreDotIcon } from "@/icons";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
+import { MonthlySalesData } from "@/types/dashboard";
 
 // Dynamically import the ReactApexChart component
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-export default function MonthlySalesChart() {
+interface MonthlySalesChartProps {
+  data?: MonthlySalesData[];
+  loading?: boolean;
+}
+
+export default function MonthlySalesChart({ data, loading }: MonthlySalesChartProps) {
+  const salesData = data?.map(d => d.orderCount) || [];
+  const months = data?.map(d => d.month) || [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+
   const options: ApexOptions = {
     colors: ["#465fff"],
     chart: {
@@ -39,20 +51,7 @@ export default function MonthlySalesChart() {
       colors: ["transparent"],
     },
     xaxis: {
-      categories: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ],
+      categories: months,
       axisBorder: {
         show: false,
       },
@@ -93,8 +92,8 @@ export default function MonthlySalesChart() {
   };
   const series = [
     {
-      name: "Sales",
-      data: [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
+      name: "Đơn hàng",
+      data: salesData,
     },
   ];
   const [isOpen, setIsOpen] = useState(false);
@@ -107,11 +106,20 @@ export default function MonthlySalesChart() {
     setIsOpen(false);
   }
 
+  if (loading) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6 animate-pulse">
+        <div className="h-6 bg-gray-200 rounded dark:bg-gray-700 w-32 mb-4" />
+        <div className="h-[180px] bg-gray-100 rounded dark:bg-gray-800" />
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white px-5 pt-5 dark:border-gray-800 dark:bg-white/[0.03] sm:px-6 sm:pt-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-          Monthly Sales
+          Doanh số theo tháng
         </h3>
 
         <div className="relative inline-block">
