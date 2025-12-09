@@ -26,10 +26,10 @@ export const Navbar = () => {
         <header className="flex items-center justify-between px-6 md:px-16 py-5 border-b border-gray-200 bg-white">
             <Link href="/" className="flex items-center gap-3">
                 <Image
-                    src="/images/SmartPhoneLogo.svg"
+                    src="/images/logo.svg"
                     alt="SmartPhone Logo"
-                    width={140}
-                    height={70}
+                    width={120}
+                    height={30}
                     priority
                 />
             </Link>
