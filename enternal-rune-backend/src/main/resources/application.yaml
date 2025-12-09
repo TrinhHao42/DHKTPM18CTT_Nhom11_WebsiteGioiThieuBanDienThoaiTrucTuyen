@@ -72,12 +72,7 @@ spring:
     mongodb:
       uri: ${MONGO_URI}
 
-
 qr:
-
-
-
-
 
 sepay:
   api: ${SEPAY_API}
@@ -85,7 +80,6 @@ sepay:
 frontend:
   user: ${USER_URL}
   admin: ${ADMIN_URL}
-
 
 server:
   port: 8080
