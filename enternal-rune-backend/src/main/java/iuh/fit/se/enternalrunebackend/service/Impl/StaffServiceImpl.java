@@ -202,7 +202,6 @@ public class StaffServiceImpl implements StaffService {
     public StaffResponse getById(Long id) {
         User staff = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy Staff"));
-        // SỬA LỖI CONSTRUCTOR: Sử dụng phương thức mapToStaffResponse đã sửa
         return mapToStaffResponse(staff);
     }
 
