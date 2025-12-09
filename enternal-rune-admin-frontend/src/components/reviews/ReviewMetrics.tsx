@@ -66,7 +66,8 @@ export default function ReviewMetrics() {
       console.log('Metrics response:', response);
       setMetrics(response);
       setError(null);
-    } catch (err: any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err : any) {
       console.error('Error fetching metrics:', err);
       
       let errorMessage = 'Không thể tải thống kê';

@@ -5,6 +5,7 @@ import Badge from '@/components/ui/badge/Badge';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { adminCommentService, AdminComment, AdminCommentResponse } from '@/services/adminCommentService';
+import { useToast } from '@/hooks/useToast';
 
 type Review = {
   id: string;
@@ -27,6 +28,7 @@ export default function ReviewTable() {
   const [showReplyModal, setShowReplyModal] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
+  const toast = useToast();
   
   // API state management
   const [comments, setComments] = useState<AdminComment[]>([]);
@@ -244,13 +246,13 @@ export default function ReviewTable() {
         }
         
         // Show success message
-        alert('Phản hồi đã được thêm thành công!');
+        toast.success('Phản hồi đã được thêm thành công!');
       } else {
-        alert('Lỗi: ' + response.message);
+        toast.error('Lỗi: ' + response.message);
       }
     } catch (err) {
       console.error('Error submitting reply:', err);
-      alert('Không thể gửi phản hồi. Vui lòng thử lại.');
+      toast.error('Không thể gửi phản hồi. Vui lòng thử lại.');
     } finally {
       setSubmittingReply(false);
     }
