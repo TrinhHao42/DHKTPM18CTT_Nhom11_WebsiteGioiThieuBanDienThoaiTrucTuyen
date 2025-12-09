@@ -15,7 +15,27 @@ import java.util.List;
 @RepositoryRestResource(path="users")
 public interface UserRepository extends JpaRepository<User,Long> {
     User findByEmail(String email);
+    
+    /**
+     * Find user with roles fetched for authentication
+     */
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.email = :email")
+    User findByEmailWithRoles(@Param("email") String email);
 
+    /**
+     * Find user with addresses fetched for order creation and profile
+     */
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.addresses WHERE u.userId = :userId")
+    User findByIdWithAddresses(@Param("userId") Long userId);
+    
+    /**
+     * Find user with both roles and addresses fetched
+     */
+    @Query("SELECT DISTINCT u FROM User u " +
+           "LEFT JOIN FETCH u.roles " +
+           "LEFT JOIN FETCH u.addresses " +
+           "WHERE u.userId = :userId")
+    User findByIdWithRolesAndAddresses(@Param("userId") Long userId);
 
     boolean existsByEmail(String email);
 

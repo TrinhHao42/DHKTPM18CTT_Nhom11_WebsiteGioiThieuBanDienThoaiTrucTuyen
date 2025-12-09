@@ -53,12 +53,29 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public User findByEmailWithRoles(String email) {
+        return userRepository.findByEmailWithRoles(email);
+    }
+
+    @Override
+    public User findByEmailWithAddresses(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user != null) {
+            // Load with addresses
+            return userRepository.findByIdWithAddresses(user.getUserId());
+        }
+        return null;
+    }
+
+    @Override
     @Transactional
     public AddressResponse addUserAddress(Long userId, AddressRequest addressRequest) {
 
-        // Tìm user
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + userId));
+        // Load user with addresses to avoid LazyInitializationException
+        User user = userRepository.findByIdWithAddresses(userId);
+        if (user == null) {
+            throw new RuntimeException("User không tồn tại với ID: " + userId);
+        }
 
         // Kiểm tra nếu address đã tồn tại
         Optional<Address> existingAddress = addressRepository.findByExactMatch(
@@ -110,8 +127,11 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserResponse getUserWithAddresses(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + userId));
+        // Load user with addresses to avoid LazyInitializationException
+        User user = userRepository.findByIdWithAddresses(userId);
+        if (user == null) {
+            throw new RuntimeException("User không tồn tại với ID: " + userId);
+        }
 
         UserResponse response = UserResponse.toUserResponse(user);
 
@@ -120,7 +140,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User userE = userRepository.findByEmail(username);
+        // Use optimized query that fetches roles with user
+        User userE = userRepository.findByEmailWithRoles(username);
         if(userE== null){
             throw new UsernameNotFoundException("Tài khoản không tồn tại!");
         }
@@ -191,8 +212,11 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserDetailResponse getUserDetail(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + userId));
+        // Load user with addresses to avoid LazyInitializationException
+        User user = userRepository.findByIdWithAddresses(userId);
+        if (user == null) {
+            throw new RuntimeException("User không tồn tại với ID: " + userId);
+        }
 
         // Convert địa chỉ
         List<AddressResponse> addressResponses = user.getAddresses().stream()

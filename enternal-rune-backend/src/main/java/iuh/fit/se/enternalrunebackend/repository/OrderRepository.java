@@ -1,4 +1,5 @@
 package iuh.fit.se.enternalrunebackend.repository;
+import iuh.fit.se.enternalrunebackend.dto.response.OrderListResponse;
 import iuh.fit.se.enternalrunebackend.entity.Order;
 
 import org.springframework.data.domain.Page;
@@ -14,6 +15,33 @@ import java.util.List;
 @Repository
 public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecificationExecutor<Order>{
 
+    /**
+     * Optimized query to fetch single order with all details for detail view
+     * Eliminates N+1 queries by fetching all relations in 2 queries (due to multiple collections)
+     */
+    @Query("SELECT DISTINCT o FROM Order o " +
+           "LEFT JOIN FETCH o.orderShippingAddress " +
+           "LEFT JOIN FETCH o.orderUser " +
+           "LEFT JOIN FETCH o.orderDetails od " +
+           "LEFT JOIN FETCH od.odProductVariant pv " +
+           "LEFT JOIN FETCH pv.prodvImg " +
+           "LEFT JOIN FETCH pv.prodvPrice " +
+           "LEFT JOIN FETCH pv.pvProduct " +
+           "WHERE o.orderId = :orderId")
+    Order findByIdWithOrderDetails(@Param("orderId") int orderId);
+
+    @Query("SELECT DISTINCT o FROM Order o " +
+           "LEFT JOIN FETCH o.paymentStatusHistories psh " +
+           "LEFT JOIN FETCH psh.paymentStatus " +
+           "WHERE o.orderId = :orderId")
+    Order findByIdWithPaymentHistory(@Param("orderId") int orderId);
+
+    @Query("SELECT DISTINCT o FROM Order o " +
+           "LEFT JOIN FETCH o.shippingStatusHistories ssh " +
+           "LEFT JOIN FETCH ssh.shippingStatus " +
+           "WHERE o.orderId = :orderId")
+    Order findByIdWithShippingHistory(@Param("orderId") int orderId);
+
     @Query("SELECT DISTINCT o FROM Order o " +
            "LEFT JOIN FETCH o.orderShippingAddress " +
            "LEFT JOIN FETCH o.orderUser " +
@@ -24,6 +52,16 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
            "WHERE o.orderUser.userId = :customerId " +
            "ORDER BY o.orderDate DESC")
     Page<Order> findOrdersByCustomerIdWithDetails(@Param("customerId") Long customerId, Pageable pageable);
+    
+    /**
+     * Optimized query to fetch orders with all necessary joins for admin list
+     * Uses multiple queries with batch fetching to avoid Cartesian product
+     */
+    @Query("SELECT DISTINCT o FROM Order o " +
+           "LEFT JOIN FETCH o.orderUser u " +
+           "LEFT JOIN FETCH o.orderDetails od " +
+           "WHERE o IN :orders")
+    List<Order> findOrdersWithDetails(@Param("orders") List<Order> orders);
 
     // Tổng số đơn hàng
     @Query("SELECT COUNT(o) FROM Order o")
@@ -168,14 +206,78 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
 
     Order getOrderByOrderId(int orderId);
 
+    /**
+     * Optimized query using DTO projection to avoid N+1
+     * Directly select only needed fields into OrderListResponse
+     */
+    @Query("""
+    SELECT new iuh.fit.se.enternalrunebackend.dto.response.OrderListResponse(
+        o.orderId,
+        o.orderDate,
+        o.orderTotalAmount,
+        (SELECT COALESCE(SUM(od.odQuantity), 0) FROM OrderDetail od WHERE od.order.orderId = o.orderId),
+        u.name,
+        u.email,
+        (SELECT ps.statusCode FROM OrderPaymentHistory psh 
+         JOIN psh.paymentStatus ps 
+         WHERE psh.order.orderId = o.orderId 
+         ORDER BY psh.createdAt DESC LIMIT 1),
+        (SELECT ps.statusName FROM OrderPaymentHistory psh 
+         JOIN psh.paymentStatus ps 
+         WHERE psh.order.orderId = o.orderId 
+         ORDER BY psh.createdAt DESC LIMIT 1),
+        (SELECT ss.statusCode FROM OrderShippingHistory ssh 
+         JOIN ssh.shippingStatus ss 
+         WHERE ssh.order.orderId = o.orderId 
+         ORDER BY ssh.createdAt DESC LIMIT 1),
+        (SELECT ss.statusName FROM OrderShippingHistory ssh 
+         JOIN ssh.shippingStatus ss 
+         WHERE ssh.order.orderId = o.orderId 
+         ORDER BY ssh.createdAt DESC LIMIT 1)
+    )
+    FROM Order o
+    JOIN o.orderUser u
+    WHERE (LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          OR :keyword IS NULL)
+      AND (:paymentStatusCode IS NULL OR 
+           EXISTS (SELECT 1 FROM OrderPaymentHistory psh2 
+                   JOIN psh2.paymentStatus ps2 
+                   WHERE psh2.order.orderId = o.orderId 
+                   AND ps2.statusCode = :paymentStatusCode
+                   AND psh2.createdAt = (SELECT MAX(psh3.createdAt) 
+                                        FROM OrderPaymentHistory psh3 
+                                        WHERE psh3.order.orderId = o.orderId)))
+      AND (:shippingStatusCode IS NULL OR 
+           EXISTS (SELECT 1 FROM OrderShippingHistory ssh2 
+                   JOIN ssh2.shippingStatus ss2 
+                   WHERE ssh2.order.orderId = o.orderId 
+                   AND ss2.statusCode = :shippingStatusCode
+                   AND ssh2.createdAt = (SELECT MAX(ssh3.createdAt) 
+                                        FROM OrderShippingHistory ssh3 
+                                        WHERE ssh3.order.orderId = o.orderId)))
+    ORDER BY o.orderDate DESC
+    """)
+    Page<OrderListResponse> searchOrdersWithDTO(
+            @Param("keyword") String keyword,
+            @Param("paymentStatusCode") String paymentStatusCode,
+            @Param("shippingStatusCode") String shippingStatusCode,
+            Pageable pageable
+    );
+
     @Query("""
     SELECT DISTINCT o FROM Order o
+    LEFT JOIN FETCH o.orderUser u
+    LEFT JOIN FETCH o.orderDetails od
+    LEFT JOIN FETCH od.odProductVariant pv
+    LEFT JOIN FETCH pv.prodvPrice
+    LEFT JOIN FETCH pv.prodvImg
     LEFT JOIN o.paymentStatusHistories psh
     LEFT JOIN psh.paymentStatus ps
     LEFT JOIN o.shippingStatusHistories ssh
     LEFT JOIN ssh.shippingStatus ss
-    WHERE (LOWER(o.orderUser.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-          OR LOWER(o.orderUser.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    WHERE (LOWER(u.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+          OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
           OR :keyword IS NULL)
       AND (:paymentStatusCode IS NULL OR 
            (ps.statusCode = :paymentStatusCode AND 
@@ -237,3 +339,4 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
            "ORDER BY month")
     List<Object[]> getMonthlySummariesForYear(@Param("year") int year);
 }
+

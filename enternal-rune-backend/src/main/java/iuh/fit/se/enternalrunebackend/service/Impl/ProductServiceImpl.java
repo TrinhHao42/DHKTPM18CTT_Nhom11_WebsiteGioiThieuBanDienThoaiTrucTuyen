@@ -510,4 +510,142 @@ public class ProductServiceImpl implements ProductService {
         }
         return result;
     }
+    
+    // ===== OPTIMIZED IMPLEMENTATIONS =====
+    
+    @Override
+    public List<ProductListResponse> getProductListOptimized() {
+        List<Object[]> results = productRepository.findProductListOptimized();
+        return results.stream().map(row -> new ProductListResponse(
+            (Integer) row[0],  // prodId
+            (String) row[1],   // prodName
+            (String) row[2],   // prodModel
+            (String) row[3],   // prodDescription  
+            (String) row[4],   // productStatus
+            row[5] != null ? ((Number) row[5]).doubleValue() : 0.0, // prodRating
+            (Integer) row[6],  // brandId
+            (String) row[7],   // brandName
+            row[8] != null ? ((Number) row[8]).intValue() : 0, // activePrice
+            (String) row[9],   // discountName
+            (String) row[10],  // primaryImageUrl
+            row[11] != null ? ((Number) row[11]).intValue() : 0, // totalComments
+            row[12] != null ? ((Number) row[12]).doubleValue() : 0.0, // averageRating
+            (String) row[13]   // availableColors
+        )).toList();
+    }
+    
+    @Override
+    public List<ProductCardResponse> getFeaturedProductCards(int limit) {
+        List<Object[]> results = productRepository.findFeaturedProductsOptimized(limit);
+        return results.stream().map(row -> new ProductCardResponse(
+            (Integer) row[0],  // prodId
+            (String) row[1],   // prodName  
+            (String) row[2],   // prodModel
+            (String) row[3],   // prodDescription
+            row[4] != null ? ((Number) row[4]).doubleValue() : 0.0, // prodRating
+            (String) row[5],   // brandName
+            row[6] != null ? ((Number) row[6]).intValue() : 0, // currentPrice
+            row[7] != null ? ((Number) row[7]).intValue() : 0, // originalPrice
+            (String) row[8],   // discountLabel
+            (String) row[9],   // imageUrl
+            row[10] != null ? ((Number) row[10]).intValue() : 0, // totalComments
+            row[11] != null ? ((Number) row[11]).doubleValue() : 0.0, // averageRating
+            (String) row[12]   // availableColors
+        )).toList();
+    }
+    
+    @Override
+    public List<ProductCardResponse> getProductCardsByBrand(String brandName, int limit) {
+        List<Object[]> results = productRepository.findProductsByBrandOptimized(brandName, limit);
+        return results.stream().map(row -> new ProductCardResponse(
+            (Integer) row[0],  // prodId
+            (String) row[1],   // prodName  
+            (String) row[2],   // prodModel
+            (String) row[3],   // prodDescription
+            row[4] != null ? ((Number) row[4]).doubleValue() : 0.0, // prodRating
+            (String) row[5],   // brandName
+            row[6] != null ? ((Number) row[6]).intValue() : 0, // currentPrice
+            row[7] != null ? ((Number) row[7]).intValue() : 0, // originalPrice
+            (String) row[8],   // discountLabel
+            (String) row[9],   // imageUrl
+            row[10] != null ? ((Number) row[10]).intValue() : 0, // totalComments
+            row[11] != null ? ((Number) row[11]).doubleValue() : 0.0, // averageRating
+            (String) row[12]   // availableColors
+        )).toList();
+    }
+    
+    @Override
+    public Page<ProductListResponse> filterProductsOptimized(
+            List<Integer> brands,
+            List<String> priceRanges,
+            List<String> colors,
+            List<String> memory,
+            String search,
+            int page,
+            int size) {
+        
+        // Convert parameters for native query - use empty arrays instead of null
+        Integer[] brandIds = brands != null && !brands.isEmpty() ? 
+            brands.toArray(new Integer[0]) : new Integer[0];
+        
+        String[] colorArray = colors != null && !colors.isEmpty() ? 
+            colors.toArray(new String[0]) : new String[0];
+        
+        String[] memoryArray = memory != null && !memory.isEmpty() ? 
+            memory.toArray(new String[0]) : new String[0];
+        
+        // Parse price range
+        Integer minPrice = null;
+        Integer maxPrice = null;
+        if (priceRanges != null && !priceRanges.isEmpty()) {
+            String priceRange = priceRanges.get(0); // Take first range
+            if (priceRange.contains("-")) {
+                String[] parts = priceRange.split("-");
+                try {
+                    minPrice = Integer.parseInt(parts[0].trim());
+                    if (parts.length > 1 && !parts[1].trim().equals("*")) {
+                        maxPrice = Integer.parseInt(parts[1].trim());
+                    }
+                } catch (NumberFormatException e) {
+                    // Ignore invalid price range
+                }
+            }
+        }
+        
+        int offset = page * size;
+        
+        // Handle empty search string
+        String searchParam = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+        
+        // Get filtered results
+        List<Object[]> results = productRepository.findProductsFilteredOptimized(
+            brandIds, minPrice, maxPrice, colorArray, memoryArray, searchParam, size, offset
+        );
+        
+        // Get total count
+        Long totalCount = productRepository.countProductsFilteredOptimized(
+            brandIds, minPrice, maxPrice, colorArray, memoryArray, searchParam
+        );
+        
+        // Convert to ProductListResponse
+        List<ProductListResponse> content = results.stream().map(row -> new ProductListResponse(
+            (Integer) row[0],  // prodId
+            (String) row[1],   // prodName
+            (String) row[2],   // prodModel
+            (String) row[3],   // prodDescription
+            (String) row[4],   // productStatus
+            row[5] != null ? ((Number) row[5]).doubleValue() : 0.0, // prodRating
+            (Integer) row[6],  // brandId
+            (String) row[7],   // brandName
+            row[8] != null ? ((Number) row[8]).intValue() : 0, // activePrice
+            (String) row[9],   // discountName
+            (String) row[10],  // primaryImageUrl
+            row[11] != null ? ((Number) row[11]).intValue() : 0, // totalComments
+            row[12] != null ? ((Number) row[12]).doubleValue() : 0.0, // averageRating
+            (String) row[13]   // availableColors
+        )).toList();
+        
+        Pageable pageable = PageRequest.of(page, size);
+        return new PageImpl<>(content, pageable, totalCount != null ? totalCount : 0);
+    }
 }

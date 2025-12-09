@@ -124,7 +124,7 @@ export const ProductListProvider = ({ children }: ProductListProviderProps) => {
     setFilters(resetState)
     setSearchTerm('')
     // Reset triggers refetch of default API list
-    ProductService.getFilteredProducts({ page: 1, size: 100 })
+    ProductService.getFilteredProducts({ page: 1, size: 20 })
       .then(setApiProducts)
       .catch(err => setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi'))
     setCurrentPage(1)
@@ -186,9 +186,17 @@ export const ProductListProvider = ({ children }: ProductListProviderProps) => {
 
     switch (sortOption) {
       case 'price-asc':
-        return sorted.sort((a, b) => (a.productPrices?.[0].ppPrice || 0) - (b.productPrices?.[0].ppPrice || 0))
+        return sorted.sort((a, b) => {
+          const priceA = a.activePrice || a.currentPrice || a.productPrices?.[0]?.ppPrice || 0
+          const priceB = b.activePrice || b.currentPrice || b.productPrices?.[0]?.ppPrice || 0
+          return priceA - priceB
+        })
       case 'price-desc':
-        return sorted.sort((a, b) => (b.productPrices?.[0].ppPrice || 0) - (a.productPrices?.[0].ppPrice || 0))
+        return sorted.sort((a, b) => {
+          const priceA = a.activePrice || a.currentPrice || a.productPrices?.[0]?.ppPrice || 0
+          const priceB = b.activePrice || b.currentPrice || b.productPrices?.[0]?.ppPrice || 0
+          return priceB - priceA
+        })
       case 'newest':
         return sorted.sort((a, b) => Number(b.prodId) - Number(a.prodId))
       case 'popular':
