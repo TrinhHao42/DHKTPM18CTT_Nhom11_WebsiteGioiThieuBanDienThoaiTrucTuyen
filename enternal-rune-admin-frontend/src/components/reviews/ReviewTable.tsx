@@ -705,7 +705,7 @@ export default function ReviewTable() {
                   disabled={submittingReply}
                 />
                 <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  Phản hồi sẽ hiển thị với tên "ADMIN"
+                  Phản hồi sẽ hiển thị với tên &apos;ADMIN&apos;
                 </p>
               </div>
             </div>

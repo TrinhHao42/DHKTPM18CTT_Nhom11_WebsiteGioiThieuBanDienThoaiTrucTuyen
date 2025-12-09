@@ -79,9 +79,45 @@ function UserBehaviorDetailList({ websiteId, timeRange, getFriendlyEventName, ev
               
               // Check all possible property name formats
               const productName = eventData.product_name || eventData.productName || eventData['product-name'];
-              const productPrice = eventData.product_price || eventData.productPrice || eventData['product-price'];
-              const productId = eventData.product_id || eventData.productId || eventData['product-id'];
-              const productBrand = eventData.product_brand || eventData.productBrand || eventData['product-brand'];
+              
+              // Normalize productPrice to number or string
+              const productPriceRaw = eventData.product_price || eventData.productPrice || eventData['product-price'];
+              let productPrice: number | string | null = null;
+              if (productPriceRaw !== undefined && productPriceRaw !== null) {
+                if (typeof productPriceRaw === 'object' && productPriceRaw !== null) {
+                  const priceObj = productPriceRaw as Record<string, unknown>;
+                  productPrice = (priceObj.amount || priceObj.price || priceObj.value || JSON.stringify(productPriceRaw)) as string | number;
+                } else {
+                  const asNumber = Number(productPriceRaw);
+                  productPrice = isNaN(asNumber) ? String(productPriceRaw) : asNumber;
+                }
+              }
+              
+              // Normalize productId to string/number
+              const productIdRaw = eventData.product_id || eventData.productId || eventData['product-id'];
+              let productId: string | number | null = null;
+              if (productIdRaw !== undefined && productIdRaw !== null) {
+                if (typeof productIdRaw === 'object' && productIdRaw !== null) {
+                  const idObj = productIdRaw as Record<string, unknown>;
+                  productId = (idObj.id || idObj.productId || JSON.stringify(productIdRaw)) as string | number;
+                } else {
+                  const asNumber = Number(productIdRaw);
+                  productId = isNaN(asNumber) ? String(productIdRaw) : asNumber;
+                }
+              }
+              
+              // Normalize brand - prefer brandName string if given as object
+              const productBrandRaw = eventData.product_brand || eventData.productBrand || eventData['product-brand'];
+              let productBrand: string | null = null;
+              if (productBrandRaw !== undefined && productBrandRaw !== null) {
+                if (typeof productBrandRaw === 'object' && productBrandRaw !== null) {
+                  const brandObj = productBrandRaw as Record<string, unknown>;
+                  productBrand = String(brandObj.brandName || brandObj.name || JSON.stringify(productBrandRaw));
+                } else {
+                  productBrand = String(productBrandRaw);
+                }
+              }
+              
               const quantity = eventData.quantity || 1;
               
               // Show product info if we have at least a name or ID
@@ -134,7 +170,7 @@ function UserBehaviorDetailList({ websiteId, timeRange, getFriendlyEventName, ev
                       {productInfo ? (
                         <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-gray-400">
                           {productInfo.price && (
-                            <span>💰 {productInfo.price.toLocaleString('vi-VN')} ₫</span>
+                            <span>💰 {typeof productInfo.price === 'number' ? productInfo.price.toLocaleString('vi-VN') : productInfo.price} ₫</span>
                           )}
                           <span>📊 Số lần: {behavior.currentMonth}</span>
                           {productInfo.brand && (
