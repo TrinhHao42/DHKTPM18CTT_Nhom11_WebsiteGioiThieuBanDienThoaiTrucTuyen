@@ -5,7 +5,6 @@ import iuh.fit.se.enternalrunebackend.dto.response.BrandDashboardListResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.BrandResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.BrandStatisticResponse;
 import iuh.fit.se.enternalrunebackend.entity.Brand;
-import iuh.fit.se.enternalrunebackend.entity.Message;
 import iuh.fit.se.enternalrunebackend.service.BrandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
