@@ -73,12 +73,14 @@ public class Endpoints {
             "/orders/admin/**",
             "/shipping-status",
             "/api/notifications/**",
-            "/api/admin/payments/**"
+            "/api/admin/payments/**",
+            "/api/staff/**"
     };
     
     public static final String[] ADMIN_POST_ENDPOINTS = {
             "/products/dashboard/**",
-            "/api/discounts/**"
+            "/api/discounts/**",
+            "/api/staff/**"
     };
     
     public static final String[] ADMIN_PUT_ENDPOINTS = {
@@ -86,13 +88,15 @@ public class Endpoints {
             "/products/dashboard/**",
             "/api/discounts/**",
             "/orders/admin/*/shipping-status",
-            "/api/notifications/**"
+            "/api/notifications/**",
+            "/api/staff/**"
     };
     
     public static final String[] ADMIN_DELETE_ENDPOINTS = {
             "/api/dashboard-order/**",
             "/api/dashboard-user/**",
             "/products/dashboard/**",
-            "/api/discounts/**"
+            "/api/discounts/**",
+            "/api/staff/**"
     };
 }
