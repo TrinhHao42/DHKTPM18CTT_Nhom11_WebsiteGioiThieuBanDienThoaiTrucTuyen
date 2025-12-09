@@ -12,7 +12,7 @@ spring:
         api-key: ${GEMINI_API_KEY}
         chat:
           options:
-            model: gemini-2.0-flash
+            model: gemini-2.5-flash
         embedding:
           api-key: ${GEMINI_API_KEY}
   #    vectorstore:
@@ -25,9 +25,9 @@ spring:
     name: enternal-rune-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/PhoneDB
-    username: postgres
-    password: postgrespassword
+    url: jdbc:postgresql://ccu6unqr99fgui.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/ddul6kp39tfhrv
+    username: u3q4vh5udl7u8g
+    password: pbc51e26b854604c63574db8e52b25b5e3c462510618e731c3ecc4216d8f24655
     driver-class-name: org.postgresql.Driver
 
   jpa:

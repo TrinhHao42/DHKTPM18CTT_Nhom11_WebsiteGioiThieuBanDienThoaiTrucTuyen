@@ -1,6 +1,6 @@
 'use client';
 import { useParams } from 'next/navigation';
-import OrderDetailPage from '@/pages/OrderManagement/components/OrderDetailPage';
+import OrderDetailPage from '@/components/OrderManagement/OrderDetailPage';
 
 export default function OrderDetailScreen() {
     const params = useParams();

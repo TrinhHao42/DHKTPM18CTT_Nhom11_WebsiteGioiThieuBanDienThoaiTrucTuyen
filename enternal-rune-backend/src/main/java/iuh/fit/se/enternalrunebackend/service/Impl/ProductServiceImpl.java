@@ -3,8 +3,7 @@ package iuh.fit.se.enternalrunebackend.service.Impl;
 import iuh.fit.se.enternalrunebackend.dto.request.ImageRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.ProductPriceRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.ProductRequest;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductDashboardListResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductDashboardResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.*;
 import iuh.fit.se.enternalrunebackend.entity.*;
 import iuh.fit.se.enternalrunebackend.entity.enums.PriceStatus;
 import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
@@ -26,8 +25,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Map;
 
@@ -50,7 +49,120 @@ public class ProductServiceImpl implements ProductService {
     private final ImageService imageService;
     @Override
     public List<Product> getAllProductsWithActivePrice() {
-        return productRepository.findAllWithActivePrice();
+        // Step 1: Get product IDs with active price
+        List<Integer> productIds = productRepository.findProductIdsWithActivePrice();
+        
+        if (productIds.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        
+        // Step 2: Fetch products with main relations (brand, images, specs) - 1 query
+        List<Product> products = productRepository.findProductsByIdsWithRelations(productIds);
+        
+        // Step 3: Fetch product prices - 1 query
+        productRepository.findProductsByIdsWithPrices(productIds);
+        
+        // Step 4: Trigger ElementCollection loading (will still be N queries but at least batched)
+        products.forEach(p -> {
+            if (p.getProdVersion() != null) p.getProdVersion().size();
+            if (p.getProdColor() != null) p.getProdColor().size();
+        });
+        
+        return products;
+    }
+    
+    @Override
+    public List<ProductResponse> getProductSummaryWithActivePrice() {
+        // Step 1: Query only basic product info + brand (1 query)
+        List<Object[]> productData = productRepository.findProductSummaryWithActivePrice();
+        
+        if (productData.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        
+        // Extract product IDs
+        List<Integer> productIds = productData.stream()
+            .map(row -> (Integer) row[0])
+            .distinct()
+            .toList();
+        
+        // Step 2: Get images (1 query) - native query returns raw types
+        List<Object[]> imagesData = productRepository.findImagesByProductIds(productIds);
+        Map<Integer, List<ImageResponse>> imagesMap = new HashMap<>();
+        for (Object[] row : imagesData) {
+            Integer prodId = ((Number) row[0]).intValue();
+            Integer imageId = ((Number) row[1]).intValue();
+            String imageName = (String) row[2];
+            String imageData = (String) row[3];
+            ImageResponse img = new ImageResponse(imageId, imageName, imageData);
+            imagesMap.computeIfAbsent(prodId, k -> new ArrayList<>()).add(img);
+        }
+        
+        // Step 3: Get active prices (1 query) - native query
+        List<Object[]> pricesData = productRepository.findActivePricesByProductIds(productIds);
+        Map<Integer, List<ProductPriceResponse>> pricesMap = new HashMap<>();
+        for (Object[] row : pricesData) {
+            Integer prodId = ((Number) row[0]).intValue();
+            Integer ppId = ((Number) row[1]).intValue();
+            Integer ppPrice = ((Number) row[2]).intValue();
+            String ppPriceStatus = row[3] != null ? row[3].toString() : null;
+            LocalDate ppStartDate = row[4] != null ? ((java.sql.Date) row[4]).toLocalDate() : null;
+            LocalDate ppEndDate = row[5] != null ? ((java.sql.Date) row[5]).toLocalDate() : null;
+            Integer discountId = row[6] != null ? ((Number) row[6]).intValue() : null;
+            String discountName = (String) row[7];
+            
+            ProductPriceResponse price = new ProductPriceResponse(
+                ppId, ppPrice, ppPriceStatus, ppStartDate, ppEndDate, discountId, discountName
+            );
+            pricesMap.computeIfAbsent(prodId, k -> new ArrayList<>()).add(price);
+        }
+        
+        // Step 4: Get versions and colors (1 query) - JPQL with ElementCollection
+        List<Object[]> versionColorData = productRepository.findVersionsAndColorsByProductIds(productIds);
+        Map<Integer, List<String>> versionsMap = new HashMap<>();
+        Map<Integer, List<String>> colorsMap = new HashMap<>();
+        for (Object[] row : versionColorData) {
+            Integer prodId = (Integer) row[0];
+            versionsMap.put(prodId, (List<String>) row[1]);
+            colorsMap.put(prodId, (List<String>) row[2]);
+        }
+        
+        // Step 5: Build ProductResponse objects
+        List<ProductResponse> responses = new ArrayList<>();
+        for (Object[] row : productData) {
+            Integer prodId = (Integer) row[0];
+            
+            ProductResponse response = new ProductResponse();
+            response.setProdId(prodId);
+            response.setProdName((String) row[1]);
+            response.setProdModel((String) row[2]);
+            response.setProductStatus(row[3] != null ? row[3].toString() : null);
+            response.setProdDescription((String) row[4]);
+            response.setProdRating(row[5] != null ? (Double) row[5] : 0.0);
+            
+            // Brand
+            response.setProdBrand(new BrandResponse((Integer) row[6], (String) row[7]));
+            
+            // Images
+            response.setImages(imagesMap.getOrDefault(prodId, java.util.Collections.emptyList()));
+            
+            // Prices
+            response.setProductPrices(pricesMap.getOrDefault(prodId, java.util.Collections.emptyList()));
+            
+            // Versions and Colors
+            response.setProdVersion(versionsMap.getOrDefault(prodId, java.util.Collections.emptyList()));
+            response.setProdColor(colorsMap.getOrDefault(prodId, java.util.Collections.emptyList()));
+            
+            // No specs, no rating stats for list view
+            response.setProdSpecs(null);
+            response.setTotalComments(null);
+            response.setAverageRating(null);
+            response.setRatingDistribution(null);
+            
+            responses.add(response);
+        }
+        
+        return responses;
     }
 
     @Override
@@ -372,5 +484,30 @@ public class ProductServiceImpl implements ProductService {
         }
         
         return distribution;
+    }
+    
+    @Override
+    public Map<Integer, Double> getAverageRatingsForProducts(List<Integer> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<Integer, Double> result = new HashMap<>();
+        for (Integer productId : productIds) {
+            result.put(productId, commentRepository.getAverageRating(productId));
+        }
+        return result;
+    }
+    
+    @Override
+    public Map<Integer, Integer> getTotalCommentsForProducts(List<Integer> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<Integer, Integer> result = new HashMap<>();
+        for (Integer productId : productIds) {
+            Long count = commentRepository.countByProductId(productId);
+            result.put(productId, count != null ? count.intValue() : 0);
+        }
+        return result;
     }
 }

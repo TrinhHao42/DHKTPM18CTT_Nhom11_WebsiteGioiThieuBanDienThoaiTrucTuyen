@@ -31,6 +31,7 @@ public class Endpoints {
             "/account/register",
             "/api/auth/**",
             "/ai/generate",
+            "/payment/webhookPayment",
             // ==== TẠO CONVERSATION CHAT, TEST WS ====
             "/api/messages/**",
             "/api/conversations/**",

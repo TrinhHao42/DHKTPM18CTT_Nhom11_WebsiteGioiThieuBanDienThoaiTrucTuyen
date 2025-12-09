@@ -1,5 +1,7 @@
-import Profile from '@/pages/ProfilePage'
+import Profile from '@/page-components/ProfilePage'
 import React from 'react'
+
+export const dynamic = 'force-dynamic'
 
 const ProfilePage = () => {
   return (
@@ -10,3 +12,4 @@ const ProfilePage = () => {
 }
 
 export default ProfilePage
+

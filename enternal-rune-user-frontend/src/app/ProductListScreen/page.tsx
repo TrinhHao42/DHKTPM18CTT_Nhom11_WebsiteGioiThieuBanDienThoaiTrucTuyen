@@ -1,5 +1,7 @@
-import {ProductListPage} from '@/pages/ProductListPage'
+import ProductListPage from '@/page-components/ProductListPage'
 import React from 'react'
+
+export const dynamic = 'force-dynamic'
 
 const ProductListScreen = () => {
   return (
