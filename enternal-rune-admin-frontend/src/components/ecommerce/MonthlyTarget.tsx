@@ -7,13 +7,20 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { MoreDotIcon } from "@/icons";
 import { useState } from "react";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
+import { MonthlyTargetData } from "@/types/dashboard";
 // Dynamically import the ReactApexChart component
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
-export default function MonthlyTarget() {
-  const series = [75.55];
+interface MonthlyTargetProps {
+  data?: MonthlyTargetData;
+  loading?: boolean;
+}
+
+export default function MonthlyTarget({ data, loading }: MonthlyTargetProps) {
+  const percentage = data?.percentage || 0;
+  const series = [percentage];
   const options: ApexOptions = {
     colors: ["#465FFF"],
     chart: {
@@ -62,15 +69,21 @@ export default function MonthlyTarget() {
     labels: ["Progress"],
   };
 
-  const [isOpen, setIsOpen] = useState(false);
-
-  function toggleDropdown() {
-    setIsOpen(!isOpen);
+  if (loading) {
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-white/[0.03] animate-pulse">
+        <div className="px-5 pt-5 bg-white shadow-default rounded-2xl pb-11 dark:bg-gray-900 sm:px-6 sm:pt-6">
+          <div className="h-6 bg-gray-200 rounded dark:bg-gray-700 w-32 mb-2" />
+          <div className="h-4 bg-gray-200 rounded dark:bg-gray-700 w-48 mb-6" />
+          <div className="h-[330px] bg-gray-100 rounded dark:bg-gray-800" />
+        </div>
+      </div>
+    );
   }
 
-  function closeDropdown() {
-    setIsOpen(false);
-  }
+  const target = data?.target || 0;
+  const achieved = data?.achieved || 0;
+  const remaining = target - achieved;
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-white/[0.03]">
@@ -78,36 +91,11 @@ export default function MonthlyTarget() {
         <div className="flex justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90">
-              Monthly Target
+              Mục tiêu tháng
             </h3>
             <p className="mt-1 font-normal text-gray-500 text-theme-sm dark:text-gray-400">
-              Target you’ve set for each month
+              Mục tiêu bạn đã đặt ra cho tháng này
             </p>
-          </div>
-          <div className="relative inline-block">
-            <button onClick={toggleDropdown} className="dropdown-toggle">
-              <MoreDotIcon className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-300" />
-            </button>
-            <Dropdown
-              isOpen={isOpen}
-              onClose={closeDropdown}
-              className="w-40 p-2"
-            >
-              <DropdownItem
-                tag="a"
-                onItemClick={closeDropdown}
-                className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-              >
-                View More
-              </DropdownItem>
-              <DropdownItem
-                tag="a"
-                onItemClick={closeDropdown}
-                className="flex w-full font-normal text-left text-gray-500 rounded-lg hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-              >
-                Delete
-              </DropdownItem>
-            </Dropdown>
           </div>
         </div>
         <div className="relative ">
@@ -120,23 +108,27 @@ export default function MonthlyTarget() {
             />
           </div>
 
-          <span className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-[95%] rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500">
-            +10%
-          </span>
+          {percentage > 0 && (
+            <span className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-[95%] rounded-full bg-success-50 px-3 py-1 text-xs font-medium text-success-600 dark:bg-success-500/15 dark:text-success-500">
+              {percentage >= 100 ? 'Hoàn thành' : `${percentage.toFixed(0)}%`}
+            </span>
+          )}
         </div>
         <p className="mx-auto mt-10 w-full max-w-[380px] text-center text-sm text-gray-500 sm:text-base">
-          You earn $3287 today, it&apos;s higher than last month. Keep up your
-          good work!
+          {percentage >= 100 
+            ? 'Chúc mừng! Bạn đã hoàn thành mục tiêu tháng này!' 
+            : `Bạn đã đạt ${percentage.toFixed(1)}% mục tiêu. Tiếp tục phát huy!`
+          }
         </p>
       </div>
 
       <div className="flex items-center justify-center gap-5 px-6 py-3.5 sm:gap-8 sm:py-5">
         <div>
           <p className="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-            Target
+            Mục tiêu
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
-            $20K
+            {target >= 1000000 ? `${(target / 1000000).toFixed(1)}M` : `${(target / 1000).toFixed(0)}K`}đ
             <svg
               width="16"
               height="16"
@@ -158,10 +150,10 @@ export default function MonthlyTarget() {
 
         <div>
           <p className="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-            Revenue
+            Đã đạt
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
-            $20K
+            {achieved >= 1000000 ? `${(achieved / 1000000).toFixed(1)}M` : `${(achieved / 1000).toFixed(0)}K`}đ
             <svg
               width="16"
               height="16"
@@ -183,10 +175,10 @@ export default function MonthlyTarget() {
 
         <div>
           <p className="mb-1 text-center text-gray-500 text-theme-xs dark:text-gray-400 sm:text-sm">
-            Today
+            Còn lại
           </p>
           <p className="flex items-center justify-center gap-1 text-base font-semibold text-gray-800 dark:text-white/90 sm:text-lg">
-            $20K
+            {remaining >= 1000000 ? `${(remaining / 1000000).toFixed(1)}M` : remaining >= 0 ? `${(remaining / 1000).toFixed(0)}K` : '0'}đ
             <svg
               width="16"
               height="16"

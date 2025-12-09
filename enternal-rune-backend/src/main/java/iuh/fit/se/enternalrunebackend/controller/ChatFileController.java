@@ -14,17 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ChatFileController {
 
     private final ChatFileService chatFileService;
-
-    /**
-     * Upload ảnh cho một conversation:
-     * POST /api/chat/conversations/{conversationId}/image
-     *
-     * form-data:
-     *  - file: (binary) ảnh
-     *  - senderId: user id
-     *  - senderRole: CUSTOMER / AGENT
-     *  - caption: (optional)
-     */
+    
     @PostMapping("/conversations/{conversationId}/image")
     public ResponseEntity<Message> uploadImage(
             @PathVariable String conversationId,

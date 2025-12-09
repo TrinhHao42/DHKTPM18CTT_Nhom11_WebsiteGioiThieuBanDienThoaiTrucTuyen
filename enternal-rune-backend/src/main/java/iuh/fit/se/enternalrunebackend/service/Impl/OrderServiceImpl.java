@@ -391,8 +391,10 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal totalRevenue = orderRepository.getTotalRevenue();
         if (totalRevenue == null) totalRevenue = BigDecimal.ZERO;
 
-        long completedOrders = orderRepository.countByCurrentShippingStatus("DELIVERED");
+        // Đơn hoàn thành = DELIVERED hoặc RECEIVED
+        long completedOrders = orderRepository.countCompletedOrders();
 
+        // Đang xử lý = PROCESSING hoặc SHIPPED
         long processingOrders = orderRepository.countProcessingOrders();
 
         return new OrderStatisticsResponse(
