@@ -92,7 +92,7 @@ const CartSummary = React.memo(({ choosedItems }: { choosedItems: CartItem[] }) 
                 className="w-full bg-blue-600 text-white py-2.5 rounded-md font-semibold text-sm hover:bg-blue-700 active:scale-95 transition-all duration-150 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-400 mb-3"
                 onClick={handleCheckout}
             >
-                Thanh toán
+                Đặt hàng
             </button>
         </div>
     )
