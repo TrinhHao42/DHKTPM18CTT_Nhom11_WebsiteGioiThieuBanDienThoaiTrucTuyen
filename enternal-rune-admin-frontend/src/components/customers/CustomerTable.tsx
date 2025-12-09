@@ -2,150 +2,75 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '../ui/table';
 import Badge from '../ui/badge/Badge';
-import Image from 'next/image';
 import Link from 'next/link';
+import { UserDashboardResponse, AuthProvider } from '@/types/customer';
 
-interface Customer {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  totalOrders: number;
-  totalSpent: number;
-  status: 'active' | 'inactive' | 'vip';
-  joinDate: string;
-  avatar: string;
+interface CustomerTableProps {
+  customers: UserDashboardResponse[];
+  loading?: boolean;
+  totalPages: number;
+  currentPage: number;
+  totalElements: number;
+  onSearch: (keyword: string, activated: boolean | null) => void;
+  onPageChange: (page: number, keyword: string, activated: boolean | null) => void;
+  onDelete: (id: number) => Promise<void>;
 }
 
-const customerData: Customer[] = [
-  {
-    id: 1,
-    name: 'Nguyễn Văn An',
-    email: 'nguyenvanan@email.com',
-    phone: '+84 912 345 678',
-    totalOrders: 24,
-    totalSpent: 5680.0,
-    status: 'vip',
-    joinDate: '2024-01-15',
-    avatar: '/images/user/user-01.jpg',
-  },
-  {
-    id: 2,
-    name: 'Trần Thị Bình',
-    email: 'tranthibinh@email.com',
-    phone: '+84 923 456 789',
-    totalOrders: 8,
-    totalSpent: 1250.0,
-    status: 'active',
-    joinDate: '2024-03-20',
-    avatar: '/images/user/user-02.jpg',
-  },
-  {
-    id: 3,
-    name: 'Lê Hoàng Cường',
-    email: 'lehoangcuong@email.com',
-    phone: '+84 934 567 890',
-    totalOrders: 45,
-    totalSpent: 12450.0,
-    status: 'vip',
-    joinDate: '2023-11-05',
-    avatar: '/images/user/user-03.jpg',
-  },
-  {
-    id: 4,
-    name: 'Phạm Thị Dung',
-    email: 'phamthidung@email.com',
-    phone: '+84 945 678 901',
-    totalOrders: 3,
-    totalSpent: 450.0,
-    status: 'active',
-    joinDate: '2024-08-10',
-    avatar: '/images/user/user-04.jpg',
-  },
-  {
-    id: 5,
-    name: 'Hoàng Văn Em',
-    email: 'hoangvanem@email.com',
-    phone: '+84 956 789 012',
-    totalOrders: 0,
-    totalSpent: 0,
-    status: 'inactive',
-    joinDate: '2024-09-01',
-    avatar: '/images/user/user-05.jpg',
-  },
-  {
-    id: 6,
-    name: 'Võ Thị Phương',
-    email: 'vothiphuong@email.com',
-    phone: '+84 967 890 123',
-    totalOrders: 18,
-    totalSpent: 3890.0,
-    status: 'active',
-    joinDate: '2024-02-28',
-    avatar: '/images/user/user-06.jpg',
-  },
-  {
-    id: 7,
-    name: 'Đỗ Văn Giang',
-    email: 'dovangiang@email.com',
-    phone: '+84 978 901 234',
-    totalOrders: 32,
-    totalSpent: 8920.0,
-    status: 'vip',
-    joinDate: '2023-12-10',
-    avatar: '/images/user/user-07.jpg',
-  },
-  {
-    id: 8,
-    name: 'Bùi Thị Hạnh',
-    email: 'buithihanh@email.com',
-    phone: '+84 989 012 345',
-    totalOrders: 5,
-    totalSpent: 780.0,
-    status: 'active',
-    joinDate: '2024-06-15',
-    avatar: '/images/user/user-08.jpg',
-  },
-];
-
-export default function CustomerTable() {
+export default function CustomerTable({
+  customers,
+  loading,
+  totalPages,
+  currentPage,
+  totalElements,
+  onSearch,
+  onPageChange,
+  onDelete,
+}: CustomerTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'activated' | 'inactivated'>('all');
 
-  const filteredCustomers = customerData.filter((customer) => {
-    const matchesSearch =
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.includes(searchTerm);
-    const matchesStatus = filterStatus === 'all' || customer.status === filterStatus;
+  const handleSearch = () => {
+    const activated = filterStatus === 'all' ? null : filterStatus === 'activated';
+    onSearch(searchTerm , activated);
+  };
 
-    return matchesSearch && matchesStatus;
-  });
+  const handleFilterChange = (value: 'all' | 'activated' | 'inactivated') => {
+    setFilterStatus(value);
+    const activated = value === 'all' ? null : value === 'activated';
+    onSearch(searchTerm , activated);
+  };
 
-  const getStatusBadgeColor = (status: Customer['status']) => {
-    switch (status) {
-      case 'vip':
-        return 'warning';
-      case 'active':
-        return 'success';
-      case 'inactive':
-        return 'error';
-      default:
-        return 'primary';
+  const handlePageChange = (page: number) => {
+    const activated = filterStatus === 'all' ? null : filterStatus === 'activated';
+    onPageChange(page, searchTerm , activated);
+  };
+
+  const handleDeleteClick = async (id: number) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa khách hàng này?')) {
+      try {
+        await onDelete(id);
+        // alert('Xóa khách hàng thành công!');
+      } catch (error) {
+        // alert('Xóa khách hàng thất bại!');
+      }
     }
   };
 
-  const getStatusText = (status: Customer['status']) => {
-    switch (status) {
-      case 'vip':
-        return 'VIP';
-      case 'active':
-        return 'Hoạt động';
-      case 'inactive':
-        return 'Không hoạt động';
-      default:
-        return status;
-    }
+  const getStatusBadgeColor = (activated: boolean) => {
+    return activated ? 'success' : 'error';
+  };
+
+  const getStatusText = (activated: boolean) => {
+    return activated ? 'Đã kích hoạt' : 'Chưa kích hoạt';
+  };
+
+  const getAuthProviderBadge = (provider: AuthProvider) => {
+    const config: Record<AuthProvider, { color: 'primary' | 'success' | 'warning' | 'error' | 'light'; label: string }> = {
+      LOCAL: { color: 'light', label: 'Local' },
+      GOOGLE: { color: 'primary', label: 'Google' },
+      FACEBOOK: { color: 'warning', label: 'Facebook' },
+    };
+    return config[provider] || config.LOCAL;
   };
 
   return (
@@ -157,25 +82,8 @@ export default function CustomerTable() {
             Danh sách khách hàng
           </h3>
           <p className="text-theme-sm mt-1 text-gray-500 dark:text-gray-400">
-            {filteredCustomers.length} khách hàng
+            {totalElements} khách hàng
           </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/customers/new"
-            className="bg-brand-500 text-theme-sm shadow-theme-xs hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-700 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 font-medium text-white"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Thêm khách hàng
-          </Link>
         </div>
       </div>
 
@@ -186,9 +94,10 @@ export default function CustomerTable() {
           <div className="relative flex-1">
             <input
               type="text"
-              placeholder="Tìm kiếm khách hàng..."
+              placeholder="Tìm kiếm theo tên, email, số điện thoại..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               className="text-theme-sm focus:border-brand-500 focus:ring-brand-500 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 pl-10 text-gray-700 placeholder:text-gray-400 focus:ring-1 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:placeholder:text-gray-500"
             />
             <svg
@@ -209,28 +118,30 @@ export default function CustomerTable() {
           {/* Status Filter */}
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => handleFilterChange(e.target.value as 'all' | 'activated' | 'inactivated')}
             className="text-theme-sm focus:border-brand-500 focus:ring-brand-500 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-700 focus:ring-1 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
           >
             <option value="all">Tất cả trạng thái</option>
-            <option value="vip">VIP</option>
-            <option value="active">Hoạt động</option>
-            <option value="inactive">Không hoạt động</option>
+            <option value="activated">Đã kích hoạt</option>
+            <option value="inactivated">Chưa kích hoạt</option>
           </select>
-        </div>
 
-        {/* Export Button */}
-        <button className="text-theme-sm shadow-theme-xs inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 font-medium whitespace-nowrap text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200">
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          Xuất file
-        </button>
+          {/* Search Button */}
+          <button
+            onClick={handleSearch}
+            className="bg-brand-500 text-theme-sm shadow-theme-xs hover:bg-brand-600 dark:bg-brand-600 dark:hover:bg-brand-700 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 font-medium text-white whitespace-nowrap"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            Tìm kiếm
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -258,29 +169,29 @@ export default function CustomerTable() {
                 isHeader
                 className="text-theme-xs py-3 text-start font-medium text-gray-500 dark:text-gray-400"
               >
-                Liên hệ
+                Email
               </TableCell>
               <TableCell
                 isHeader
-                className="text-theme-xs py-3 text-start font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs py-3 text-center font-medium text-gray-500 dark:text-gray-400"
+              >
+                Đăng ký qua
+              </TableCell>
+              <TableCell
+                isHeader
+                className="text-theme-xs py-3 text-center font-medium text-gray-500 dark:text-gray-400"
               >
                 Tổng đơn
               </TableCell>
               <TableCell
                 isHeader
-                className="text-theme-xs py-3 text-start font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs py-3 text-end font-medium text-gray-500 dark:text-gray-400"
               >
                 Tổng chi tiêu
               </TableCell>
               <TableCell
                 isHeader
-                className="text-theme-xs py-3 text-start font-medium text-gray-500 dark:text-gray-400"
-              >
-                Ngày tham gia
-              </TableCell>
-              <TableCell
-                isHeader
-                className="text-theme-xs py-3 text-start font-medium text-gray-500 dark:text-gray-400"
+                className="text-theme-xs py-3 text-center font-medium text-gray-500 dark:text-gray-400"
               >
                 Trạng thái
               </TableCell>
@@ -295,8 +206,43 @@ export default function CustomerTable() {
 
           {/* Table Body */}
           <TableBody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {filteredCustomers.length > 0
-              ? filteredCustomers.map((customer) => (
+            {loading ? (
+              // Loading skeleton
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell className="py-3">
+                    <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell className="py-3 text-center">
+                    <div className="h-6 w-16 bg-gray-200 dark:bg-gray-700 rounded mx-auto animate-pulse" />
+                  </TableCell>
+                  <TableCell className="py-3 text-center">
+                    <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded mx-auto animate-pulse" />
+                  </TableCell>
+                  <TableCell className="py-3 text-end">
+                    <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded ml-auto animate-pulse" />
+                  </TableCell>
+                  <TableCell className="py-3 text-center">
+                    <div className="h-6 w-20 bg-gray-200 dark:bg-gray-700 rounded mx-auto animate-pulse" />
+                  </TableCell>
+                  <TableCell className="py-3">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                      <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : customers.length > 0 ? (
+              customers.map((customer) => {
+                const providerBadge = getAuthProviderBadge(customer.authProvider);
+                return (
                   <TableRow
                     key={customer.id}
                     className="hover:bg-gray-50 dark:hover:bg-white/[0.02]"
@@ -308,50 +254,35 @@ export default function CustomerTable() {
                       />
                     </TableCell>
                     <TableCell className="py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 overflow-hidden rounded-full">
-                          <Image
-                            width={40}
-                            height={40}
-                            src={customer.avatar}
-                            className="h-10 w-10 object-cover"
-                            alt={customer.name}
-                          />
-                        </div>
-                        <div>
-                          <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
-                            {customer.name}
-                          </p>
-                        </div>
-                      </div>
+                      <p className="text-theme-sm font-medium text-gray-800 dark:text-white/90">
+                        {customer.name}
+                      </p>
                     </TableCell>
                     <TableCell className="py-3">
-                      <div>
-                        <p className="text-theme-sm text-gray-800 dark:text-white/90">
-                          {customer.email}
-                        </p>
-                        <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                          {customer.phone}
-                        </p>
-                      </div>
+                      <p className="text-theme-sm text-gray-800 dark:text-white/90">
+                        {customer.email}
+                      </p>
                     </TableCell>
-                    <TableCell className="text-theme-sm py-3 text-gray-500 dark:text-gray-400">
-                      {customer.totalOrders}
+                    <TableCell className="py-3 text-center">
+                      <Badge size="sm" color={providerBadge.color}>
+                        {providerBadge.label}
+                      </Badge>
                     </TableCell>
-                    <TableCell className="text-theme-sm py-3 font-medium text-gray-800 dark:text-white/90">
-                      ${customer.totalSpent.toFixed(2)}
+                    <TableCell className="text-theme-sm py-3 text-center text-gray-500 dark:text-gray-400">
+                      {customer.totalOrder}
                     </TableCell>
-                    <TableCell className="text-theme-sm py-3 text-gray-500 dark:text-gray-400">
-                      {new Date(customer.joinDate).toLocaleDateString('vi-VN')}
+                    <TableCell className="text-theme-sm py-3 text-end font-medium text-gray-800 dark:text-white/90">
+                      {customer.totalPrice?.toLocaleString('vi-VN')} ₫
                     </TableCell>
-                    <TableCell className="py-3">
-                      <Badge size="sm" color={getStatusBadgeColor(customer.status)}>
-                        {getStatusText(customer.status)}
+                    <TableCell className="py-3 text-center">
+                      <Badge size="sm" color={getStatusBadgeColor(customer.activate)}>
+                        {getStatusText(customer.activate)}
                       </Badge>
                     </TableCell>
                     <TableCell className="py-3">
                       <div className="flex items-center justify-center gap-2">
-                        <button
+                        <Link
+                          href={`/customers/${customer.id}`}
                           className="hover:text-brand-600 dark:hover:text-brand-400 p-2 text-gray-500 dark:text-gray-400"
                           title="Xem chi tiết"
                         >
@@ -374,27 +305,9 @@ export default function CustomerTable() {
                               d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                             />
                           </svg>
-                        </button>
-                        <Link
-                          href={`/customers/${customer.id}/edit`}
-                          className="hover:text-brand-600 dark:hover:text-brand-400 p-2 text-gray-500 dark:text-gray-400"
-                          title="Chỉnh sửa"
-                        >
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                            />
-                          </svg>
                         </Link>
                         <button
+                          onClick={() => handleDeleteClick(customer.id)}
                           className="hover:text-error-600 dark:hover:text-error-400 p-2 text-gray-500 dark:text-gray-400"
                           title="Xóa"
                         >
@@ -415,12 +328,13 @@ export default function CustomerTable() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
-              : null}
+                );
+              })
+            ) : null}
           </TableBody>
         </Table>
 
-        {filteredCustomers.length === 0 && (
+        {!loading && customers.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12">
             <svg
               className="h-12 w-12 text-gray-400 dark:text-gray-600"
@@ -441,22 +355,52 @@ export default function CustomerTable() {
       </div>
 
       {/* Pagination */}
-      {filteredCustomers.length > 0 && (
+      {!loading && customers.length > 0 && totalPages > 1 && (
         <div className="mt-4 flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-            Hiển thị 1-{filteredCustomers.length} của {customerData.length} khách hàng
+            Trang {currentPage + 1} / {totalPages} - Tổng {totalElements} khách hàng
           </p>
           <div className="flex items-center gap-2">
-            <button className="text-theme-sm rounded-lg border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 0}
+              className="text-theme-sm rounded-lg border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]"
+            >
               Trước
             </button>
-            <button className="text-theme-sm bg-brand-600 border-brand-600 hover:bg-brand-700 rounded-lg border px-3 py-2 font-medium text-white">
-              1
-            </button>
-            <button className="text-theme-sm rounded-lg border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]">
-              2
-            </button>
-            <button className="text-theme-sm rounded-lg border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]">
+            
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNum: number;
+              if (totalPages <= 5) {
+                pageNum = i;
+              } else if (currentPage < 3) {
+                pageNum = i;
+              } else if (currentPage > totalPages - 3) {
+                pageNum = totalPages - 5 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`text-theme-sm rounded-lg border px-3 py-2 font-medium ${
+                    currentPage === pageNum
+                      ? 'bg-brand-600 border-brand-600 text-white hover:bg-brand-700'
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]'
+                  }`}
+                >
+                  {pageNum + 1}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages - 1}
+              className="text-theme-sm rounded-lg border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-white/[0.03]"
+            >
               Sau
             </button>
           </div>

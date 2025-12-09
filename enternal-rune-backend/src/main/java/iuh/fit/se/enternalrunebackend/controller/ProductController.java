@@ -1,72 +1,70 @@
 package iuh.fit.se.enternalrunebackend.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import iuh.fit.se.enternalrunebackend.dto.request.ProductRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.*;
 import iuh.fit.se.enternalrunebackend.entity.Product;
 import iuh.fit.se.enternalrunebackend.entity.Brand;
 import iuh.fit.se.enternalrunebackend.entity.enums.ProductStatus;
 import iuh.fit.se.enternalrunebackend.service.ProductService;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ImageResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.BrandResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductPriceResponse;
-import iuh.fit.se.enternalrunebackend.dto.response.ProductSpecificationsResponse;
 import iuh.fit.se.enternalrunebackend.entity.ProductSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/products")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Cho phép gọi từ frontend (React, v.v.)
 public class ProductController {
 
     private final ProductService productService;
 
     //Lấy danh sách sản phẩm nổi bật sắp xếp theo rateing top của từng thương hiệu
     @GetMapping("/top-brand")
-    public ResponseEntity<List<ProductResponse>> getFeaturedProducts(
+    public ResponseEntity<List<ProductCardResponse>> getFeaturedProducts(
             @RequestParam(defaultValue = "8") int limit) {
-        List<Product> products = productService.getFeaturedProducts(limit);
-        List<ProductResponse> dto = products.stream().map(this::toDto).toList();
+        // Sử dụng optimized single-query method
+        List<ProductCardResponse> dto = productService.getFeaturedProductCards(limit);
         return ResponseEntity.ok(dto);
     }
 
-    // Lấy danh sách sản phẩm với giá ACTIVE
+    // Lấy danh sách sản phẩm với giá ACTIVE (tối ưu - chỉ load fields cần thiết)
     @GetMapping("/active-price")
     public List<ProductResponse> getProductsWithActivePrice() {
-        List<Product> products = productService.getAllProductsWithActivePrice();
-        return products.stream().map(this::toDto).toList();
+        // Sử dụng DTO projection thay vì load full entity
+        return productService.getProductSummaryWithActivePrice();
     }
 
-    // (Tuỳ chọn) Lấy sản phẩm theo ID — chỉ lấy giá ACTIVE
+    // Lấy sản phẩm theo ID — tối ưu hơn, query trực tiếp 1 sản phẩm (có đầy đủ rating stats)
     @GetMapping("/{id}/active-price")
-    public ProductResponse getProductWithActivePrice(@PathVariable int id) {
-        List<Product> products = productService.getAllProductsWithActivePrice();
-        return products.stream()
-                .filter(p -> p.getProdId() == id)
-                .findFirst()
-                .map(this::toDto)
-                .orElse(null);
+    public ResponseEntity<ProductResponse> getProductWithActivePrice(@PathVariable int id) {
+        Product product = productService.getProductById(id);
+        if (product == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(toDto(product, true));
     }
 
     @GetMapping("/latest")
-    public List<ProductResponse> getLatestProductsByBrand(
+    public List<ProductCardResponse> getLatestProductsByBrand(
             @RequestParam(defaultValue = "iPhone") String brand,
             @RequestParam(defaultValue = "4") int limit) {
-        List<Product> products = productService.getProductsByBrand(brand, limit);
-        return products.stream().map(this::toDto).toList();
+        // Sử dụng optimized single-query method
+        return productService.getProductCardsByBrand(brand, limit);
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<Page<ProductResponse>> filterProducts(
+    public ResponseEntity<Page<ProductListResponse>> filterProducts(
             @RequestParam(required = false) List<Integer> brands,
             @RequestParam(required = false) List<String> priceRange,
             @RequestParam(required = false) List<String> colors,
@@ -75,16 +73,18 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        Page<Product> products = productService.filterProducts(brands, priceRange, colors, memory, search, page, size);
-        List<ProductResponse> dtoList = products.getContent().stream().map(this::toDto).toList();
-        org.springframework.data.domain.Page<ProductResponse> dtoPage = new org.springframework.data.domain.PageImpl<>(
-                dtoList, products.getPageable(), products.getTotalElements()
-        );
-        return ResponseEntity.ok(dtoPage);
+        // Sử dụng optimized single-query method với pagination
+        Page<ProductListResponse> products = productService.filterProductsOptimized(
+            brands, priceRange, colors, memory, search, page, size);
+        return ResponseEntity.ok(products);
     }
 
     // --- Mapping helper ---
     private ProductResponse toDto(Product p) {
+        return toDto(p, true);
+    }
+    
+    private ProductResponse toDto(Product p, boolean includeRatingStats) {
         BrandResponse brandDto = null;
         Brand b = p.getProdBrand();
         if (b != null) {
@@ -127,6 +127,17 @@ public class ProductController {
         );
     }
 
+    // Calculate rating statistics only if needed (expensive operation)
+    Integer totalComments = null;
+    Double averageRating = null;
+    Map<String, Integer> ratingDistribution = null;
+    
+    if (includeRatingStats) {
+        totalComments = productService.getTotalComments(p.getProdId());
+        averageRating = productService.getAverageRating(p.getProdId());
+        ratingDistribution = productService.getRatingDistribution(p.getProdId());
+    }
+
     return new ProductResponse(
         p.getProdId(),
         p.getProdName(),
@@ -138,13 +149,22 @@ public class ProductController {
         p.getProdRating(),
         brandDto,
         images,
-    productPrices,
-    specsDto
+        productPrices,
+        specsDto,
+        totalComments,
+        averageRating,
+        ratingDistribution
     );
     }
-    @PostMapping("/dashboard/add")
-    public ResponseEntity<String> addProduct(@RequestBody ProductRequest request){
-        productService.addProduct(request);
+    @PostMapping(value = "/dashboard/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> addProduct(
+            @RequestPart("product") String productJson,
+            @RequestPart("images") List<MultipartFile> images
+    ) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        ProductRequest productRequest = mapper.readValue(productJson, ProductRequest.class);
+
+        productService.addProduct(productRequest, images);
         return ResponseEntity.ok("Product created successfully");
     }
     @DeleteMapping("/dashboard/delete/{id}")
@@ -152,10 +172,18 @@ public class ProductController {
         productService.deleteProduct(id);
         return ResponseEntity.ok("Xóa sản phẩm thành công");
     }
-    @PutMapping("/dashboard/update/{id}")
-    public Product updateProduct(@PathVariable Integer id, @RequestBody ProductRequest request){
-        return productService.updateProduct(id, request);
+//    @PutMapping("/dashboard/update/{id}")
+//    public Product updateProduct(@PathVariable Integer id, @RequestBody ProductRequest request){
+//        return productService.updateProduct(id, request);
+//    }
+    @PutMapping(value = "/dashboard/update/{id}", consumes = {"multipart/form-data"})
+    public Product updateProduct(
+            @PathVariable Integer id,
+            @RequestPart("data") ProductRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> newFiles) throws IOException {
+        return productService.updateProduct(id, request, newFiles);
     }
+
     @GetMapping("/dashboard/statistics")
     public ProductDashboardResponse getDashboard() {
         return productService.getProductDashboard();
@@ -172,6 +200,9 @@ public class ProductController {
         Pageable pageable = PageRequest.of(page, size);
         return productService.getProductDashboardList(keyword, brand, status, pageable);
     }
-
-
+    @GetMapping("/dashboard/{id}")
+    public ProductResponse getProductById(@PathVariable Integer id) {
+        Product product = productService.getProductById(id);
+        return toDto(product);
+    }
 }

@@ -4,24 +4,23 @@ import iuh.fit.se.enternalrunebackend.dto.request.CreateOrderRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.OrderStatusUpdateRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.*;
 import iuh.fit.se.enternalrunebackend.entity.Order;
-import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
-import iuh.fit.se.enternalrunebackend.entity.enums.ShippingStatus;
+import iuh.fit.se.enternalrunebackend.entity.OrderRefund;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
+import java.util.Map;
 
 public interface OrderService {
     DashboardSummaryResponse getSummaryForMonth(int year, int month);
     Order createOrder(CreateOrderRequest request);
-    PaymentStatus getOrderPaymentStatus(int orderId);
-    List<Order> getOrdersByUserId(Long userId);
     Page<OrderResponse> getOrdersByUserIdPaginated(Long userId, int page, int size);
     OrderResponse getOrderById(int orderId);
-//    List<OrderListResponse> getOrderList();
     OrderStatisticsResponse getOrderStatistics();
-    Page<OrderListResponse> getOrderList(String keyword, PaymentStatus paymentStatus, ShippingStatus shippingStatus, Pageable pageable);
-    OrderListResponse updateOrderStatus(int orderId, OrderStatusUpdateRequest request);
     void deleteById(int id);
-    OrderDetailResponse getOrderDetail(int orderId);
+    OrderResponse getOrderDetail(int orderId);
+    Order cancelOrder(int orderId, Long userId);
+    Page<OrderListResponse> getOrderList(String keyword, String paymentStatusCode, String shippingStatusCode, Pageable pageable);
+    void updateShippingStatus(int orderId, String statusCode);
+    void confirmReceivedOrder(int orderId, Long userId);
+    Map<String, Boolean> checkPendingRequests(int orderId);
 }

@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧪 Test Tracking E-commerce</title>
+
+  <!-- Include tracking script -->
+  <script src="/tracking.js" data-website-id="cmic2k2820000ml8mu0miqhlm"
+    data-api-url="http://localhost:3001/api/analytics/track" data-debug="true">
+    </script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+
+    .status-bar {
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .status-bar .status-item {
+      margin: 5px 0;
+    }
+
+    .status.success {
+      color: #28a745;
+      font-weight: bold;
+    }
+
+    .status.error {
+      color: #dc3545;
+      font-weight: bold;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .product-card {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 20px;
+      background: #fafafa;
+      position: relative;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .product-image {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .product-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin: 10px 0;
+    }
+
+    .product-price {
+      font-size: 20px;
+      color: #e74c3c;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .product-specs {
+      color: #666;
+      margin: 10px 0;
+    }
+
+    .product-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: all 0.3s;
+      flex: 1;
+    }
+
+    button.btn-cart {
+      background: #17a2b8;
+      color: white;
+    }
+
+    button.btn-cart:hover {
+      background: #138496;
+      transform: scale(1.05);
+    }
+
+    button.btn-buy {
+      background: #28a745;
+      color: white;
+    }
+
+    button.btn-buy:hover {
+      background: #218838;
+      transform: scale(1.05);
+    }
+
+    button.btn-test {
+      background: #6c757d;
+      color: white;
+      margin: 5px;
+      flex: none;
+      min-width: 120px;
+    }
+
+    button.btn-test:hover {
+      background: #545b62;
+    }
+
+    .test-section {
+      background: #f8f9fa;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 10px;
+      border-left: 4px solid #007bff;
+    }
+
+    .test-section h3 {
+      margin-top: 0;
+      color: #007bff;
+    }
+
+    .log-section {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #4a5568;
+      padding-left: 10px;
+    }
+
+    .log-entry.success {
+      border-left-color: #38a169;
+      color: #68d391;
+    }
+
+    .log-entry.error {
+      border-left-color: #e53e3e;
+      color: #fc8181;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .section {
+      height: 400px;
+      margin: 20px 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .section:nth-child(even) {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .stats {
+      background: #e9ecef;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    .link-section a {
+      display: inline-block;
+      color: #007bff;
+      text-decoration: none;
+      padding: 8px 16px;
+      margin: 5px;
+      border: 1px solid #007bff;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+
+    .link-section a:hover {
+      background: #007bff;
+      color: white;
+    }
+
+    #debug-panel {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 300px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 11px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+
+    #debug-panel h4 {
+      margin: 0 0 10px 0;
+      color: #4CAF50;
+    }
+
+    .event-log {
+      border-bottom: 1px solid #444;
+      padding-bottom: 5px;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>� Test E-commerce Tracking</h1>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-item">🔗 Kết nối API: <span id="api-status">Đang kiểm tra...</span></div>
+      <div class="status-item">📡 Tracking Script: <span id="script-status">Đang kiểm tra...</span></div>
+      <div class="status-item">🎯 Events Sent: <span id="events-count">0</span></div>
+      <div class="status-item">⏱️ Session ID: <span id="session-id">Loading...</span></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="test-section">
+      <h3>� Test Controls</h3>
+      <div class="controls">
+        <button class="btn-test" onclick="testConnection()">Test API</button>
+        <button class="btn-test" onclick="testScript()">Test Script</button>
+        <button class="btn-test" onclick="clearLog()">Clear Log</button>
+        <button class="btn-test" onclick="exportLog()">Export Log</button>
+      </div>
+    </div>
+
+    <!-- Product Grid for E-commerce Testing -->
+    <div class="product-grid">
+      <!-- iPhone 15 Pro Max -->
+      <div class="product-card">
+        <div class="product-image">📱</div>
+        <div class="product-title">iPhone 15 Pro Max</div>
+        <div class="product-price">29,990,000 ₫</div>
+        <div class="product-specs">
+          • Màu: Titan Tự Nhiên<br>
+          • Dung lượng: 512GB<br>
+          • Bảo hành: 2 năm
+        </div>
+        <div class="product-actions">
+          <button class="btn-cart"
+            onclick="trackAddToCart('iphone_15_pro_max', 'iPhone 15 Pro Max', 29990000, 'Apple')">
+            🛒 Thêm vào giỏ
+          </button>
+          <button class="btn-buy" onclick="trackBuyNow('iphone_15_pro_max', 'iPhone 15 Pro Max', 29990000, 'Apple')">
+            ⚡ Mua ngay
+          </button>
+        </div>
+      </div>
+
+      <!-- Samsung Galaxy S24 Ultra -->
+      <div class="product-card">
+        <div class="product-image">📱</div>
+        <div class="product-title">Samsung Galaxy S24 Ultra</div>
+        <div class="product-price">25,990,000 ₫</div>
+        <div class="product-specs">
+          • Màu: Đen<br>
+          • Dung lượng: 256GB<br>
+          • Bút S Pen đi kèm
+        </div>
+        <div class="product-actions">
+          <button class="btn-cart"
+            onclick="trackAddToCart('samsung_s24_ultra', 'Samsung Galaxy S24 Ultra', 25990000, 'Samsung')">
+            🛒 Thêm vào giỏ
+          </button>
+          <button class="btn-buy"
+            onclick="trackBuyNow('samsung_s24_ultra', 'Samsung Galaxy S24 Ultra', 25990000, 'Samsung')">
+            ⚡ Mua ngay
+          </button>
+        </div>
+      </div>
+
+      <!-- MacBook Pro M4 -->
+      <div class="product-card">
+        <div class="product-image">💻</div>
+        <div class="product-title">MacBook Pro 14" M4</div>
+        <div class="product-price">42,990,000 ₫</div>
+        <div class="product-specs">
+          • Chip: Apple M4<br>
+          • RAM: 16GB<br>
+          • SSD: 512GB
+        </div>
+        <div class="product-actions">
+          <button class="btn-cart" onclick="trackAddToCart('macbook_pro_m4', 'MacBook Pro 14 M4', 42990000, 'Apple')">
+            🛒 Thêm vào giỏ
+          </button>
+          <button class="btn-buy" onclick="trackBuyNow('macbook_pro_m4', 'MacBook Pro 14 M4', 42990000, 'Apple')">
+            ⚡ Mua ngay
+          </button>
+        </div>
+      </div>
+
+      <!-- AirPods Pro -->
+      <div class="product-card">
+        <div class="product-image">🎧</div>
+        <div class="product-title">AirPods Pro (2nd Gen)</div>
+        <div class="product-price">5,990,000 ₫</div>
+        <div class="product-specs">
+          • Chống ồn chủ động<br>
+          • USB-C Charging<br>
+          • Spatial Audio
+        </div>
+        <div class="product-actions">
+          <button class="btn-cart" onclick="trackAddToCart('airpods_pro_2', 'AirPods Pro 2nd Gen', 5990000, 'Apple')">
+            🛒 Thêm vào giỏ
+          </button>
+          <button class="btn-buy" onclick="trackBuyNow('airpods_pro_2', 'AirPods Pro 2nd Gen', 5990000, 'Apple')">
+            ⚡ Mua ngay
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test Section 3: Link Tests -->
+    <div class="test-section link-section">
+      <h2>🔗 Link Navigation Tests</h2>
+      <p>Test different types of links:</p>
+
+      <a href="#section1" onclick="trackCustomEvent('internal_link_click', {linkType: 'anchor', target: 'section1'})">
+        Go to Section 1
+      </a>
+
+      <a href="#section2" onclick="trackCustomEvent('internal_link_click', {linkType: 'anchor', target: 'section2'})">
+        Go to Section 2
+      </a>
+
+      <a href="https://example.com" target="_blank"
+        onclick="trackCustomEvent('external_link_click', {domain: 'example.com', openType: 'new_tab'})">
+        External Link
+      </a>
+
+      <a href="mailto:test@example.com" onclick="trackCustomEvent('email_link_click', {action: 'mailto'})">
+        Email Link
+      </a>
+    </div>
+
+    <!-- Test Section 4: E-commerce Simulation -->
+    <div class="test-section">
+      <h2>🛒 E-commerce Event Tests</h2>
+      <p>Simulate e-commerce interactions:</p>
+
+      <button onclick="simulateProductView()">View Product</button>
+      <button onclick="simulateAddToCart()">Add to Cart</button>
+      <button onclick="simulateCheckout()">Start Checkout</button>
+      <button onclick="simulatePurchase()">Complete Purchase</button>
+    </div>
+
+    <!-- Test Section 5: User Behavior -->
+    <div class="test-section">
+      <h2>👤 User Behavior Tests</h2>
+
+      <button onclick="simulateUserLogin()">Simulate Login</button>
+      <button onclick="simulateUserSignup()">Simulate Signup</button>
+      <button onclick="simulateSearch()">Simulate Search</button>
+      <button onclick="simulateDownload()">Simulate Download</button>
+    </div>
+
+    <!-- Scroll Sections for Scroll Tracking -->
+    <div id="section1" class="section">
+      <div>
+        <h2>📊 Section 1 - Scroll Tracking</h2>
+        <p>This section helps test scroll depth tracking. Keep scrolling to trigger scroll milestones!</p>
+      </div>
+    </div>
+
+    <div id="section2" class="section">
+      <div>
+        <h2>🎯 Section 2 - More Content</h2>
+        <p>Continue scrolling to reach 50%, 75%, and 100% scroll milestones.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <div>
+        <h2>🏁 Section 3 - End of Page</h2>
+        <p>You've reached the end! This should trigger the 100% scroll milestone.</p>
+      </div>
+    </div>
+
+    <!-- Log Section -->
+    <div class="log-section">
+      <h3 style="color: #e2e8f0; margin-top: 0;">📊 Tracking Log</h3>
+      <div id="log-container"></div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let eventsCount = 0;
+    const startTime = Date.now();
+    const logContainer = document.getElementById('log-container');
+
+    // Logging function
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString('vi-VN');
+      const logEntry = document.createElement('div');
+      logEntry.className = `log-entry ${type}`;
+      logEntry.innerHTML = `[${timestamp}] ${message}`;
+
+      if (logContainer) {
+        logContainer.appendChild(logEntry);
+        logContainer.scrollTop = logContainer.scrollHeight;
+
+        // Keep only last 50 entries
+        while (logContainer.children.length > 50) {
+          logContainer.removeChild(logContainer.firstChild);
+        }
+      }
+
+      console.log(`[TRACKING TEST] ${message}`);
+    }
+
+    // Update status display
+    function updateStatus() {
+      eventsCount++;
+      document.getElementById('events-count').textContent = eventsCount;
+
+      if (window.umami && window.umami.session) {
+        const sessionId = window.umami.session.sessionId || 'N/A';
+        document.getElementById('session-id').textContent = sessionId.substring(0, 8) + '...';
+      }
+    }
+
+    // Test Connection
+    async function testConnection() {
+      log('Đang test API connection...', 'info');
+      try {
+        const response = await fetch('/api/test-tracking');
+        const data = await response.json();
+        log(`✅ API Connection thành công: ${data.message}`, 'success');
+        document.getElementById('api-status').innerHTML = '<span class="status success">✅ Kết nối thành công</span>';
+      } catch (error) {
+        log(`❌ API Connection thất bại: ${error.message}`, 'error');
+        document.getElementById('api-status').innerHTML = '<span class="status error">❌ Kết nối thất bại</span>';
+      }
+    }
+
+    // Test Script
+    function testScript() {
+      if (window.umami) {
+        log('✅ Tracking script đã load thành công', 'success');
+        log(`Session ID: ${window.umami.session?.sessionId?.substring(0, 8) || 'Unknown'}...`, 'info');
+        document.getElementById('script-status').innerHTML = '<span class="status success">✅ Script hoạt động</span>';
+      } else {
+        log('❌ Tracking script chưa load', 'error');
+        document.getElementById('script-status').innerHTML = '<span class="status error">❌ Script chưa load</span>';
+      }
+    }
+
+    // E-commerce Tracking Functions
+    function trackAddToCart(productId, productName, price, brand) {
+      if (window.umami) {
+        const eventData = {
+          product_id: productId,
+          product_name: productName,
+          product_brand: brand,
+          product_price: price,
+          quantity: 1,
+          selected_color: 'Default',
+          selected_storage: 'Default',
+          total_price: price,
+          currency: 'VND',
+          timestamp: Date.now(),
+          test_page: true
+        };
+
+        window.umami.track('add_to_cart', eventData);
+
+        log(`🛒 ADD TO CART: ${productName} - ${price.toLocaleString('vi-VN')} ₫`, 'success');
+        log(`Data: ${JSON.stringify(eventData, null, 2)}`, 'info');
+        updateStatus();
+      } else {
+        log('❌ Umami not available for add to cart', 'error');
+      }
+    }
+
+    function trackBuyNow(productId, productName, price, brand) {
+      if (window.umami) {
+        const eventData = {
+          product_id: productId,
+          product_name: productName,
+          product_brand: brand,
+          product_price: price,
+          quantity: 1,
+          selected_color: 'Default',
+          selected_storage: 'Default',
+          total_price: price,
+          currency: 'VND',
+          timestamp: Date.now(),
+          test_page: true
+        };
+
+        window.umami.track('buy_now', eventData);
+
+        log(`⚡ BUY NOW: ${productName} - ${price.toLocaleString('vi-VN')} ₫`, 'success');
+        log(`Data: ${JSON.stringify(eventData, null, 2)}`, 'info');
+        updateStatus();
+      } else {
+        log('❌ Umami not available for buy now', 'error');
+      }
+    }
+
+    // Utility Functions
+    function clearLog() {
+      if (logContainer) {
+        logContainer.innerHTML = '';
+        log('📄 Log đã được xóa', 'info');
+      }
+    }
+
+    function exportLog() {
+      if (logContainer) {
+        const logContent = logContainer.textContent;
+        const blob = new Blob([logContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tracking-test-log-${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        log('📥 Log đã được export', 'success');
+      }
+    }
+
+    // Auto-test on page load
+    window.addEventListener('load', function () {
+      log('🚀 Trang test đã load xong', 'info');
+
+      // Wait for tracking script to initialize
+      setTimeout(() => {
+        testScript();
+        testConnection();
+      }, 1000);
+    });
+
+    // Override umami tracking for logging
+    window.addEventListener('load', function () {
+      setTimeout(() => {
+        if (window.umami && window.umami.track) {
+          const originalTrack = window.umami.track;
+          window.umami.track = function (eventName, eventData) {
+            log(`📡 Sending Event: ${eventName}`, 'info');
+            log(`Event Display Name: ${window.umami.getEventDisplayName ? window.umami.getEventDisplayName(eventName) : eventName}`, 'info');
+            return originalTrack.call(this, eventName, eventData);
+          };
+          log('✅ Umami tracking được override để log chi tiết', 'success');
+        }
+      }, 1500);
+    });
+  </script>
+</body>
+
+</html>

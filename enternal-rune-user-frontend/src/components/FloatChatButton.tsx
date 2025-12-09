@@ -385,7 +385,7 @@ export default function FloatChatButton() {
               <button
                 onClick={handleSend}
                 disabled={!inputValue.trim() || isLoading}
-                className="w-10 h-10 rounded-xl text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                className="w-10 h-10 rounded-full text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
                 style={{ backgroundColor: '#1447E6' }}
                 onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = '#0d3bb8' }}
                 onMouseLeave={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.backgroundColor = '#1447E6' }}
@@ -415,7 +415,7 @@ export default function FloatChatButton() {
                 ) : (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="w-5 h-5"
+                    className="w-5 h-5 rotate-45"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"

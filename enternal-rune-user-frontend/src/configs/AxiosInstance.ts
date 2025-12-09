@@ -10,16 +10,23 @@ const AxiosInstance = axios.create({
   },
 })
 
-// ✅ Thêm interceptor để tự động gửi token (chỉ khi cần thiết)
+// ✅ Thêm interceptor để tự động gửi token
 AxiosInstance.interceptors.request.use(
   (config) => {
-    // Chỉ thêm token khi request yêu cầu authentication (withCredentials: true)
-    if (config.withCredentials && typeof window !== 'undefined') {
+    // Luôn thêm token nếu có (cho tất cả các request)
+    if (typeof window !== 'undefined') {
       const token = localStorage.getItem('token')
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
     }
+    
+    // Handle multipart/form-data requests
+    if (config.data instanceof FormData) {
+      // Remove Content-Type header to let Axios set multipart/form-data with boundary
+      delete config.headers['Content-Type']
+    }
+    
     return config
   },
   (error) => {
@@ -31,8 +38,8 @@ AxiosInstance.interceptors.request.use(
 AxiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Chỉ redirect khi request cần authentication và gặp lỗi 401
-    if (error.config?.withCredentials && error.response?.status === 401) {
+    // Redirect khi gặp lỗi 401 (Unauthorized)
+    if (error.response?.status === 401) {
       // Token expired hoặc invalid
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token')

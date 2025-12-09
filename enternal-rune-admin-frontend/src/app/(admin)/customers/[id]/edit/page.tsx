@@ -21,7 +21,7 @@ function getCustomerById(id: string) {
     district: "Quận 1",
     province: "TP. Hồ Chí Minh",
     notes: "Khách hàng VIP, ưu tiên phục vụ",
-    status: "vip" as const,
+    status: "vip" as 'active' | 'inactive' | 'vip',
     customerType: "retail",
     discountPercent: 10,
     avatar: "/images/user/user-01.png",

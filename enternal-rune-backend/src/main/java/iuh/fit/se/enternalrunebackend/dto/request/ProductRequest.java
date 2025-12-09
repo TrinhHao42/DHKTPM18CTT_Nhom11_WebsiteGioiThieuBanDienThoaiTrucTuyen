@@ -18,5 +18,5 @@ public class ProductRequest {
     private Integer brandId;
     private List<ImageRequest> images;
     private List<ProductPriceRequest> productPrices;
-
 }
+

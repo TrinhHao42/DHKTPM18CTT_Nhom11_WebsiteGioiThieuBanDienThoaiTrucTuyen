@@ -29,22 +29,28 @@ class AuthService {
    * Đăng nhập
    */
   async login(email: string, password: string): Promise<LoginResponse> {
-    const response = await fetch(`${API_BASE_URL}/account/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/account/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
-      );
+      if (!response.ok) {
+        throw new Error(
+          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
+        );
+      }
+      return response.json();
     }
 
-    return response.json();
+    catch (error) {
+      throw new Error(
+          "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin."
+        );
+    }
   }
 
   /**

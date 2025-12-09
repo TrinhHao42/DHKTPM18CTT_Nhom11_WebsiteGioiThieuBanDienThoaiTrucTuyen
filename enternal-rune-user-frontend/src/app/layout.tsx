@@ -8,6 +8,7 @@ import { ProductsProvider } from "@/context/ProductsContext";
 import { CartProvider } from "@/context/CartContext";
 import { CheckoutProvider } from "@/context/CheckoutContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { WebSocketProvider } from "@/context/WebSocketContext";
 import ToasterProvider from "@/components/ToasterProvider";
 
 const geistSans = Geist({
@@ -32,22 +33,27 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <script async src="https://6jh6gpx1-3001.asse.devtunnels.ms/tracking.js"
+        data-website-id="cmic2k2820000ml8mu0miqhlm"
+        data-api-url="https://6jh6gpx1-3001.asse.devtunnels.ms/api/analytics/track"></script>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <CheckoutProvider>
           <AuthProvider>
-            <CartProvider>
-              <ProductsProvider>
-                <div className="flex flex-col min-h-screen">
-                  <Navbar />
-                  {children}
-                  <Footer />
-                </div>
-                <FloatChatButton />
-                <ToasterProvider />
-              </ProductsProvider>
-            </CartProvider>
+            <WebSocketProvider>
+              <CartProvider>
+                <ProductsProvider>
+                  <div className="flex flex-col min-h-screen">
+                    <Navbar />
+                    {children}
+                    <Footer />
+                  </div>
+                  <FloatChatButton />
+                  <ToasterProvider />
+                </ProductsProvider>
+              </CartProvider>
+            </WebSocketProvider>
           </AuthProvider>
         </CheckoutProvider>
       </body>

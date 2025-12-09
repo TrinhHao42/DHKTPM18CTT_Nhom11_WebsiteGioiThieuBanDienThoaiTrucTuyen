@@ -5,7 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transactions")
@@ -21,43 +21,76 @@ public class Transaction {
     @Column(name = "trans_id")
     int transId;
 
-    @Column(name = "trans_gateway", nullable = false)
-    String transGateway;
+    // Webhook fields
+    @Column(name = "webhook_id", length = 100)
+    String webhookId; // id từ transaction object
 
-    @Column(name = "trans_date", nullable = false)
-    LocalDate transDate;
+    @Column(name = "payment_method", nullable = false, length = 50)
+    String paymentMethod;
 
-    @Column(name = "trans_account_number", nullable = false, length = 50)
-    String transAccountNumber;
+    @Column(name = "transaction_id", nullable = false, length = 100)
+    String transactionId;
 
-    @Column(name = "trans_amount_in", nullable = false)
-    BigDecimal transAmountIn;
+    @Column(name = "transaction_type", length = 50)
+    String transactionType;
 
-    @Column(name = "trans_amount_out", nullable = false)
-    BigDecimal transAmountOut;
+    @Column(name = "transaction_date")
+    LocalDateTime transactionDate;
 
-    @Column(name = "trans_reference_number")
-    String transReferenceNumber;
+    @Column(name = "transaction_status", length = 50)
+    String transactionStatus;
 
-    @Column(name = "trans_body", length = 255)
-    String transBody;
+    @Column(name = "transaction_amount", nullable = false)
+    BigDecimal transactionAmount;
 
-    @Column(name = "trans_content", length = 255)
-    String transContent;
+    @Column(name = "transaction_currency", length = 10)
+    String transactionCurrency;
 
-    @Column(name = "trans_created_at", nullable = false)
-    LocalDate transCreatedAt;
+    @Column(name = "authentication_status", length = 100)
+    String authenticationStatus;
+
+    // Additional webhook info
+    @Column(name = "timestamp")
+    Long timestamp;
+
+    @Column(name = "notification_type", length = 50)
+    String notificationType;
+
+    @Column(name = "order_status", length = 50)
+    String orderStatus;
+
+    @Column(name = "order_invoice_number", length = 100)
+    String orderInvoiceNumber;
+
+    // Card information (nullable)
+    @Column(name = "card_number", length = 50)
+    String cardNumber;
+
+    @Column(name = "card_holder_name", length = 100)
+    String cardHolderName;
+
+    @Column(name = "card_expiry", length = 20)
+    String cardExpiry;
+
+    @Column(name = "card_funding_method", length = 50)
+    String cardFundingMethod;
+
+    @Column(name = "card_brand", length = 50)
+    String cardBrand;
+
+    @Column(name = "created_at", nullable = false)
+    LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-     User transUser;
+    @JoinColumn(name = "user_id")
+    User transUser;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @JoinColumn(name = "order_id", unique = true)
     Order order;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_refund_request_id")
-    OrderRefundRequest orderRefundRequest;
+    OrderRefund orderRefundRequest;
 }
 

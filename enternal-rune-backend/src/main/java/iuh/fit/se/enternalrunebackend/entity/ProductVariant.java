@@ -17,9 +17,6 @@ public class ProductVariant {
     @Column(name = "product_variant_id")
     Long prodvId;
 
-    @ManyToOne
-    Product prodvProduct;
-
     String prodvName;
 
     String prodvModel;
@@ -27,6 +24,10 @@ public class ProductVariant {
     String prodvVersion;
 
     String prodvColor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = true)
+    Product pvProduct;
 
     @ManyToOne
     @JoinColumn(name = "pp_price")

@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
   images: {
     remotePatterns: [
       {
@@ -39,8 +44,18 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'encrypted-tbn0.gstatic.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
     ],
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'].map(ext => {
+    return ext;
+  }),
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/,

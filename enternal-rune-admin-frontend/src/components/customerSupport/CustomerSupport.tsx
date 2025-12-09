@@ -1,505 +1,453 @@
-"use client";
-import React, { useEffect, useState, useRef } from "react";
-import Image from "next/image";
-import {
-  SearchIcon,
-  EmojiIcon,
-  PaperClipIcon,
-  MicrophoneIcon,
-  PaperPlaneIcon,
-} from "@/icons";
-
-// Kiểu dữ liệu cho chat items
-type Chat = {
-  id: number;
-  name: string;
-  role: string;
-  lastMessage: string;
-  time: string;
-  avatar: string;
-  isOnline: boolean;
-  unreadCount: number;
-};
-
-// Mock data cho danh sách chat
-const chatList: Chat[] = [
-  {
-    id: 1,
-    name: "Lindsey Curtis",
-    role: "Project Manager",
-    lastMessage: "I want to make an appointment tomorrow from 2:00 to 5:00pm?",
-    time: "15 mins",
-    avatar: "/images/user/user-01.jpg",
-    isOnline: true,
-    unreadCount: 2,
-  },
-  {
-    id: 2,
-    name: "Sarah Wilson",
-    role: "Designer",
-    lastMessage: "Can you review the latest design mockups?",
-    time: "30 mins",
-    avatar: "/images/user/user-02.jpg",
-    isOnline: true,
-    unreadCount: 0,
-  },
-  {
-    id: 3,
-    name: "Mike Johnson",
-    role: "Content Writer",
-    lastMessage: "The blog post is ready for review",
-    time: "45 mins",
-    avatar: "/images/user/user-03.jpg",
-    isOnline: false,
-    unreadCount: 1,
-  },
-  {
-    id: 4,
-    name: "Emily Davis",
-    role: "Front-end Developer",
-    lastMessage: "I've completed the responsive design",
-    time: "2 days",
-    avatar: "/images/user/user-04.jpg",
-    isOnline: true,
-    unreadCount: 0,
-  },
-  {
-    id: 5,
-    name: "David Brown",
-    role: "Digital Marketer",
-    lastMessage: "The campaign results look promising",
-    time: "1 hour",
-    avatar: "/images/user/user-05.jpg",
-    isOnline: false,
-    unreadCount: 3,
-  },
-  {
-    id: 6,
-    name: "David Brown",
-    role: "Digital Marketer",
-    lastMessage: "The campaign results look promising",
-    time: "1 hour",
-    avatar: "/images/user/user-05.jpg",
-    isOnline: false,
-    unreadCount: 3,
-  },
-  {
-    id: 7,
-    name: "David Brown",
-    role: "Digital Marketer",
-    lastMessage: "The campaign results look promising",
-    time: "1 hour",
-    avatar: "/images/user/user-05.jpg",
-    isOnline: false,
-    unreadCount: 3,
-    
-  },
-  {
-    id: 8,
-    name: "David Brown",
-    role: "Digital Marketer",
-    lastMessage: "The campaign results look promising",
-    time: "1 hour",
-    avatar: "/images/user/user-05.jpg",
-    isOnline: false,
-    unreadCount: 3,
-  },
-  {
-    id: 9,
-    name: "David Brown",
-    role: "Digital Marketer",
-    lastMessage: "The campaign results look promising",
-    time: "1 hour",
-    avatar: "/images/user/user-05.jpg",
-    isOnline: false,
-    unreadCount: 3,
-  },
-  {
-    id: 10,
-    name: "David Brown",
-    role: "Digital Marketer",
-    lastMessage: "The campaign results look promising",
-    time: "1 hour",
-    avatar: "/images/user/user-05.jpg",
-    isOnline: false,
-    unreadCount: 3,
-  },
-  {
-    id: 11,
-    name: "David Brown",
-    role: "Digital Marketer",
-    lastMessage: "The campaign results look promising",
-    time: "1 hour",
-    avatar: "/images/user/user-05.jpg",
-    isOnline: false,
-    unreadCount: 3,
-  },
-  {
-    id: 12,
-    name: "David Brown",
-    role: "Digital Marketer",
-    lastMessage: "The campaign results look promising",
-    time: "1 hour",
-    avatar: "/images/user/user-05.jpg",
-    isOnline: false,
-    unreadCount: 3,
-  },
-];
-
-// Mock data cho tin nhắn
-const messages = [
-  {
-    id: 1,
-    sender: "Lindsey Curtis",
-    content: "I want to make an appointment tomorrow from 2:00 to 5:00pm?",
-    time: "2 hours ago",
-    isOwn: false,
-    avatar: "/images/user/user-01.jpg",
-  },
-  {
-    id: 2,
-    sender: "You",
-    content: "If don't like something, I'll stay away from it.",
-    time: "2 hours ago",
-    isOwn: true,
-  },
-  {
-    id: 3,
-    sender: "Lindsey Curtis",
-    content: "I want more detailed information.",
-    time: "2 hours ago",
-    isOwn: false,
-    avatar: "/images/user/user-01.jpg",
-  },
-  {
-    id: 4,
-    sender: "You",
-    content: "If don't like something, I'll stay away from it.",
-    time: "2 hours ago",
-    isOwn: true,
-  },
-  {
-    id: 5,
-    sender: "You",
-    content: "They got there early and got really good seats",
-    time: "2 hours ago",
-    isOwn: true,
-  },
-  {
-    id: 6,
-    sender: "You",
-    content: "They got there early and got really good seats",
-    time: "2 hours ago",
-    isOwn: true,
-  },
-  {
-    id: 7,
-    sender: "You",
-    content: "They got there early and got really good seats",
-    time: "2 hours ago",
-    isOwn: true,
-  },
-
-  {
-    id: 8,
-    sender: "You",
-    content: "They got there early and got really good seats",
-    time: "2 hours ago",
-    isOwn: true,
-  },
-  {
-    id: 9,
-    sender: "You",
-    content: "They got there early and got really good seats",
-    time: "2 hours ago",
-    isOwn: true,
-  },
-  {
-    id: 10,
-    sender: "You",
-    content: "They got there early and got really good seats",
-    time: "2 hours ago",
-    isOwn: true,
-  },
-];
+'use client';
+import React, { useState, useEffect, useRef } from 'react';
+import { chatService, Conversation, Message, ChatUser } from '@/services/chatService';
+import ChatModal from './ChatModal';
 
 export default function CustomerSupport() {
-  const [selectedChat, setSelectedChat] = useState<Chat>(chatList[0]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [messageInput, setMessageInput] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showChatView, setShowChatView] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [userInfoCache, setUserInfoCache] = useState<Map<string, ChatUser>>(new Map());
+  const [unreadCounts, setUnreadCounts] = useState<Map<string, number>>(new Map());
+  const openConversationIdRef = useRef<string | null>(null);
+  const subscribedConversationsRef = useRef<Set<string>>(new Set());
+  const pageSize = 20;
 
-  // Set initial state based on screen size
+  // ID nhân viên - trong thực tế sẽ lấy từ auth context
+  const agentId = 'agent-001';
+
   useEffect(() => {
-    const checkScreenSize = () => {
-      const isMobile = window.innerWidth < 1024;
-      if (isMobile) {
-        setIsSidebarOpen(true);
-        setShowChatView(false);
-        document.body.classList.add("overflow-hidden");
-      } else {
-        setIsSidebarOpen(false);
-        setShowChatView(false);
-        document.body.classList.remove("overflow-hidden");
+    // Kết nối WebSocket
+    chatService.connect(
+      () => {
+        console.log('WebSocket connected');
+        setIsConnected(true);
+        loadConversations();
+        subscribeToNewConversations();
+      },
+      (error) => {
+        console.error('WebSocket connection error:', error);
+        setIsConnected(false);
       }
-    };
+    );
 
-    checkScreenSize();
-    window.addEventListener("resize", checkScreenSize);
-    return () => window.removeEventListener("resize", checkScreenSize);
+    return () => {
+      chatService.disconnect();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto scroll xuống cuối tin nhắn
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedChat]);
+  // Subscribe to new conversations and updates
+  const subscribeToNewConversations = () => {
+    chatService.subscribeToAllConversations(async (updatedConversation) => {
+      // Fetch user info ngay khi nhận conversation mới
+      if (updatedConversation.customerId && !userInfoCache.has(updatedConversation.customerId)) {
+        try {
+          const userInfo = await chatService.getUserInfo(updatedConversation.customerId);
+          setUserInfoCache((prevCache) => {
+            const newCache = new Map(prevCache);
+            newCache.set(userInfo.id, userInfo);
+            return newCache;
+          });
+        } catch (error) {
+          console.error('Failed to fetch user info:', error);
+        }
+      }
+      
+      setConversations((prev) => {
+        const existingIndex = prev.findIndex((c) => c.id === updatedConversation.id);
+        
+        if (existingIndex >= 0) {
+          // Update existing conversation
+          const updated = [...prev];
+          updated[existingIndex] = updatedConversation;
+          return updated;
+        } else {
+          // Add new conversation at the beginning
+          setTotalElements((prevTotal) => prevTotal + 1);
+          // Tăng số tin nhắn chưa đọc cho conversation mới
+          setUnreadCounts((prevCounts) => {
+            const newCounts = new Map(prevCounts);
+            newCounts.set(updatedConversation.id, 1);
+            return newCounts;
+          });
+          
+          // Subscribe to messages của conversation mới này
+          subscribeToConversationMessages(updatedConversation.id);
+          
+          return [updatedConversation, ...prev];
+        }
+      });
+    });
+  };
 
-  const filteredChats = chatList.filter((chat) =>
-    chat.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // Subscribe to messages của một conversation
+  const subscribeToConversationMessages = (conversationId: string) => {
+    // Kiểm tra đã subscribe chưa để tránh trùng
+    if (subscribedConversationsRef.current.has(conversationId)) {
+      return;
+    }
+    
+    subscribedConversationsRef.current.add(conversationId);
+    
+    chatService.subscribeToConversation(conversationId, (newMessage) => {
+      // Kiểm tra xem có đang xem conversation này không
+      const isViewingThis = openConversationIdRef.current === conversationId;
+      
+      if (isViewingThis) {
+        // Cập nhật messages nếu đang xem
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === newMessage.id);
+          if (exists) return prev;
+          return [...prev, { ...newMessage }];
+        });
+        
+        // Xóa chấm đỏ vì đang xem conversation
+        setUnreadCounts((prevCounts) => {
+          const newCounts = new Map(prevCounts);
+          newCounts.delete(conversationId);
+          return newCounts;
+        });
+      } else {
+        // KHÔNG đang xem conversation này
+        // Nếu tin nhắn từ customer hoặc từ agent khác (không phải mình)
+        if (newMessage.senderRole === 'CUSTOMER' || 
+           (newMessage.senderRole === 'AGENT' && newMessage.senderId !== agentId)) {
+          // Tăng số tin nhắn chưa đọc
+          setUnreadCounts((prevCounts) => {
+            const newCounts = new Map(prevCounts);
+            const currentCount = newCounts.get(conversationId) || 0;
+            newCounts.set(conversationId, currentCount + 1);
+            return newCounts;
+          });
+        }
+      }
+    });
+  };
 
-  const handleSendMessage = () => {
-    if (messageInput.trim()) {
-      console.log("Sending message:", messageInput);
-      setMessageInput("");
-      // TODO: Thêm message mới vào danh sách messages ở đây
+  const loadConversations = async (page: number = 0) => {
+    try {
+      setLoading(true);
+      const data = await chatService.getConversations(page, pageSize);
+      setConversations(data.content);
+      setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
+      setCurrentPage(page);
+      
+      // Lấy thông tin user cho các conversation
+      const userIds = [...new Set(data.content.map(c => c.customerId))];
+      const userInfoPromises = userIds.map(userId => 
+        chatService.getUserInfo(userId).catch(() => null)
+      );
+      const userInfos = await Promise.all(userInfoPromises);
+      
+      const newCache = new Map(userInfoCache);
+      userInfos.forEach(info => {
+        if (info) newCache.set(info.id, info);
+      });
+      setUserInfoCache(newCache);
+      
+      // Lấy unread counts từ backend (thay vì check từng message)
+      try {
+        const unreadCountsFromBackend = await chatService.getUnreadCounts(agentId);
+        setUnreadCounts(unreadCountsFromBackend);
+      } catch (error) {
+        console.error('Failed to fetch unread counts:', error);
+      }
+      
+      // Subscribe to messages cho tất cả conversations hiện có
+      data.content.forEach((conversation) => {
+        subscribeToConversationMessages(conversation.id);
+      });
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleChatClick = (chat: Chat) => {
-    setSelectedChat(chat);
-    const isMobile = window.innerWidth < 1024;
-    if (isMobile) {
-      setIsSidebarOpen(false);
-      setShowChatView(true);
+  const handleSelectConversation = async (conversation: Conversation) => {
+    setSelectedConversation(conversation);
+    openConversationIdRef.current = conversation.id;
+
+    try {
+      // Load messages
+      const conversationMessages = await chatService.getMessages(conversation.id);
+      setMessages(conversationMessages);
+
+      // Xóa chấm đỏ khi mở conversation
+      setUnreadCounts((prevCounts) => {
+        const newCounts = new Map(prevCounts);
+        newCounts.delete(conversation.id);
+        return newCounts;
+      });
+
+      // Nếu conversation đang PENDING, chuyển sang IN_PROGRESS và assign cho agent
+      if (conversation.status === 'PENDING') {
+        const updated = await chatService.updateConversationStatus(
+          conversation.id,
+          'IN_PROGRESS',
+          agentId
+        );
+        setSelectedConversation(updated);
+        setConversations((prev) =>
+          prev.map((c) => (c.id === conversation.id ? updated : c))
+        );
+      }
+
+      // Mở modal
+      setIsChatModalOpen(true);
+    } catch (error) {
+      console.error('Failed to load conversation messages:', error);
     }
   };
 
-  const handleBackToList = () => {
-    const isMobile = window.innerWidth < 1024;
-    if (isMobile) {
-      setShowChatView(false);
-      setIsSidebarOpen(true);
+  const handleSendMessage = (content: string) => {
+    if (!selectedConversation) return;
+
+    // Gửi tin nhắn qua WebSocket
+    // Tin nhắn sẽ được nhận lại qua WebSocket subscription và hiển thị
+    chatService.sendMessage(selectedConversation.id, {
+      senderId: agentId,
+      senderRole: 'AGENT',
+      content,
+    });
+  };
+
+  const handleSendImage = async (file: File, caption?: string) => {
+    if (!selectedConversation) return;
+
+    try {
+      // Upload image - API trả về message object và tự động broadcast
+      const imageMessage = await chatService.uploadImageMessage(
+        selectedConversation.id,
+        agentId,
+        'AGENT',
+        file,
+        caption
+      );
+      
+      // Thêm message ngay lập tức vào UI để hiển thị
+      setMessages((prev) => {
+        // Kiểm tra xem message đã tồn tại chưa (tránh duplicate)
+        const exists = prev.some((m) => m.id === imageMessage.id);
+        if (exists) return prev;
+        return [...prev, imageMessage];
+      });
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      throw error;
     }
+  };
+
+  const handleCompleteConversation = async () => {
+    if (!selectedConversation) return;
+
+    try {
+      const updated = await chatService.updateConversationStatus(
+        selectedConversation.id,
+        'CLOSED'
+      );
+      setSelectedConversation(updated);
+      setConversations((prev) =>
+        prev.map((c) => (c.id === selectedConversation.id ? updated : c))
+      );
+    } catch (error) {
+      console.error('Failed to complete conversation:', error);
+    }
+  };
+
+  const handleReopenConversation = async () => {
+    if (!selectedConversation) return;
+
+    try {
+      const updated = await chatService.updateConversationStatus(
+        selectedConversation.id,
+        'IN_PROGRESS',
+        agentId
+      );
+      setSelectedConversation(updated);
+      setConversations((prev) =>
+        prev.map((c) => (c.id === selectedConversation.id ? updated : c))
+      );
+    } catch (error) {
+      console.error('Failed to reopen conversation:', error);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsChatModalOpen(false);
+    setSelectedConversation(null);
+    openConversationIdRef.current = null;
+    // Không unsubscribe để tiếp tục nhận tin nhắn từ tất cả conversations
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (minutes < 1) return 'Vừa xong';
+    if (minutes < 60) return `${minutes} phút trước`;
+    if (hours < 24) return `${hours} giờ trước`;
+    if (days < 7) return `${days} ngày trước`;
+    return date.toLocaleDateString('vi-VN');
+  };
+
+  const getUserDisplay = (customerId: string) => {
+    const userInfo = userInfoCache.get(customerId);
+    return {
+      name: userInfo?.displayName || `Khách hàng #${customerId.substring(0, 12)}`,
+      email: userInfo?.email || '',
+      initials: userInfo?.displayName 
+        ? userInfo.displayName.substring(0, 2).toUpperCase()
+        : customerId.substring(0, 2).toUpperCase()
+    };
   };
 
   return (
-    <div className="-mt-3 flex min-h-0 w-full flex-1 flex-col bg-gray-50 dark:bg-gray-900 lg:mx-0 lg:mt-0 lg:flex-row">
-      {" "}
-      {/* flex-1 để fill parent, -mx/-mt cancel padding của AdminLayout trên mobile, min-h-0 cho flex shrink */}
-      {/* Mobile Overlay - Chỉ overlay khi sidebar open và chưa vào chat view */}
-      {isSidebarOpen && !showChatView && (
-        <div
-          className="bg-opacity-50 fixed inset-0 z-40 bg-black transition-opacity duration-300 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-      {/* Sidebar - Danh sách chat */}
-      <aside
-        className={`fixed inset-y-0 overflow-y-auto left-0 z-50 flex h-full min-h-0 w-full transform flex-col rounded-r-lg border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg transition-all duration-300 ease-out will-change-transform lg:static lg:left-auto lg:z-auto lg:w-80 lg:rounded-none lg:shadow-none ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${showChatView ? "hidden lg:block" : "block lg:block"} `}
-      >
-        {/* Search */}
-        <div className="sticky top-3 z-10 flex-shrink-0 border-b border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 h-16 lg:h-[4.5rem] flex items-center px-3 lg:px-4">
-          <div className="relative w-full">
-            <div className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400 dark:text-gray-500">
-              <SearchIcon />
+    <div className="h-full overflow-y-auto bg-gray-50 p-6 dark:bg-gray-900/50">
+      <div className="mx-auto max-w-[1600px] space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Hỗ Trợ Khách Hàng
+            </h1>
+           
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 dark:bg-white/[0.03]">
+              <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-success-500' : 'bg-error-500'}`} />
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {isConnected ? 'Đã kết nối' : 'Mất kết nối'}
+              </span>
             </div>
-            <input
-              type="text"
-              placeholder="Search chats..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 py-2 pr-3 pl-10 text-sm focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
           </div>
         </div>
 
-        {/* Chat List */}
-        <div className="scrollbar-thin pt-2 scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0 flex-1 overflow-y-auto">
-          {filteredChats.length > 0 ? (
-            filteredChats.map((chat) => (
-              <div
-                key={chat.id}
-                onClick={() => handleChatClick(chat)}
-                className={`cursor-pointer border-b border-gray-100 dark:border-gray-700 p-3 transition-colors duration-150 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 ${
-                  selectedChat.id === chat.id
-                    ? "border-r-4 border-r-blue-500 bg-blue-50 dark:bg-blue-900/30 lg:border-r-0 lg:border-l-4 lg:border-l-blue-500"
-                    : ""
-                }`}
-              >
-                <div className="flex items-start space-x-3">
-                  <div className="relative h-10 w-10 flex-shrink-0">
-                    <Image
-                      src={chat.avatar}
-                      alt={chat.name}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                    />
-                    {chat.isOnline && (
-                      <div className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-green-500"></div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex items-center justify-between">
-                      <h3 className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {chat.name}
-                      </h3>
-                      <span className="ml-2 flex-shrink-0 text-xs text-gray-500 dark:text-gray-400">
-                        {chat.time}
-                      </span>
-                    </div>
-                    <p className="truncate text-xs leading-tight text-gray-500 dark:text-gray-400">
-                      {chat.lastMessage}
-                    </p>
-                  </div>
-                  {chat.unreadCount > 0 && (
-                    <div className="ml-2 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-500 text-xs text-white">
-                      {chat.unreadCount > 9 ? "9+" : chat.unreadCount}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))
+      
+       
+
+        {/* Conversations List */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
+          {loading ? (
+            <div className="flex h-64 items-center justify-center">
+              <div className="h-12 w-12 animate-spin rounded-full border-4 border-brand-500 border-t-transparent"></div>
+            </div>
+          ) : conversations.length === 0 ? (
+            <div className="py-12 text-center">
+              <div className="mb-4 text-6xl">📬</div>
+              <h3 className="mb-2 text-lg font-medium text-gray-900 dark:text-white">
+                Không có yêu cầu nào
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Chưa có yêu cầu hỗ trợ nào từ khách hàng
+              </p>
+            </div>
           ) : (
-            <div className="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
-              No chats found
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {conversations.map((conversation) => {
+                const userDisplay = getUserDisplay(conversation.customerId);
+                return (
+                <div
+                  key={conversation.id}
+                  onClick={() => handleSelectConversation(conversation)}
+                  className="group cursor-pointer rounded-xl border border-gray-200 bg-white p-5 transition-all duration-200 hover:border-brand-300 hover:shadow-lg dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-700"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-lg font-bold text-white shadow-lg">
+                        {userDisplay.initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {userDisplay.name}
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {userDisplay.email || formatTime(conversation.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatTime(conversation.createdAt)}
+                    </p>
+                    {unreadCounts.get(conversation.id) ? (
+                      <div className="relative flex items-center">
+                        <span className="flex h-3 w-3">
+                          <span className="absolute inline-flex h-3 w-3 animate-ping rounded-full bg-error-400 opacity-75"></span>
+                          <span className="relative inline-flex h-3 w-3 rounded-full bg-error-500"></span>
+                        </span>
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 text-center">
+                    <span className="text-xs font-medium text-brand-500 opacity-0 transition-opacity group-hover:opacity-100">
+                      Nhấn để trả lời →
+                    </span>
+                  </div>
+                </div>
+              );})}
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-6 dark:border-gray-800">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Trang {currentPage + 1} / {totalPages} ({totalElements} yêu cầu)
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => loadConversations(currentPage - 1)}
+                  disabled={currentPage === 0}
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                >
+                  ← Trước
+                </button>
+                <button
+                  onClick={() => loadConversations(currentPage + 1)}
+                  disabled={currentPage >= totalPages - 1}
+                  className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.05]"
+                >
+                  Sau →
+                </button>
+              </div>
             </div>
           )}
         </div>
-      </aside>
-      {/* Main Chat Area */}
-      <main className="relative flex flex-col w-full h-full overflow-hidden">
+      </div>
 
-        {/* Chat Header */}
-        <header className="sticky top-3 z-10 w-full flex-shrink-0 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 h-16 lg:h-[4.5rem] flex items-center px-3 lg:px-4">
-        <div className="flex items-center justify-between w-full">
-            <div className="flex flex-1 items-center space-x-3">
-              {/* Mobile Back Button */}
-              <button
-                className="-ml-1 rounded-md p-2 transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 lg:hidden"
-                onClick={handleBackToList}
-              >
-                <svg
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  className="h-5 w-5 text-gray-500 dark:text-gray-400"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-              </button>
-              <div className="relative flex-shrink-0">
-                <Image
-                  src={selectedChat.avatar}
-                  alt={selectedChat.name}
-                  width={40}
-                  height={40}
-                  className="rounded-full"
-                />
-                {selectedChat.isOnline && (
-                  <div className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-gray-800 bg-green-500"></div>
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate text-base font-semibold text-gray-900 dark:text-gray-100">
-                  {selectedChat.name}
-                </h3>
-                <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                  {selectedChat.role}
-                </p>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 px-3 py-4 ">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.isOwn ? "justify-end" : "justify-start"} mb-4`}
-            >
-              <div
-                className={`flex max-w-[75%] items-end space-x-2 lg:max-w-[60%] ${message.isOwn ? "flex-row-reverse space-x-reverse" : ""}`}
-              >
-                {!message.isOwn && (
-                  <div className="relative h-8 w-8 flex-shrink-0 lg:h-10 lg:w-10">
-                    <Image
-                      src={message.avatar || "/images/user/default.jpg"}
-                      alt={message.sender}
-                      width={32}
-                      height={32}
-                      className="rounded-full lg:h-10 lg:w-10"
-                    />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div
-                    className={`max-w-full rounded-2xl px-3 py-2 ${
-                      message.isOwn
-                        ? "bg-blue-500 text-white"
-                        : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm"
-                    }`}
-                  >
-                    <p className="text-sm break-words whitespace-pre-wrap">
-                      {message.content}
-                    </p>
-                  </div>
-                  <div
-                    className={`mt-1 text-xs text-gray-400 dark:text-gray-500 ${message.isOwn ? "text-right" : "text-left"}`}
-                  >
-                    {message.isOwn ? message.time : `${message.time}`}
-                  </div>
-                </div>
-                {message.isOwn && <div className="h-8 w-8 lg:h-10 lg:w-10" />}
-              </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Message Input */}
-        <footer className="sticky right-0 bottom-0 left-0 flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm p-3 lg:p-4">
-          <div className="flex max-w-full items-end space-x-2">
-            <button className="flex-shrink-0 rounded-full p-2 transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600">
-              <EmojiIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-            </button>
-            <div className="relative min-w-0 flex-1">
-              <input
-                type="text"
-                placeholder="Type a message..."
-                value={messageInput}
-                onChange={(e) => setMessageInput(e.target.value)}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && !e.shiftKey && handleSendMessage()
-                }
-                className="w-full resize-none rounded-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 px-4 py-3 text-sm transition-shadow duration-150 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-            <button className="flex-shrink-0 rounded-full p-2 transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 lg:hidden">
-              <PaperClipIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-            </button>
-            <button className="flex-shrink-0 rounded-full p-2 transition-colors duration-150 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 lg:hidden">
-              <MicrophoneIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-            </button>
-            <button
-              onClick={handleSendMessage}
-              disabled={!messageInput.trim()}
-              className="transform rounded-full bg-blue-500 p-2 text-white transition-all duration-150 hover:bg-blue-600 active:scale-95 active:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 dark:disabled:bg-gray-600"
-            >
-              <PaperPlaneIcon className="h-5 w-5" />
-            </button>
-          </div>
-        </footer>
-      </main>
+      {/* Chat Modal */}
+      {selectedConversation && (() => {
+        const userDisplay = getUserDisplay(selectedConversation.customerId);
+        return (
+          <ChatModal
+            isOpen={isChatModalOpen}
+            onClose={handleCloseModal}
+            conversation={selectedConversation}
+            customerName={userDisplay.name}
+            customerEmail={userDisplay.email}
+            messages={messages}
+            onSendMessage={handleSendMessage}
+            onSendImage={handleSendImage}
+            onCompleteConversation={handleCompleteConversation}
+            onReopenConversation={handleReopenConversation}
+            agentId={agentId}
+          />
+        );
+      })()}
     </div>
   );
 }

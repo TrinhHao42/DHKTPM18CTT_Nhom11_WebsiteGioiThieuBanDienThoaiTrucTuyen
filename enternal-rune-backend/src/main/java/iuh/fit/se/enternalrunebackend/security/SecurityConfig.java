@@ -5,6 +5,7 @@ import iuh.fit.se.enternalrunebackend.repository.RoleRepository;
 import iuh.fit.se.enternalrunebackend.repository.UserRepository;
 import iuh.fit.se.enternalrunebackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -34,9 +35,18 @@ public class SecurityConfig {
     @Lazy
     private JwtFilter jwtFilter;
 
-    @Autowired private UserRepository userRepository;
-    @Autowired private RoleRepository roleRepository;
-    @Autowired private OAuth2SuccessHandler oAuth2SuccessHandler;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
+    private OAuth2SuccessHandler oAuth2SuccessHandler;
+
+    @Value("${frontend.user}")
+    private String userUrl;
+
+    @Value("${frontend.admin}")
+    private String adminUrl;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -58,41 +68,50 @@ public class SecurityConfig {
                 // CORS
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
-                    corsConfig.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "http://localhost:3001"));
-                    corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    // Use allowedOriginPatterns for flexibility with localhost ports
+                    corsConfig.setAllowedOriginPatterns(Arrays.asList(
+                            "http://localhost:3000", // User frontend
+                            "http://localhost:3001", // Admin frontend
+                            userUrl, // Environment variable
+                            adminUrl // Environment variable
+                    ));
+                    corsConfig.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                     corsConfig.setAllowedHeaders(Arrays.asList("*"));
                     corsConfig.setAllowCredentials(true);
                     return corsConfig;
                 }))
                 // API + JWT → dùng stateless
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(sm ->
-                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        // ==== ADMIN COMMENTS - MUST BE FIRST ====
+                        .requestMatchers("/api/admin/comments/**").permitAll()
                         // ==== PUBLIC ENDPOINTS CHO CHAT / AUTH ====
                         // WebSocket endpoint + STOMP prefix
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/assistance/**").permitAll()
                         // Auth / OAuth public
-                        .requestMatchers("/oauth/**","/login/**","/oauth2/**","/api/oauth/**").permitAll()
+                        .requestMatchers("/oauth/**", "/login/**", "/oauth2/**", "/api/oauth/**").permitAll()
                         // Các endpoint public khác bạn khai báo trong Endpoints
                         .requestMatchers(HttpMethod.GET, Endpoints.PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.POST, Endpoints.PUBLIC_POST_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.PATCH, Endpoints.PUBLIC_PATCH_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.PUT, Endpoints.PUBLIC_PUT_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.DELETE, Endpoints.PUBLIC_DELETE_ENDPOINTS).permitAll()
 
                         // Admin
                         .requestMatchers(HttpMethod.GET, Endpoints.ADMIN_GET_ENDPOINTS).hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, Endpoints.ADMIN_POST_ENDPOINTS).hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, Endpoints.ADMIN_PUT_ENDPOINTS).hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, Endpoints.ADMIN_DELETE_ENDPOINTS).hasRole("ADMIN")
                         // Còn lại phải auth (JWT hoặc OAuth2)
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
 
                 // Không dùng form login mặc định
                 .formLogin(form -> form.disable())
                 // (tuỳ chọn) disable httpBasic nếu không dùng
-                //.httpBasic(AbstractHttpConfigurer::disable)
+                // .httpBasic(AbstractHttpConfigurer::disable)
 
                 // Thêm JWT filter trước UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -107,12 +126,9 @@ public class SecurityConfig {
                                     return new DefaultOAuth2User(
                                             List.of(new SimpleGrantedAuthority("ROLE_USER")),
                                             oauth2User.getAttributes(),
-                                            "email"
-                                    );
-                                })
-                        )
-                        .successHandler(oAuth2SuccessHandler)
-                );
+                                            "email");
+                                }))
+                        .successHandler(oAuth2SuccessHandler));
 
         return http.build();
     }

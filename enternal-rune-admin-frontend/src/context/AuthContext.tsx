@@ -75,34 +75,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      if (email == "admin@gmail.com" && password == "123") {
-        const data: AuthResponse = {
-          token: "dummy-admin-token",
-          roles: ["ROLE_ADMIN"],
-          user: {
-            userId: 1,
-            userEmail: "admin@example.com",
-            userName: "Admin User",
-            userAddress: []
-          }
-        };
-        setToken(data.token);
-        setUser(data.user);
-        setRoles(data.roles);
-        return;
-      }
 
       const data: AuthResponse = await authService.login(email, password);
-
-      // Kiểm tra xem user có role ADMIN không
-      const isAdmin = data.roles.some(
-        (role) => role === "ROLE_ADMIN" || role === "ADMIN"
-      );
-
-      if (!isAdmin) {
-        throw new Error("Bạn không có quyền truy cập vào trang quản trị");
+      
+      if (!data) {
+        throw new Error("Đăng nhập không thành công");
       }
-
+      
       // Lưu vào localStorage
       localStorage.setItem("admin_token", data.token);
       localStorage.setItem("admin_user", JSON.stringify(data.user));
@@ -112,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(data.token);
       setUser(data.user);
       setRoles(data.roles);
+      return;
     } catch (error) {
       console.error("Login error:", error);
       throw error;

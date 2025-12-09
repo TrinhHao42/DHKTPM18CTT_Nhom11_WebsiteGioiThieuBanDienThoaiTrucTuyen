@@ -1,35 +1,69 @@
-import type { Metadata } from "next";
-import React from "react";
+"use client";
+
+import React, { useEffect } from "react";
 import { ProductMetrics } from "@/components/products/index";
 import { ProductTable } from "@/components/products/index";
 import PageBreadCrumb from "@/components/common/PageBreadCrumb";
-
-export const metadata: Metadata = {
-  title: "Danh sách sản phẩm | Admin Dashboard",
-  description: "Quản lý danh sách sản phẩm",
-};
+import { useProducts } from "@/hooks/useProducts";
 
 export default function ProductsPage() {
+  const {
+    products,
+    statistics,
+    pagination,
+    loading,
+    error,
+    fetchProducts,
+    fetchStatistics,
+    deleteProduct,
+    changePage,
+    search,
+    filterByBrand,
+    filterByStatus,
+  } = useProducts({ page: 0, size: 8 });
+
+  // Load data khi component mount
+  useEffect(() => {
+    fetchProducts();
+    fetchStatistics();
+  }, []);
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteProduct(id);
+      // Thông báo thành công có thể thêm toast notification ở đây
+    } catch (err) {
+      console.error("Error deleting product:", err);
+      // Thông báo lỗi có thể thêm toast notification ở đây
+    }
+  };
+
+  const handleFilterByStatus = (status: "ACTIVE" | "OUT_OF_STOCK" | "REMOVED" | "all") => {
+    if (status === "all") {
+      fetchProducts({ page: 0, status: undefined });
+    } else {
+      filterByStatus(status);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      {/* <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-title-md font-bold text-gray-800 dark:text-white/90">
-            Danh sách sản phẩm
-          </h1>
-          <p className="mt-1 text-theme-sm text-gray-500 dark:text-gray-400">
-            Quản lý và theo dõi tất cả sản phẩm trong hệ thống
-          </p>
-        </div>
-      </div> */}
-    <PageBreadCrumb pageTitle="Danh sách sản phẩm" />
+      <PageBreadCrumb pageTitle="Danh sách sản phẩm" />
 
       {/* Metrics */}
-      <ProductMetrics />
+      <ProductMetrics statistics={statistics} loading={loading} />
 
       {/* Product Table */}
-      <ProductTable />
+      <ProductTable
+        products={products}
+        loading={loading}
+        pagination={pagination}
+        onSearch={search}
+        onFilterByStatus={handleFilterByStatus}
+        onFilterByBrand={filterByBrand}
+        onChangePage={changePage}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

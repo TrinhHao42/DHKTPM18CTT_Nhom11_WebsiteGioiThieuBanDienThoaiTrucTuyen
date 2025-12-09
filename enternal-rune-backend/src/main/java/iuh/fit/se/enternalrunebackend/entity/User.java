@@ -34,7 +34,7 @@ public class User {
     public enum AuthProvider {
         LOCAL, GOOGLE,FACEBOOK
     }
-    @ManyToMany(fetch = FetchType.EAGER,cascade = {
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {
             CascadeType.DETACH, CascadeType.MERGE,CascadeType.REFRESH
     })
     @JoinTable(
@@ -45,7 +45,7 @@ public class User {
     @JsonIgnore
     List<Role> roles;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = {
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {
             CascadeType.DETACH, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.PERSIST
     })
     @JoinTable(
@@ -57,7 +57,7 @@ public class User {
     List<Address> addresses;
 
     @OneToMany(mappedBy = "orHandleBy", cascade = CascadeType.ALL)
-    List<OrderRefundRequest> orderRefundRequests;
+    List<OrderRefund> orderRefundRequests;
 
     @OneToMany(mappedBy = "orderUser", cascade = CascadeType.ALL)
     List<Order> orders;

@@ -24,12 +24,13 @@ export const Navbar = () => {
 
     return (
         <header className="flex items-center justify-between px-6 md:px-16 py-5 border-b border-gray-200 bg-white">
-            <Link href="/">
+            <Link href="/" className="flex items-center gap-3">
                 <Image
-                    src="https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/dummyLogo/prebuiltuiDummyLogo.svg"
-                    alt="Logo"
-                    width={100}
-                    height={100}
+                    src="/images/logo.svg"
+                    alt="SmartPhone Logo"
+                    width={120}
+                    height={30}
+                    priority
                 />
             </Link>
 
@@ -43,14 +44,11 @@ export const Navbar = () => {
                 <Link href="/ProductListScreen" className="hover:text-blue-600">
                     Sản phẩm
                 </Link>
-                <Link href="#" className="hover:text-blue-600">
-                    Bảng giá
-                </Link>
-                <Link href="#" className="hover:text-blue-600">
-                    Tài liệu
-                </Link>
                 <Link href="/AssistanceChatScreen" className="hover:text-blue-600">
                     Hỗ trợ
+                </Link>
+                <Link href="/WarrantyAndReturnPolicy" className="hover:text-blue-600">
+                    Chính sách
                 </Link>
                 <button
                     id="closeMenu"

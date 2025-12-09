@@ -1,0 +1,81 @@
+package iuh.fit.se.enternalrunebackend.dto.response;
+
+import iuh.fit.se.enternalrunebackend.entity.enums.RequestStatus;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ReturnRequestResponse {
+    
+    Long returnRequestId;
+    Integer orderId;
+    Long userId;
+    String userName;
+    String userEmail;
+    String reason;
+    String imageUrl;
+    RequestStatus status;
+    String adminNote;
+    LocalDateTime createdAt;
+    LocalDateTime updatedAt;
+    Long processedBy;
+    
+    // Constructor for JPQL DTO projection (list view - minimal data)
+    public ReturnRequestResponse(
+        Long returnRequestId,
+        Integer orderId,
+        Long userId,
+        String userName,
+        String userEmail,
+        String reason,
+        String imageUrl,
+        RequestStatus status,
+        String adminNote,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt,
+        Long processedBy
+    ) {
+        this.returnRequestId = returnRequestId;
+        this.orderId = orderId;
+        this.userId = userId;
+        this.userName = userName;
+        this.userEmail = userEmail;
+        this.reason = reason;
+        this.imageUrl = imageUrl;
+        this.status = status;
+        this.adminNote = adminNote;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.processedBy = processedBy;
+    }
+    
+    // Order details
+    OrderSummary orderSummary;
+    
+    @Data
+    @Builder
+    public static class OrderSummary {
+        Integer orderId;
+        String orderDate;
+        Double totalAmount;
+        String paymentStatus;
+        String shippingStatus;
+        List<OrderItemSummary> items;
+    }
+    
+    @Data
+    @Builder
+    public static class OrderItemSummary {
+        String productName;
+        String variantName;
+        Integer quantity;
+        Double price;
+    }
+}

@@ -8,7 +8,8 @@ import iuh.fit.se.enternalrunebackend.entity.*;
 import iuh.fit.se.enternalrunebackend.entity.enums.CommentStatus;
 import iuh.fit.se.enternalrunebackend.repository.*;
 import iuh.fit.se.enternalrunebackend.service.CommentService;
-import iuh.fit.se.enternalrunebackend.util.FileStorageUtil;
+import iuh.fit.se.enternalrunebackend.service.ImageService;
+import iuh.fit.se.enternalrunebackend.service.PurchaseCheckService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -31,40 +32,39 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class CommentServiceImpl implements CommentService {
-    
+
     private final CommentRepository commentRepository;
     private final CommentImageRepository commentImageRepository;
     private final ProductRepository productRepository;
-    private final FileStorageUtil fileStorageUtil;
-    
+    private final PurchaseCheckService purchaseCheckService;
+    private final ImageService imageService;
+
     // Business rules constants
     private static final int RATE_LIMIT_SECONDS = 10;
     private static final int MAX_IMAGES_PER_COMMENT = 6;
     private static final int MAX_CONTENT_LENGTH = 1000;
-    
+
     @Override
     @Transactional(readOnly = true)
     public CommentPageResponse getComments(Integer productId, int page, int size) {
-        log.info("Getting comments for product {} - page: {}, size: {}", productId, page, size);
-        
         Pageable pageable = PageRequest.of(page, size);
         Page<Comment> commentPage = commentRepository.findByProductIdOrderByCmDateDesc(productId, pageable);
-        
+
         List<CommentResponse> commentResponses = commentPage.getContent().stream()
                 .map(comment -> mapToCommentResponse(comment, productId))
                 .collect(Collectors.toList());
-        
+
         // Get rating statistics
         Double averageRating = commentRepository.getAverageRating(productId);
         Long totalRatings = commentRepository.countByProductId(productId);
         Map<Integer, Long> ratingDistribution = getRatingDistribution(productId);
-        
+
         // Fill missing ratings with 0
         Map<Integer, Long> completeRatingDistribution = new HashMap<>();
         for (int i = 1; i <= 5; i++) {
             completeRatingDistribution.put(i, ratingDistribution.getOrDefault(i, 0L));
         }
-        
+
         return CommentPageResponse.builder()
                 .comments(commentResponses)
                 .currentPage(page)
@@ -78,29 +78,36 @@ public class CommentServiceImpl implements CommentService {
                 .ratingDistribution(completeRatingDistribution)
                 .build();
     }
-    
+
     @Override
     @Transactional
-    public CommentResponse createComment(Integer productId, CreateCommentRequest request, 
-                                       MultipartFile[] images, Optional<User> currentUser, String ipAddress) {
-        String commentType = request.getParentCommentId() != null ? "REPLY" : "ROOT_COMMENT";
-        log.info("Creating {} for product {} from IP {}, parentId: {}", 
-                commentType, productId, ipAddress, request.getParentCommentId());
-        
+    public CommentResponse createComment(Integer productId, CreateCommentRequest request,
+            MultipartFile[] images, Optional<User> currentUser, String ipAddress) {
+        // Xác định đã mua hàng chưa - sử dụng service thay vì trực tiếp repository
+        boolean hasPurchased = false;
+        if (currentUser.isPresent()) {
+            User user = currentUser.get();
+            // Kiểm tra user đã mua hàng với productId hay chưa
+            hasPurchased = purchaseCheckService.hasUserPurchasedProduct(user.getUserId(), productId);
+        }
+        // Nếu chưa mua, không cho phép gửi rating (ép về null)
+        if (!hasPurchased && request.getParentCommentId() == null) {
+            request.setRating(null);
+        }
         // Validate request
-        validateCommentRequest(request, images);
-        
+        validateCommentRequest(request, images, hasPurchased);
+
         // Rate limiting check
         checkRateLimit(ipAddress);
-        
+
         // Get product
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found: " + productId));
-        
+
         // Determine display name and anonymous flag
         String displayName;
         boolean isAnonymous = currentUser.isEmpty();
-        
+
         if (currentUser.isPresent()) {
             User user = currentUser.get();
             displayName = user.getName(); // Use actual username if logged in
@@ -108,15 +115,20 @@ public class CommentServiceImpl implements CommentService {
                 displayName = request.getDisplayName().trim(); // Allow override
             }
         } else {
-            displayName = request.getDisplayName() != null && !request.getDisplayName().trim().isEmpty() 
-                    ? request.getDisplayName().trim() 
+            displayName = request.getDisplayName() != null && !request.getDisplayName().trim().isEmpty()
+                    ? request.getDisplayName().trim()
                     : "Khách";
         }
-        
+
         // Create comment entity
         Comment comment = new Comment();
         comment.setCmContent(request.getContent() != null ? request.getContent().trim() : "");
-        comment.setCmRating(request.getRating());
+        // Nếu chưa mua thì không set rating (hoặc set null)
+        if (hasPurchased && request.getRating() != null) {
+            comment.setCmRating(request.getRating());
+        } else {
+            comment.setCmRating(null); // Integer cho phép null
+        }
         comment.setDisplayName(displayName);
         comment.setIpAddress(ipAddress);
         comment.setAnonymous(isAnonymous);
@@ -124,38 +136,33 @@ public class CommentServiceImpl implements CommentService {
         comment.setCmUser(currentUser.orElse(null));
         comment.setCmProduct(product);
         comment.setCmDate(LocalDateTime.now());
-        
+
         // Handle parent comment for replies
         if (request.getParentCommentId() != null) {
             Comment parentComment = commentRepository.findById(request.getParentCommentId())
-                    .orElseThrow(() -> new IllegalArgumentException("Parent comment not found: " + request.getParentCommentId()));
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Parent comment not found: " + request.getParentCommentId()));
             comment.setComment(parentComment);
-            log.info("Creating reply to comment ID: {} for product: {}", request.getParentCommentId(), productId);
         }
-        
+
         // Save comment
         Comment savedComment = commentRepository.save(comment);
-        log.info("Comment saved with ID: {}, isReply: {}, parentId: {}", 
-                savedComment.getCmId(), 
-                savedComment.getComment() != null,
-                savedComment.getComment() != null ? savedComment.getComment().getCmId() : null);
-        
+
         // Handle image uploads
         List<CommentImage> commentImages = new ArrayList<>();
         if (images != null && images.length > 0) {
             commentImages = saveCommentImages(savedComment, images);
         }
-        
+
         // Set images and save again to trigger cascade
         savedComment.setImages(commentImages);
         commentRepository.saveAndFlush(savedComment);
-        
+
         CommentResponse response = mapToCommentResponse(savedComment, productId);
-        log.info("Reply creation completed. Response ID: {}, ParentID: {}", response.getId(), response.getParentCommentId());
-        
+
         return response;
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public Map<Integer, Long> getRatingDistribution(Integer productId) {
@@ -177,125 +184,203 @@ public class CommentServiceImpl implements CommentService {
             result.put(i, distribution.getOrDefault(i, 0L));
         }
         return result;
-    }    @Override
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public double getAverageRating(Integer productId) {
         Double average = commentRepository.getAverageRating(productId);
         return average != null ? average : 0.0;
     }
-    
+
     @Override
     @Transactional(readOnly = true)
     public Page<CommentResponse> getReplyComments(Integer parentCommentId, int page, int size) {
         Comment parentComment = commentRepository.findById(parentCommentId)
                 .orElseThrow(() -> new IllegalArgumentException("Parent comment not found: " + parentCommentId));
-        
+
         Pageable pageable = PageRequest.of(page, size);
         Page<Comment> replyPage = commentRepository.findByCommentOrderByCmDateAsc(parentComment, pageable);
-        
+
         // Get productId from parent comment
         Integer productId = parentComment.getCmProduct().getProdId();
-        
+
         return replyPage.map(comment -> mapToCommentResponse(comment, productId));
     }
-    
+
+    @Override
+    @Transactional
+    public void deleteCommentImage(Integer imageId, Optional<User> currentUser) {
+        // Find the image
+        CommentImage commentImage = commentImageRepository.findById(imageId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment image not found: " + imageId));
+
+        Comment comment = commentImage.getComment();
+
+        // Authorization check - only comment owner or admin can delete
+        if (currentUser.isPresent()) {
+            User user = currentUser.get();
+            if (!comment.getCmUser().equals(user) && !isAdmin(user)) {
+                throw new RuntimeException("Unauthorized to delete this image");
+            }
+        } else {
+            throw new RuntimeException("Authentication required to delete image");
+        }
+
+        // Note: We don't delete from Cloudinary for comment images
+        // as they use the same ImageService as products and we don't want to break
+        // product images
+        // Cloudinary will handle cleanup through its auto-deletion policies
+
+        // Delete from database
+        commentImageRepository.delete(commentImage);
+    }
+
+    /**
+     * Check if user is admin (implement based on your role system)
+     */
+    private boolean isAdmin(User user) {
+        // Implement based on your role system
+        // For now, return false - you can update this based on your User entity
+        // structure
+        return false;
+    }
+
     /**
      * Validate comment request
      */
     private void validateCommentRequest(CreateCommentRequest request, MultipartFile[] images) {
-        // Allow rating 0 for replies, but require 1-5 for regular comments
+        // Allow rating 0 for replies, cho phép rating = 0 cho comment nếu chưa mua hàng
+        validateCommentRequest(request, images, false);
+    }
+
+    // Overload: validate với hasPurchased
+    private void validateCommentRequest(CreateCommentRequest request, MultipartFile[] images, boolean hasPurchased) {
         if (request.getParentCommentId() == null) {
-            // Regular comment - require rating between 1 and 5
-            if (request.getRating() < 1 || request.getRating() > 5) {
-                throw new IllegalArgumentException("Rating must be between 1 and 5 for comments");
+            // Regular comment
+            if (hasPurchased) {
+                // Đã mua: yêu cầu rating 1-5
+                if (request.getRating() == null || request.getRating() < 1 || request.getRating() > 5) {
+                    throw new IllegalArgumentException("Rating must be between 1 and 5 for comments");
+                }
+            } else {
+                // Chưa mua: không cho phép gửi rating
+                if (request.getRating() != null) {
+                    throw new IllegalArgumentException("Không được gửi rating khi chưa mua hàng");
+                }
             }
         } else {
             // Reply - allow rating 0, but still check upper bound
-            if (request.getRating() < 0 || request.getRating() > 5) {
+            if (request.getRating() != null && (request.getRating() < 0 || request.getRating() > 5)) {
                 throw new IllegalArgumentException("Rating must be between 0 and 5 for replies");
             }
         }
-        
+
         if (request.getContent() != null && request.getContent().length() > MAX_CONTENT_LENGTH) {
             throw new IllegalArgumentException("Content must not exceed " + MAX_CONTENT_LENGTH + " characters");
         }
-        
+
         if (images != null && images.length > MAX_IMAGES_PER_COMMENT) {
             throw new IllegalArgumentException("Maximum " + MAX_IMAGES_PER_COMMENT + " images allowed per comment");
         }
-        
+
         if (request.getDisplayName() != null && request.getDisplayName().length() > 100) {
             throw new IllegalArgumentException("Display name must not exceed 100 characters");
         }
     }
-    
+
     /**
      * Check rate limiting
      */
     private void checkRateLimit(String ipAddress) {
         LocalDateTime checkTime = LocalDateTime.now().minusSeconds(RATE_LIMIT_SECONDS);
         int recentComments = commentRepository.countByIpAddressAndCmDateAfter(ipAddress, checkTime);
-        
+
         if (recentComments > 0) {
-            throw new RuntimeException("Rate limit exceeded. Please wait " + RATE_LIMIT_SECONDS + " seconds between comments.");
+            throw new RuntimeException(
+                    "Rate limit exceeded. Please wait " + RATE_LIMIT_SECONDS + " seconds between comments.");
         }
     }
-    
+
     /**
-     * Save comment images
+     * Save comment images using ImageService (same as ProductService)
      */
     private List<CommentImage> saveCommentImages(Comment comment, MultipartFile[] images) {
         List<CommentImage> commentImages = new ArrayList<>();
-        
+
         for (int i = 0; i < images.length; i++) {
             MultipartFile image = images[i];
-            if (image.isEmpty()) continue;
-            
+            if (image.isEmpty())
+                continue;
+
             try {
-                FileStorageUtil.FileUploadResult uploadResult = fileStorageUtil.saveFile(image, comment.getCmProduct().getProdId());
-                
+                // Upload to Cloudinary using ImageService (same as ProductService)
+                String imageUrl = imageService.upload(image.getBytes(), image.getOriginalFilename());
+
                 CommentImage commentImage = CommentImage.builder()
-                        .url(uploadResult.getUrl())
-                        .fileName(uploadResult.getOriginalFilename())
-                        .size(uploadResult.getSize())
+                        .url(imageUrl)
+                        .fileName(image.getOriginalFilename())
+                        .size(image.getSize())
                         .displayOrder(i)
                         .comment(comment)
                         .build();
-                
+
                 CommentImage savedImage = commentImageRepository.save(commentImage);
                 commentImages.add(savedImage);
-                
-                log.info("Image saved for comment {}: {}", comment.getCmId(), uploadResult.getOriginalFilename());
-                
+
             } catch (Exception e) {
-                log.error("Failed to save image for comment {}: {}", comment.getCmId(), e.getMessage());
                 throw new RuntimeException("Failed to upload image: " + e.getMessage(), e);
             }
         }
-        
+
         return commentImages;
     }
-    
+
     /**
      * Map Comment entity to CommentResponse DTO
      */
     private CommentResponse mapToCommentResponse(Comment comment, Integer productId) {
         List<ImageInfo> imageInfos = new ArrayList<>();
-        if (comment.getImages() != null) {
-            imageInfos = comment.getImages().stream()
-                    .map(img -> ImageInfo.builder()
-                            .id(img.getId())
-                            .fileName(img.getFileName())
-                            .url(img.getUrl())
-                            .size(img.getSize())
-                            .displayOrder(img.getDisplayOrder())
-                            .build())
-                    .collect(Collectors.toList());
+        
+        // Safe access to images - handle lazy loading gracefully
+        try {
+            if (comment.getImages() != null && !comment.getImages().isEmpty()) {
+                imageInfos = comment.getImages().stream()
+                        .map(img -> ImageInfo.builder()
+                                .id(img.getId())
+                                .fileName(img.getFileName())
+                                .url(img.getUrl())
+                                .size(img.getSize())
+                                .displayOrder(img.getDisplayOrder())
+                                .build())
+                        .collect(Collectors.toList());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to load images for comment {}: {}", comment.getCmId(), e.getMessage());
+            imageInfos = new ArrayList<>(); // Return empty list on error
         }
-        
-        // Get reply count
-        int replyCount = comment.getCmReplyComment() != null ? comment.getCmReplyComment().size() : 0;
-        
+
+        // Get reply count safely
+        int replyCount = 0;
+        try {
+            replyCount = comment.getCmReplyComment() != null ? comment.getCmReplyComment().size() : 0;
+        } catch (Exception e) {
+            log.warn("Failed to count replies for comment {}: {}", comment.getCmId(), e.getMessage());
+        }
+
+        // Check purchase status của COMMENT AUTHOR (không phải current user)
+        boolean hasPurchased = false;
+        if (comment.getCmUser() != null && comment.getCmUser().getUserId() != null) {
+            try {
+                Long authorUserId = comment.getCmUser().getUserId();
+                hasPurchased = purchaseCheckService.hasUserPurchasedProduct(authorUserId, productId);
+            } catch (Exception e) {
+                log.warn("Failed to check purchase status for comment author {}: {}", 
+                         comment.getCmUser().getUserId(), e.getMessage());
+                hasPurchased = false;
+            }
+        }
+
         // Get username safely (handle lazy loading and type issues)
         String username = null;
         try {
@@ -306,14 +391,11 @@ public class CommentServiceImpl implements CommentService {
                 } else if (nameObj != null) {
                     // Handle case where name is Integer or other type
                     username = String.valueOf(nameObj);
-                    log.warn("User name for comment {} was not String, converted: {} -> {}", 
-                        comment.getCmId(), nameObj.getClass().getSimpleName(), username);
                 }
             }
         } catch (Exception e) {
-            log.warn("Could not load user for comment {}: {}", comment.getCmId(), e.getMessage());
         }
-        
+
         // Get parent comment ID safely (handle lazy loading)
         Integer parentCommentId = null;
         try {
@@ -321,9 +403,8 @@ public class CommentServiceImpl implements CommentService {
                 parentCommentId = comment.getComment().getCmId();
             }
         } catch (Exception e) {
-            log.warn("Could not load parent comment for comment {}: {}", comment.getCmId(), e.getMessage());
         }
-        
+
         return CommentResponse.builder()
                 .id(comment.getCmId())
                 .content(comment.getCmContent())
@@ -337,6 +418,8 @@ public class CommentServiceImpl implements CommentService {
                 .parentCommentId(parentCommentId)
                 .images(imageInfos)
                 .replyCount(replyCount)
+                .hasPurchased(hasPurchased) // Purchase status của comment author
                 .build();
     }
+
 }

@@ -3,28 +3,27 @@ package iuh.fit.se.enternalrunebackend.controller;
 import iuh.fit.se.enternalrunebackend.dto.request.CreateOrderRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.OrderResponse;
 import iuh.fit.se.enternalrunebackend.entity.Order;
-import iuh.fit.se.enternalrunebackend.entity.enums.PaymentStatus;
 import iuh.fit.se.enternalrunebackend.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequestMapping("/orders")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class OrderController {
 
     private final OrderService orderService;
 
     /**
      * Tạo order mới
-     * POST /api/orders
+     * POST /orders
      */
     @PostMapping
     public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest request) {
@@ -37,8 +36,6 @@ public class OrderController {
             response.put("orderId", order.getOrderId());
             response.put("orderDate", order.getOrderDate());
             response.put("totalAmount", order.getOrderTotalAmount());
-            response.put("paymentStatus", order.getOrderPaymentStatus());
-            response.put("shippingStatus", order.getOrderShippingStatus());
 
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
@@ -52,10 +49,10 @@ public class OrderController {
 
     /**
      * Lấy danh sách orders của user với phân trang
-     * GET /api/orders/user/{userId}?page=0&size=5
+     * GET /orders/user/{userId}?page=0&size=5
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getUserOrders(
+    public ResponseEntity<?> getUserOrdersFullHistories(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
@@ -83,7 +80,7 @@ public class OrderController {
 
     /**
      * Lấy order theo ID
-     * GET /api/orders/{orderId}
+     * GET /orders/{orderId}
      */
     @GetMapping("/{orderId}")
     public ResponseEntity<?> getOrderById(@PathVariable int orderId) {
@@ -98,18 +95,158 @@ public class OrderController {
         }
     }
 
-    @GetMapping("/status/{id}")
-    public ResponseEntity<?> getOrderPaymentStatus(@PathVariable int id){
+
+    /**
+     * Hủy đơn hàng
+     * PUT /api/orders/{orderId}/cancel
+     */
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable int orderId, @RequestParam Long userId) {
         try {
-            PaymentStatus status = orderService.getOrderPaymentStatus(id);
+            Order cancelledOrder = orderService.cancelOrder(orderId, userId);
+            
             Map<String, Object> response = new HashMap<>();
-            response.put("status", status);
+            response.put("success", true);
+            response.put("message", "Hủy đơn hàng thành công!");
+            response.put("orderId", cancelledOrder.getOrderId());
+            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Không tìm thấy đơn hàng: " + e.getMessage());
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể hủy đơn hàng: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    @GetMapping("/status/{orderId}")
+    public String getOrderStatusById(@PathVariable int orderId){
+        return orderService.getOrderById(orderId).getCurrentPaymentStatus().getStatusCode();
+    }
+
+    /**
+     * Lấy tất cả orders với phân trang (cho admin)
+     * GET /orders/admin/all?page=0&size=10&keyword=&paymentStatus=&shippingStatus=
+     */
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<?> getAllOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String paymentStatus,
+            @RequestParam(required = false) String shippingStatus
+    ) {
+        try {
+            org.springframework.data.domain.Pageable pageable = 
+                org.springframework.data.domain.PageRequest.of(page, size);
+            
+            Page<?> ordersPage = orderService.getOrderList(
+                keyword, 
+                paymentStatus, 
+                shippingStatus, 
+                pageable
+            );
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", ordersPage.getContent());
+            response.put("currentPage", ordersPage.getNumber());
+            response.put("totalItems", ordersPage.getTotalElements());
+            response.put("totalPages", ordersPage.getTotalPages());
+            response.put("pageSize", ordersPage.getSize());
+            response.put("hasNext", ordersPage.hasNext());
+            response.put("hasPrevious", ordersPage.hasPrevious());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể lấy danh sách đơn hàng: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * Lấy chi tiết order (cho admin)
+     * GET /orders/admin/{orderId}
+     */
+    @GetMapping("/admin/{orderId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<?> getOrderDetailForAdmin(@PathVariable int orderId) {
+        try {
+            OrderResponse order = orderService.getOrderDetail(orderId);
+            return ResponseEntity.ok(order);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể lấy thông tin đơn hàng: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * Cập nhật trạng thái giao hàng (cho admin)
+     * PUT /orders/admin/{orderId}/shipping-status?statusCode=SHIPPED
+     */
+    @PutMapping("/admin/{orderId}/shipping-status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<?> updateShippingStatus(
+            @PathVariable int orderId,
+            @RequestParam String statusCode
+    ) {
+        try {
+            orderService.updateShippingStatus(orderId, statusCode);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Cập nhật trạng thái giao hàng thành công!");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể cập nhật trạng thái: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    /**
+     * Xác nhận đã nhận hàng (cho user)
+     * PUT /orders/{orderId}/confirm-received?userId=1
+     */
+    @PutMapping("/{orderId}/confirm-received")
+    public ResponseEntity<?> confirmReceivedOrder(
+            @PathVariable int orderId,
+            @RequestParam Long userId
+    ) {
+        try {
+            orderService.confirmReceivedOrder(orderId, userId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Xác nhận nhận hàng thành công!");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể xác nhận nhận hàng: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    /**
+     * Kiểm tra đơn hàng có pending request không
+     * GET /orders/{orderId}/pending-requests
+     */
+    @GetMapping("/{orderId}/pending-requests")
+    public ResponseEntity<?> checkPendingRequests(@PathVariable int orderId) {
+        try {
+            Map<String, Boolean> result = orderService.checkPendingRequests(orderId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Không thể kiểm tra pending requests: " + e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 }
+
 

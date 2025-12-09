@@ -66,7 +66,7 @@ public class Product {
     @OneToMany(mappedBy = "cmProduct", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Comment> comments = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "product_id")
     List<ProductPrice> productPrices = new ArrayList<>();
 

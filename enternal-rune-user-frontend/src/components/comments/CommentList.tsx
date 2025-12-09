@@ -1,7 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { FaChevronDown } from 'react-icons/fa'
 import { CommentItem } from './CommentItem'
-import { CommentsPageResponse } from '@/types/Comment'
+import { CommentsPageResponse, CommentResponse } from '@/types/Comment'
+
+import { ReplyService } from '@/services/replyService'
 
 interface CommentListProps {
   commentsData: CommentsPageResponse | null
@@ -9,6 +11,7 @@ interface CommentListProps {
   loadingMore: boolean
   onLoadMore: () => void
   onImageClick?: (url: string) => void
+  onRefresh?: () => void
 }
 
 export const CommentList: React.FC<CommentListProps> = ({
@@ -16,9 +19,44 @@ export const CommentList: React.FC<CommentListProps> = ({
   loading,
   loadingMore,
   onLoadMore,
-  onImageClick
+  onImageClick,
+  onRefresh
 }) => {
   const [visibleCommentsCount, setVisibleCommentsCount] = useState(3)
+
+  const [repliesMap, setRepliesMap] = useState<Record<number, CommentResponse[]>>({})
+  const [repliesLoaded, setRepliesLoaded] = useState(false)
+
+  // ✅ Load all replies once for comments that have replies
+  useEffect(() => {
+    const loadAllReplies = async () => {
+      if (!commentsData?.comments || repliesLoaded) return
+
+      const repliesPromises = commentsData.comments
+        .filter(comment => comment.id && comment.replyCount && comment.replyCount > 0)
+        .map(async (comment) => {
+          try {
+            const repliesResponse = await ReplyService.getReplies(comment.productId, comment.id!, 0, 50)
+            return { commentId: comment.id!, replies: repliesResponse.comments }
+          } catch (error) {
+            console.error(`Error loading replies for comment ${comment.id}:`, error)
+            return { commentId: comment.id!, replies: [] }
+          }
+        })
+
+      if (repliesPromises.length > 0) {
+        const allReplies = await Promise.all(repliesPromises)
+        const newRepliesMap: Record<number, CommentResponse[]> = {}
+        allReplies.forEach(({ commentId, replies }) => {
+          newRepliesMap[commentId] = replies
+        })
+        setRepliesMap(newRepliesMap)
+      }
+      setRepliesLoaded(true)
+    }
+
+    loadAllReplies()
+  }, [commentsData?.comments, repliesLoaded])
   if (loading) {
     return (
       <div className="animate-pulse space-y-6">
@@ -66,10 +104,17 @@ export const CommentList: React.FC<CommentListProps> = ({
       <div className="space-y-6">
         {/* Comments */}
         {commentsData.comments.slice(0, visibleCommentsCount).map((comment, index) => (
-          <CommentItem 
-            key={comment.id || index} 
+          <CommentItem
+            key={comment.id || index}
             comment={comment}
             onImageClick={onImageClick}
+            onImageDeleted={() => {
+              if (onRefresh) {
+                onRefresh()
+              }
+            }}
+            preloadedReplies={comment.id ? repliesMap[comment.id] || [] : []}
+            repliesLoaded={repliesLoaded}
           />
         ))}
 

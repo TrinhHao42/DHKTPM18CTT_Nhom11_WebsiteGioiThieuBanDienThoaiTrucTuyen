@@ -1,73 +1,13 @@
 "use client";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
-import { Notification } from "@/types/Notification";
 import { NotificationRow } from "./NotificationRow";
+import { useWebSocketContext } from "@/context/WebSocketContext";
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifying, setNotifying] = useState(true);
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      user: {
-        id: "1",
-        name: "Terry Franci",
-        avatar: "/images/user/user-02.jpg",
-      },
-      message: "requests permission to change",
-      time: "5 min ago",
-      status: "online",
-    },
-    {
-      user: {
-        id: "2",
-        name: "Alena Franci",
-        avatar: "/images/user/user-03.jpg",
-      },
-      message: "requests permission to change",
-      time: "8 min ago",
-      status: "online",
-    },
-    {
-      user: {
-        id: "3",
-        name: "Brandon Philips",
-        avatar: "/images/user/user-05.jpg",
-      },
-      message: "requests permission to change",
-      time: "1 hr ago",
-      status: "error",
-    }
-  ]);
-
-  // useEffect(() => {
-  //   const socket = new WebSocket("ws://localhost:8080/notifications?role=admin");
-
-  //   socket.onopen = () => {
-  //     console.log("WebSocket connected");
-  //   };
-
-  //   socket.onerror = (err) => {
-  //     console.error("WebSocket error:", err);
-  //   };
-
-  //   socket.onmessage = (event) => {
-  //     console.log("WebSocket message received:", event.data);
-  //     // const newNotification: Notification = JSON.parse(event.data);
-  //     // setNotifications((prev) => [newNotification, ...prev]);
-  //     // setNotifying(true);
-  //   };
-
-  //   socket.onclose = () => {
-  //     console.log("WebSocket disconnected");
-  //   };
-
-  //   return () => {
-  //     socket.close();
-  //   };
-  // }, []);
-
+  const { notifications, unreadCount, markAllAsRead } = useWebSocketContext();
 
   function toggleDropdown() {
     setIsOpen(!isOpen);
@@ -79,20 +19,23 @@ export default function NotificationDropdown() {
 
   const handleClick = () => {
     toggleDropdown();
-    setNotifying(false);
   };
+
+  const handleMarkAllAsRead = () => {
+    markAllAsRead();
+  };
+
   return (
     <div className="relative">
       <button
         className="relative dropdown-toggle flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full hover:text-gray-700 h-11 w-11 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
         onClick={handleClick}
       >
-        <span
-          className={`absolute right-0 top-0.5 z-10 h-2 w-2 rounded-full bg-orange-400 ${!notifying ? "hidden" : "flex"
-            }`}
-        >
-          <span className="absolute inline-flex w-full h-full bg-orange-400 rounded-full opacity-75 animate-ping"></span>
-        </span>
+        {unreadCount > 0 && (
+          <span className="absolute right-0 top-0.5 z-10 flex h-2 w-2 rounded-full bg-orange-400">
+            <span className="absolute inline-flex w-full h-full bg-orange-400 rounded-full opacity-75 animate-ping"></span>
+          </span>
+        )}
         <svg
           className="fill-current"
           width="20"
@@ -115,38 +58,52 @@ export default function NotificationDropdown() {
       >
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-700">
           <h5 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            Notification
+            Notification {unreadCount > 0 && `(${unreadCount})`}
           </h5>
-          <button
-            onClick={toggleDropdown}
-            className="text-gray-500 transition dropdown-toggle dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-          >
-            <svg
-              className="fill-current"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllAsRead}
+                className="text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                Đánh dấu tất cả đã đọc
+              </button>
+            )}
+            <button
+              onClick={toggleDropdown}
+              className="text-gray-500 transition dropdown-toggle dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             >
-              <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z"
-                fill="currentColor"
-              />
-            </svg>
-          </button>
+              <svg
+                className="fill-current"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
         <ul className="flex flex-col h-auto overflow-y-auto custom-scrollbar">
-          {
-            notifications.map((item) => (
+          {notifications.length === 0 ? (
+            <li className="py-4 text-center text-gray-500 dark:text-gray-400">
+              Không có thông báo nào
+            </li>
+          ) : (
+            notifications.map((item, index) => (
               <NotificationRow
-                key={item.user.id}
+                key={item.id || index}
                 item={item}
                 onClick={closeDropdown}
               />
             ))
-          }
+          )}
         </ul>
         <Link
           href="/"

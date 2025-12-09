@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequestMapping("account")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class AuthController {
 
     @Autowired
@@ -79,30 +78,15 @@ public class AuthController {
                 .collect(Collectors.toList());
 
 
-        var user = userService.findByEmail(userDetails.getUsername());
+        // Load user with addresses for response
+        var user = userService.findByEmailWithAddresses(userDetails.getUsername());
 
-//        String fullAddress = null;
-//        if (user.getUserAddress() != null) {
-//            var addr = user.getUserAddress();
-//            fullAddress = String.join(", ",
-//                    addr.getStreetName(),
-//                    addr.getWardName(),
-//                    addr.getCityName(),
-//                    addr.getCountryName()
-//            );
-//        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
-//        response.put("username", userDetails.getUsername());
         response.put("roles", roles);
 
-        UserResponse loginUser = new UserResponse();
-        loginUser.setUserId(user.getUserId());
-        loginUser.setUserEmail(user.getEmail());
-        loginUser.setUserName(user.getName());
-        // Safely get addresses, return empty list if null
-        loginUser.setUserAddress(user.getAddresses() != null ? user.getAddresses() : new java.util.ArrayList<>());
+        UserResponse loginUser = UserResponse.toUserResponse(user);
 
         response.put("user", loginUser);
         return response;
@@ -120,7 +104,7 @@ public class AuthController {
                     .collect(Collectors.toList());
 
             response.put("username", userDetails.getUsername());
-            response.put("roles", roles); // Sử dụng List<String> đã chuyển đổi
+            response.put("roles", roles);
         } else {
             response.put("error", "User not authenticated");
         }
