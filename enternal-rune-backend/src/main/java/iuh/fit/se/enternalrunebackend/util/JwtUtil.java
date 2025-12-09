@@ -38,7 +38,8 @@ public class JwtUtil {
     // Sinh token từ email
     public String generateToken(String email) {
         Map<String, Object> claims = new HashMap<>();
-        User user = userService.findByEmail(email);
+        // Use findByEmailWithRoles to avoid LazyInitializationException
+        User user = userService.findByEmailWithRoles(email);
 
         if (user != null && user.getRoles() != null) {
             List<String> roleNames = user.getRoles()

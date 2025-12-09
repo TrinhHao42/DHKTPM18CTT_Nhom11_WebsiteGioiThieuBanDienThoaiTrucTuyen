@@ -85,14 +85,14 @@ public class ReturnRequestServiceImpl implements ReturnRequestService {
 
     @Override
     public Page<ReturnRequestResponse> getAllReturnRequests(Pageable pageable) {
-        return returnRequestRepository.findAllByOrderByCreatedAtDesc(pageable)
-                .map(this::mapToResponse);
+        // OPTIMIZED: Use DTO projection instead of loading full entities
+        return returnRequestRepository.findAllWithDTO(pageable);
     }
 
     @Override
     public Page<ReturnRequestResponse> getReturnRequestsByStatus(RequestStatus status, Pageable pageable) {
-        return returnRequestRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
-                .map(this::mapToResponse);
+        // OPTIMIZED: Use DTO projection instead of loading full entities
+        return returnRequestRepository.findByStatusWithDTO(status, pageable);
     }
 
     @Override

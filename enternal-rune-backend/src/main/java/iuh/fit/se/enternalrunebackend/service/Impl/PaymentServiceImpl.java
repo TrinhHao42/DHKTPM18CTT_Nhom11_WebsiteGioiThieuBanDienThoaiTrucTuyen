@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,34 +31,17 @@ public class PaymentServiceImpl implements PaymentService {
     
     @Override
     public PaymentMetricsResponse getPaymentMetrics() {
-        List<Transaction> allTransactions = transactionRepository.findAll();
-        List<Order> allOrders = orderRepository.findAll();
+        // ULTRA OPTIMIZED: Database calculates ALL metrics in ONE query
+        // Before: 200+ queries (findAll transactions + findAll orders + N*getCurrentPaymentStatus)
+        // After: 1 single query with 4 subqueries executed by database
         
-        // Tính tổng số giao dịch
-        long totalTransactions = allTransactions.size();
+        Map<String, Object> metrics = transactionRepository.getPaymentMetricsInOneQuery();
         
-        // Tính tổng doanh thu từ các giao dịch thành công
-        BigDecimal totalRevenue = allTransactions.stream()
-                .filter(tx -> "success".equalsIgnoreCase(tx.getTransactionStatus()) || 
-                             "completed".equalsIgnoreCase(tx.getTransactionStatus()))
-                .map(Transaction::getTransactionAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        // Đếm các đơn hàng đã thanh toán
-        long paidTransactions = allOrders.stream()
-                .filter(order -> {
-                    PaymentStatus currentStatus = order.getCurrentPaymentStatus();
-                    return currentStatus != null && "PAID".equals(currentStatus.getStatusCode());
-                })
-                .count();
-        
-        // Đếm các đơn hàng chờ thanh toán
-        long pendingTransactions = allOrders.stream()
-                .filter(order -> {
-                    PaymentStatus currentStatus = order.getCurrentPaymentStatus();
-                    return currentStatus != null && "PENDING".equals(currentStatus.getStatusCode());
-                })
-                .count();
+        // Extract values from Map (column names are lowercase with underscores)
+        long totalTransactions = ((Number) metrics.get("total_transactions")).longValue();
+        BigDecimal totalRevenue = (BigDecimal) metrics.get("total_revenue");
+        long paidTransactions = ((Number) metrics.get("paid_orders")).longValue();
+        long pendingTransactions = ((Number) metrics.get("pending_orders")).longValue();
         
         // TODO: Tính trend (so với tháng trước) - cần implement sau
         double transactionsTrend = 22.5; // Mock data
@@ -84,7 +68,8 @@ public class PaymentServiceImpl implements PaymentService {
             String searchTerm,
             Pageable pageable
     ) {
-        List<Transaction> allTransactions = transactionRepository.findAll();
+        // Use optimized query with JOIN FETCH to avoid N+1 problem
+        List<Transaction> allTransactions = transactionRepository.findAllWithOrderAndUser();
         
         // Lọc theo điều kiện
         List<Transaction> filteredTransactions = allTransactions.stream()

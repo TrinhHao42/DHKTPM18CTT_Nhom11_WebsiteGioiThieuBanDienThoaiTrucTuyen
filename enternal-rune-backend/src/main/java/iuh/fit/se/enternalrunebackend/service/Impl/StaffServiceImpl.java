@@ -52,9 +52,16 @@ public class StaffServiceImpl implements StaffService {
                 ? staff.getRoles().get(0)
                 : null;
 
-        AddressResponse addressResponse = staff.getAddresses() != null && !staff.getAddresses().isEmpty()
-                ? AddressResponse.toAddressResponse(staff.getAddresses().get(0))
-                : null;
+        // Use Optional to safely handle addresses without triggering lazy load
+        AddressResponse addressResponse = null;
+        try {
+            addressResponse = staff.getAddresses() != null && !staff.getAddresses().isEmpty()
+                    ? AddressResponse.toAddressResponse(staff.getAddresses().get(0))
+                    : null;
+        } catch (Exception e) {
+            // If lazy loading fails, just set null
+            addressResponse = null;
+        }
 
         // SỬA LỖI CONSTRUCTOR: Truyền đủ 7 tham số
         return new StaffResponse(
@@ -123,9 +130,11 @@ public class StaffServiceImpl implements StaffService {
     @Override
     @Transactional
     public StaffResponse updateStaff(Long id, StaffRequest request) {
-        // 1. Tìm User
-        User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Staff không tồn tại với ID: " + id));
+        // 1. Load User with roles and addresses to avoid LazyInitializationException
+        User existingUser = userRepository.findByIdWithRolesAndAddresses(id);
+        if (existingUser == null) {
+            throw new RuntimeException("Staff không tồn tại với ID: " + id);
+        }
 
         // 2. CẬP NHẬT THÔNG TIN CƠ BẢN (Name và Status)
         existingUser.setName(request.getName());

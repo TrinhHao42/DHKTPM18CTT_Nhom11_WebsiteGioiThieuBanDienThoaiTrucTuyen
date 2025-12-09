@@ -78,7 +78,8 @@ public class AuthController {
                 .collect(Collectors.toList());
 
 
-        var user = userService.findByEmail(userDetails.getUsername());
+        // Load user with addresses for response
+        var user = userService.findByEmailWithAddresses(userDetails.getUsername());
 
 
         Map<String, Object> response = new HashMap<>();

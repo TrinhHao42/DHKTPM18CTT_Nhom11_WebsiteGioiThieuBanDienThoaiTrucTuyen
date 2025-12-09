@@ -1,7 +1,6 @@
 package iuh.fit.se.enternalrunebackend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import iuh.fit.se.enternalrunebackend.dto.response.AddressResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.UserResponse;
 import iuh.fit.se.enternalrunebackend.entity.Role;
 import iuh.fit.se.enternalrunebackend.entity.User;
@@ -12,7 +11,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -20,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -51,7 +48,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             return;
         }
 
-        User user = userRepository.findByEmail(email);
+        User user = userRepository.findByEmailWithRoles(email); // Load with roles
         if (user == null) {
             user = new User();
             user.setEmail(email);
@@ -68,6 +65,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
             user.setRoles(Collections.singletonList(defaultRole));
             userRepository.save(user);
+            
+            // Reload user with roles after save to avoid LazyInitializationException
+            user = userRepository.findByEmailWithRoles(email);
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
@@ -81,14 +81,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         loginUser.setUserId(user.getUserId());
         loginUser.setUserEmail(user.getEmail());
         loginUser.setUserName(user.getName());
-        // Safely get addresses, return empty list if null
-        loginUser.setUserAddress(
-                Optional.ofNullable(user.getAddresses())
-                        .orElse(List.of())
-                        .stream()
-                        .map(AddressResponse::toAddressResponse)
-                        .toList()
-        );
+        // OAuth users don't have addresses initially, set empty list
+        // Addresses will be loaded separately when needed
+        loginUser.setUserAddress(List.of());
 
 
         ObjectMapper mapper = new ObjectMapper();
