@@ -110,6 +110,27 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
             return;
         }
 
+        // Track buy now event (keep this consistent with add to cart tracking)
+        try {
+            if (typeof window !== 'undefined' && window.umami && typeof window.umami.track === 'function') {
+                window.umami.track('buy_now', {
+                    product_id: product.prodId,
+                    product_name: product.prodName,
+                    product_brand: product.prodBrand || 'Unknown',
+                    product_price: unitPrice,
+                    quantity: quantity,
+                    selected_color: selectedColor,
+                    selected_storage: selectedStorage,
+                    selected_protection_plan: selectedPlan,
+                    total_price: totalPrice,
+                    currency: 'đ'
+                })
+            }
+        } catch (err) {
+            // Don't let tracking failures impact the user flow
+            console.error('Umami tracking failed for buy_now', err)
+        }
+
         setShowBuyNowModal(true);
     }
 
@@ -320,23 +341,6 @@ export default function ProductInfoPanel({ product, selectedColor, selectedImage
                 <button
                     onClick={handleBuyNow}
                     className="cursor-pointer bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-2xl font-semibold text-md shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-3 group hover:scale-102"
-                    // onClick={() => {
-                    //     // Track buy now event
-                    //     if (typeof window !== 'undefined' && window.umami) {
-                    //         window.umami.track('buy_now', {
-                    //             product_id: product.prodId,
-                    //             product_name: product.prodName,
-                    //             product_brand: product.prodBrand || 'Unknown',
-                    //             product_price: unitPrice,
-                    //             quantity: quantity,
-                    //             selected_color: selectedColor,
-                    //             selected_storage: selectedStorage,
-                    //             selected_protection_plan: selectedPlan,
-                    //             total_price: totalPrice,
-                    //             currency: 'VND'
-                    //         })
-                    //     }
-                    // }}
                 >
                     Mua ngay - {formatPrice(totalPrice)}
                 </button>

@@ -43,12 +43,6 @@ export const Navbar = () => {
                 <Link href="/ProductListScreen" className="hover:text-blue-600">
                     Sản phẩm
                 </Link>
-                <Link href="#" className="hover:text-blue-600">
-                    Bảng giá
-                </Link>
-                <Link href="#" className="hover:text-blue-600">
-                    Tài liệu
-                </Link>
                 <Link href="/AssistanceChatScreen" className="hover:text-blue-600">
                     Hỗ trợ
                 </Link>

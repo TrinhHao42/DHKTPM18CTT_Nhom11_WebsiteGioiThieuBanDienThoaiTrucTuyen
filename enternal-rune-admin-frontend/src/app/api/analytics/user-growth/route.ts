@@ -10,20 +10,19 @@ export async function GET(request: NextRequest) {
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
 
-    const startDate = startDateParam ? new Date(startDateParam) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const startDate = startDateParam ? new Date(startDateParam) : new Date(Date.now() - 12 * 30 * 24 * 60 * 60 * 1000); // 12 months
     const endDate = endDateParam ? new Date(endDateParam) : new Date();
 
-    const userGrowth = websiteId 
-      ? await analyticsService.getUserGrowthByMonth(websiteId, startDate, endDate)
-      : [];
+    if (!websiteId) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        timestamp: new Date().toISOString(),
+      });
+    }
 
-    // Transform to match frontend expectations
-    const transformedData = userGrowth.map(item => ({
-      month: item.month,
-      totalUsers: item.users,
-      newUsers: Math.floor(item.users * 0.7), // Estimate new users as 70%
-      churnedUsers: Math.floor(item.users * 0.1), // Estimate churn as 10%
-    }));
+    // Get detailed growth data with real calculations
+    const transformedData = await analyticsService.getUserGrowthWithDetails(websiteId, startDate, endDate);
 
     return NextResponse.json({
       success: true,

@@ -1,4 +1,4 @@
-package iuh.fit.se.enternalrunebackend.service.impl;
+package iuh.fit.se.enternalrunebackend.service.Impl;
 
 import iuh.fit.se.enternalrunebackend.dto.response.EcommerceDashboardResponse;
 import iuh.fit.se.enternalrunebackend.entity.Order;
