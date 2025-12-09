@@ -110,14 +110,21 @@ export default function ComparePage() {
 
                     {/* Dynamic Specs Comparison */}
                     <div className="divide-y divide-gray-200">
-                        {getAllSpecKeys().map((specKey) => (
-                            <SpecComparisonRow
-                                key={specKey}
-                                specKey={specKey}
-                                products={allCompareProducts}
-                                displayMap={displayMap}
-                            />
-                        ))}
+                        {getAllSpecKeys().length > 0 ? (
+                            getAllSpecKeys().map((specKey) => (
+                                <SpecComparisonRow
+                                    key={specKey}
+                                    specKey={specKey}
+                                    products={allCompareProducts}
+                                    displayMap={displayMap}
+                                />
+                            ))
+                        ) : (
+                            <div className="p-8 text-center text-gray-500">
+                                <p className="text-lg font-medium">Không có thông số kỹ thuật</p>
+                                <p className="text-sm mt-2">Sản phẩm này chưa có thông tin thông số kỹ thuật chi tiết.</p>
+                            </div>
+                        )}
                     </div>
 
                     <ComparisonSummary />

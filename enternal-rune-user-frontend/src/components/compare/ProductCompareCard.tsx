@@ -51,7 +51,7 @@ export const ProductCompareCard = ({
         <div className="relative mb-4 group">
           <div className={`p-4 rounded-2xl ${index === 0 ? 'bg-blue-100/50' : 'bg-white'} border border-gray-200 hover:shadow-lg transition-all duration-300`}>
             <Image
-              src={product.images[0]?.imageData || "/images/iphone.png"}
+              src={product.primaryImageUrl || product.images?.[0]?.imageData || product.imageUrl || "/images/iphone.png"}
               alt={product.prodName}
               width={160}
               height={160}

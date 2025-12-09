@@ -50,7 +50,19 @@ export const useCompareData = () => {
         .filter(p => p.prodModel === product.prodModel)
         .slice(0, 2)
 
-      setCompareProducts(compareTargets)
+      // 4. Load full product data for compare products (to get specs)
+      const fullCompareProducts = await Promise.all(
+        compareTargets.map(async (target) => {
+          try {
+            return await ProductService.getProductById(target.prodId.toString())
+          } catch (error) {
+            console.error(`Error loading product ${target.prodId}:`, error)
+            return target // fallback to basic data if full data fails
+          }
+        })
+      )
+
+      setCompareProducts(fullCompareProducts.filter((p): p is Product => p !== null))
 
       // Rating data is now included in Product object, no need to fetch comments
     } catch (err) {
@@ -62,12 +74,22 @@ export const useCompareData = () => {
   }
 
   const getCurrentPrice = (product: Product): number => {
-    return product.productPrices?.[0]?.ppPrice || 0
+    // Use optimized API pricing - prioritize activePrice from ProductListResponse, then currentPrice, then fallback
+    return product.activePrice || product.currentPrice || product.productPrices?.[0]?.ppPrice || 0
   }
 
   const getAllSpecKeys = (): string[] => {
-    if (!selectedProduct?.prodSpecs) return []
-    return Object.keys(selectedProduct.prodSpecs)
+    // Collect all unique spec keys from all products (selected + compare products)
+    const allProducts = selectedProduct ? [selectedProduct, ...compareProducts] : compareProducts
+    const allSpecKeys = new Set<string>()
+    
+    allProducts.forEach(product => {
+      if (product?.prodSpecs) {
+        Object.keys(product.prodSpecs).forEach(key => allSpecKeys.add(key))
+      }
+    })
+    
+    return Array.from(allSpecKeys).sort()
   }
 
   return {

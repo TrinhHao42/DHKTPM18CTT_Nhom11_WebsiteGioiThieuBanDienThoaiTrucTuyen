@@ -31,11 +31,10 @@ public class ProductController {
 
     //Lấy danh sách sản phẩm nổi bật sắp xếp theo rateing top của từng thương hiệu
     @GetMapping("/top-brand")
-    public ResponseEntity<List<ProductResponse>> getFeaturedProducts(
+    public ResponseEntity<List<ProductCardResponse>> getFeaturedProducts(
             @RequestParam(defaultValue = "8") int limit) {
-        List<Product> products = productService.getFeaturedProducts(limit);
-        // Không cần rating stats cho danh sách featured (tối ưu performance)
-        List<ProductResponse> dto = products.stream().map(p -> toDto(p, false)).toList();
+        // Sử dụng optimized single-query method
+        List<ProductCardResponse> dto = productService.getFeaturedProductCards(limit);
         return ResponseEntity.ok(dto);
     }
 
@@ -57,16 +56,15 @@ public class ProductController {
     }
 
     @GetMapping("/latest")
-    public List<ProductResponse> getLatestProductsByBrand(
+    public List<ProductCardResponse> getLatestProductsByBrand(
             @RequestParam(defaultValue = "iPhone") String brand,
             @RequestParam(defaultValue = "4") int limit) {
-        List<Product> products = productService.getProductsByBrand(brand, limit);
-        // Không cần rating stats cho danh sách latest
-        return products.stream().map(p -> toDto(p, false)).toList();
+        // Sử dụng optimized single-query method
+        return productService.getProductCardsByBrand(brand, limit);
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<Page<ProductResponse>> filterProducts(
+    public ResponseEntity<Page<ProductListResponse>> filterProducts(
             @RequestParam(required = false) List<Integer> brands,
             @RequestParam(required = false) List<String> priceRange,
             @RequestParam(required = false) List<String> colors,
@@ -75,13 +73,10 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        Page<Product> products = productService.filterProducts(brands, priceRange, colors, memory, search, page, size);
-        // Không cần rating stats cho danh sách filter (tối ưu performance)
-        List<ProductResponse> dtoList = products.getContent().stream().map(p -> toDto(p, false)).toList();
-        org.springframework.data.domain.Page<ProductResponse> dtoPage = new org.springframework.data.domain.PageImpl<>(
-                dtoList, products.getPageable(), products.getTotalElements()
-        );
-        return ResponseEntity.ok(dtoPage);
+        // Sử dụng optimized single-query method với pagination
+        Page<ProductListResponse> products = productService.filterProductsOptimized(
+            brands, priceRange, colors, memory, search, page, size);
+        return ResponseEntity.ok(products);
     }
 
     // --- Mapping helper ---
