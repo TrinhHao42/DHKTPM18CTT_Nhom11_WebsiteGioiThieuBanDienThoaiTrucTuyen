@@ -366,9 +366,9 @@ export default function CouponTable() {
                             {coupon.usedQuantity}/
                             {coupon.discountQuantityLimit}
                           </span>
-                          <span className="font-semibold text-gray-900 dark:text-white">
+                          {/* <span className="font-semibold text-gray-900 dark:text-white">
                             {usagePercent}%
-                          </span>
+                          </span> */}
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                           <div

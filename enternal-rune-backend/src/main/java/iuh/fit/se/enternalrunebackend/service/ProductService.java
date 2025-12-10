@@ -3,6 +3,9 @@ package iuh.fit.se.enternalrunebackend.service;
 import iuh.fit.se.enternalrunebackend.dto.request.ProductRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.ProductDashboardListResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.ProductDashboardResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductListResponse;
+import iuh.fit.se.enternalrunebackend.dto.response.ProductCardResponse;
 
 
 
@@ -18,6 +21,9 @@ import java.util.Map;
 
 public interface ProductService {
     List<Product> getAllProductsWithActivePrice();
+    
+    // Optimized: Get only necessary fields for list view
+    List<ProductResponse> getProductSummaryWithActivePrice();
 
     List<Product> getFeaturedProducts(int limit);
 
@@ -47,4 +53,38 @@ public interface ProductService {
     Double getAverageRating(Integer productId);
     Integer getTotalComments(Integer productId);
     Map<String, Integer> getRatingDistribution(Integer productId);
+    
+    // Batch rating statistics to avoid N+1 queries
+    Map<Integer, Double> getAverageRatingsForProducts(List<Integer> productIds);
+    Map<Integer, Integer> getTotalCommentsForProducts(List<Integer> productIds);
+    
+    // ===== OPTIMIZED METHODS FOR LIST VIEWS =====
+    
+    /**
+     * Get product list with minimal data - single query, lightweight response
+     */
+    List<ProductListResponse> getProductListOptimized();
+    
+    /**
+     * Get featured products as cards - minimal data, fastest response
+     */
+    List<ProductCardResponse> getFeaturedProductCards(int limit);
+    
+    /**
+     * Get products by brand as cards - minimal data
+     */
+    List<ProductCardResponse> getProductCardsByBrand(String brandName, int limit);
+    
+    /**
+     * Filter products with optimized pagination
+     */
+    Page<ProductListResponse> filterProductsOptimized(
+            List<Integer> brands,
+            List<String> priceRanges,
+            List<String> colors,
+            List<String> memory,
+            String search,
+            int page,
+            int size
+    );
 }

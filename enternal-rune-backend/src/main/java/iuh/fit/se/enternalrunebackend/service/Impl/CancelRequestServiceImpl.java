@@ -119,14 +119,14 @@ public class CancelRequestServiceImpl implements CancelRequestService {
 
     @Override
     public Page<CancelRequestResponse> getAllCancelRequests(Pageable pageable) {
-        return cancelRequestRepository.findAllByOrderByCreatedAtDesc(pageable)
-                .map(this::mapToResponse);
+        // OPTIMIZED: Use DTO projection instead of loading full entities
+        return cancelRequestRepository.findAllWithDTO(pageable);
     }
 
     @Override
     public Page<CancelRequestResponse> getCancelRequestsByStatus(RequestStatus status, Pageable pageable) {
-        return cancelRequestRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
-                .map(this::mapToResponse);
+        // OPTIMIZED: Use DTO projection instead of loading full entities
+        return cancelRequestRepository.findByStatusWithDTO(status, pageable);
     }
 
     @Override

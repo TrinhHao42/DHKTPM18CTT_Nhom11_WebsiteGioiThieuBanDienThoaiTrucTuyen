@@ -1,5 +1,6 @@
 package iuh.fit.se.enternalrunebackend.service.Impl;
 
+import iuh.fit.se.enternalrunebackend.dto.request.AddressRequest;
 import iuh.fit.se.enternalrunebackend.dto.request.StaffRequest;
 import iuh.fit.se.enternalrunebackend.dto.response.AddressResponse;
 import iuh.fit.se.enternalrunebackend.dto.response.StaffResponse;
@@ -37,7 +38,7 @@ public class StaffServiceImpl implements StaffService {
 
     // --- Helper Methods ---
 
-    private Address createAddressFromDto(AddressResponse addressDto) {
+    private Address createAddressFromDto(AddressRequest addressDto) {
         // ... (logic tạo Address từ DTO)
         Address address = new Address();
         address.setStreetName(addressDto.getStreetName());
@@ -52,9 +53,16 @@ public class StaffServiceImpl implements StaffService {
                 ? staff.getRoles().get(0)
                 : null;
 
-        AddressResponse addressResponse = staff.getAddresses() != null && !staff.getAddresses().isEmpty()
-                ? AddressResponse.toAddressResponse(staff.getAddresses().get(0))
-                : null;
+        // Use Optional to safely handle addresses without triggering lazy load
+        AddressResponse addressResponse = null;
+        try {
+            addressResponse = staff.getAddresses() != null && !staff.getAddresses().isEmpty()
+                    ? AddressResponse.toAddressResponse(staff.getAddresses().get(0))
+                    : null;
+        } catch (Exception e) {
+            // If lazy loading fails, just set null
+            addressResponse = null;
+        }
 
         // SỬA LỖI CONSTRUCTOR: Truyền đủ 7 tham số
         return new StaffResponse(
@@ -110,8 +118,10 @@ public class StaffServiceImpl implements StaffService {
         newUser.setPassword(passwordEncoder.encode(request.getPassword()));
         newUser.setUserActive(request.isStatus());
         newUser.setAuthProvider(User.AuthProvider.LOCAL);
-        newUser.setAddresses(Collections.singletonList(savedAddress));
-        newUser.setRoles(Collections.singletonList(staffRole));
+        newUser.setAddresses(new ArrayList<>(List.of(savedAddress)));
+        newUser.setRoles(new ArrayList<>(List.of(staffRole)));
+//        newUser.setAddresses(Collections.singletonList(savedAddress));
+//        newUser.setRoles(Collections.singletonList(staffRole));
 
         User savedUser = userRepository.save(newUser);
         return mapToStaffResponse(savedUser);
@@ -120,68 +130,133 @@ public class StaffServiceImpl implements StaffService {
     // 2. CHỨC NĂNG CẬP NHẬT NHÂN VIÊN
     // =======================================================
 
-    @Override
-    @Transactional
-    public StaffResponse updateStaff(Long id, StaffRequest request) {
-        // 1. Tìm User
-        User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Staff không tồn tại với ID: " + id));
+//    @Override
+//    @Transactional
+//    public StaffResponse updateStaff(Long id, StaffRequest request) {
+//        // 1. Load User with roles and addresses to avoid LazyInitializationException
+//        User existingUser = userRepository.findByIdWithRolesAndAddresses(id);
+//        if (existingUser == null) {
+//            throw new RuntimeException("Staff không tồn tại với ID: " + id);
+//        }
+//
+//        // 2. CẬP NHẬT THÔNG TIN CƠ BẢN (Name và Status)
+//        existingUser.setName(request.getName());
+//        existingUser.setUserActive(request.isStatus());
+//
+//        // 3. CẬP NHẬT EMAIL
+//        // Cập nhật email nếu thay đổi (và email mới không trùng với người khác)
+//        if (!existingUser.getEmail().equals(request.getEmail())) {
+//            User userWithNewEmail = userRepository.findByEmail(request.getEmail());
+//
+//            // Kiểm tra: Có tìm thấy user khác (không phải user đang update) không?
+//            if (userWithNewEmail != null && !userWithNewEmail.getUserId().equals(id)) {
+//                throw new RuntimeException("Email mới đã được sử dụng bởi người dùng khác.");
+//            }
+//            existingUser.setEmail(request.getEmail());
+//        }
+//
+//        // 4. CẬP NHẬT MẬT KHẨU
+//        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+//            // Mã hóa mật khẩu mới
+//            existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
+//        }
+//
+//        // 5. CẬP NHẬT ROLE (Sửa lỗi UnsupportedOperationException)
+//        Role newRole = roleRepository.findByRoleName(request.getRole().getRoleName());
+//        if (newRole == null) {
+//            throw new RuntimeException("Role mới không tồn tại: " + request.getRole().getRoleName());
+//        }
+//        // SỬA LỖI: Gán một ArrayList mới chứa Role mới (mutable List)
+//        existingUser.setRoles(new ArrayList<>(List.of(newRole)));
+//
+//        // 6. Cập nhật Address
+//        if (request.getAddress() != null) {
+//            Address currentAddress = existingUser.getAddresses().isEmpty() ? null : existingUser.getAddresses().get(0);
+//
+//            if (currentAddress != null) {
+//                // Cập nhật thông tin địa chỉ hiện có
+//                currentAddress.setStreetName(request.getAddress().getStreetName());
+//                currentAddress.setWardName(request.getAddress().getWardName());
+//                currentAddress.setCityName(request.getAddress().getCityName());
+//                currentAddress.setCountryName(request.getAddress().getCountryName());
+//                addressRepository.save(currentAddress); // Lưu Address để chắc chắn thay đổi được áp dụng
+//            } else {
+//                // Nếu chưa có địa chỉ, tạo mới
+//                Address newAddress = createAddressFromDto(request.getAddress());
+//                Address savedAddress = addressRepository.save(newAddress);
+//
+//                // SỬA LỖI: Gán một ArrayList mới chứa Address mới (mutable List)
+//                existingUser.setAddresses(new ArrayList<>(List.of(savedAddress)));
+//            }
+//        }
+//
+//        // Lưu User đã cập nhật
+//        User updatedUser = userRepository.save(existingUser);
+//        return mapToStaffResponse(updatedUser);
+//    }
+@Override
+@Transactional
+public StaffResponse updateStaff(Long id, StaffRequest request) {
 
-        // 2. CẬP NHẬT THÔNG TIN CƠ BẢN (Name và Status)
-        existingUser.setName(request.getName());
-        existingUser.setUserActive(request.isStatus());
-
-        // 3. CẬP NHẬT EMAIL
-        // Cập nhật email nếu thay đổi (và email mới không trùng với người khác)
-        if (!existingUser.getEmail().equals(request.getEmail())) {
-            User userWithNewEmail = userRepository.findByEmail(request.getEmail());
-
-            // Kiểm tra: Có tìm thấy user khác (không phải user đang update) không?
-            if (userWithNewEmail != null && !userWithNewEmail.getUserId().equals(id)) {
-                throw new RuntimeException("Email mới đã được sử dụng bởi người dùng khác.");
-            }
-            existingUser.setEmail(request.getEmail());
-        }
-
-        // 4. CẬP NHẬT MẬT KHẨU
-        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            // Mã hóa mật khẩu mới
-            existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
-
-        // 5. CẬP NHẬT ROLE (Sửa lỗi UnsupportedOperationException)
-        Role newRole = roleRepository.findByRoleName(request.getRole().getRoleName());
-        if (newRole == null) {
-            throw new RuntimeException("Role mới không tồn tại: " + request.getRole().getRoleName());
-        }
-        // SỬA LỖI: Gán một ArrayList mới chứa Role mới (mutable List)
-        existingUser.setRoles(new ArrayList<>(List.of(newRole)));
-
-        // 6. Cập nhật Address
-        if (request.getAddress() != null) {
-            Address currentAddress = existingUser.getAddresses().isEmpty() ? null : existingUser.getAddresses().get(0);
-
-            if (currentAddress != null) {
-                // Cập nhật thông tin địa chỉ hiện có
-                currentAddress.setStreetName(request.getAddress().getStreetName());
-                currentAddress.setWardName(request.getAddress().getWardName());
-                currentAddress.setCityName(request.getAddress().getCityName());
-                currentAddress.setCountryName(request.getAddress().getCountryName());
-                addressRepository.save(currentAddress); // Lưu Address để chắc chắn thay đổi được áp dụng
-            } else {
-                // Nếu chưa có địa chỉ, tạo mới
-                Address newAddress = createAddressFromDto(request.getAddress());
-                Address savedAddress = addressRepository.save(newAddress);
-
-                // SỬA LỖI: Gán một ArrayList mới chứa Address mới (mutable List)
-                existingUser.setAddresses(new ArrayList<>(List.of(savedAddress)));
-            }
-        }
-
-        // Lưu User đã cập nhật
-        User updatedUser = userRepository.save(existingUser);
-        return mapToStaffResponse(updatedUser);
+    User existingUser = userRepository.findByIdWithRolesAndAddresses(id);
+    if (existingUser == null) {
+        throw new RuntimeException("Staff không tồn tại với ID: " + id);
     }
+
+    // ---- 1. Update basic info
+    existingUser.setName(request.getName());
+    existingUser.setUserActive(request.isStatus());
+
+    // ---- 2. Update email if changed
+    if (!existingUser.getEmail().equals(request.getEmail())) {
+        User userWithNewEmail = userRepository.findByEmail(request.getEmail());
+        if (userWithNewEmail != null && !userWithNewEmail.getUserId().equals(id)) {
+            throw new RuntimeException("Email mới đã được sử dụng");
+        }
+        existingUser.setEmail(request.getEmail());
+    }
+
+    // ---- 3. Update password
+    if (request.getPassword() != null && !request.getPassword().isBlank()) {
+        existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
+    }
+
+    // ---- 4. Update Role
+    Role newRole = roleRepository.findByRoleName(request.getRole().getRoleName());
+    if (newRole == null) {
+        throw new RuntimeException("Role không tồn tại");
+    }
+
+    // ⭐ FIX QUAN TRỌNG NHẤT: đảm bảo list là mutable
+    existingUser.setRoles(new ArrayList<>(List.of(newRole)));
+
+    // ---- 5. Update Address
+    if (request.getAddress() != null) {
+
+        Address address;
+
+        if (existingUser.getAddresses() != null && !existingUser.getAddresses().isEmpty()) {
+            // Update address cũ
+            address = existingUser.getAddresses().get(0);
+        } else {
+            // Tạo mới
+            address = new Address();
+            existingUser.setAddresses(new ArrayList<>(List.of(address))); // ⭐ VERY IMPORTANT
+        }
+
+        address.setStreetName(request.getAddress().getStreetName());
+        address.setWardName(request.getAddress().getWardName());
+        address.setCityName(request.getAddress().getCityName());
+        address.setCountryName(request.getAddress().getCountryName());
+
+        addressRepository.save(address);
+    }
+
+    // ---- 6. Save
+    User updated = userRepository.save(existingUser);
+
+    return mapToStaffResponse(updated);
+}
 
     @Override
     @Transactional(readOnly = true)

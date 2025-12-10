@@ -1,5 +1,6 @@
 package iuh.fit.se.enternalrunebackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -31,6 +32,7 @@ public class Order {
     BigDecimal orderTotalAmount;
 
     // One-to-many relationships with history tables (tracking status changes with timestamps)
+    // BatchSize enables batch fetching to reduce N+1 queries
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("createdAt DESC")
     List<OrderPaymentHistory> paymentStatusHistories = new ArrayList<>();
@@ -40,9 +42,11 @@ public class Order {
     List<OrderShippingHistory> shippingStatusHistories = new ArrayList<>();
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     List<OrderRefund> orderRefundRequests = new ArrayList<>();
 
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     Transaction transactions;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)

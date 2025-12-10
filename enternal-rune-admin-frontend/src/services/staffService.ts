@@ -134,30 +134,32 @@ class StaffService {
     // ============================================================
 
     async updateStaff(id: number, request: StaffRequest): Promise<StaffResponse> {
-        const payload: Partial<StaffRequest> & {
-            role: { id: number | null, roleName?: string }; // Đảm bảo role có ID
-            address: { addressId: number | null, streetName?: string, wardName?: string, cityName?: string, countryName?: string }; // Đảm bảo address có ID
-        } = {
-            name: request.name,
-            email: request.email,
-            status: request.status,
-            role: request.role,
-            address: request.address,
-        };
-
-        // Chỉ gửi password nếu có giá trị (vì nó là optional)
-        if (request.password) {
-            payload.password = request.password;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/${id}`, {
-            method: "PUT",
-            headers: this.getAuthHeaders(),
-            body: JSON.stringify(payload),
-        });
-
-        return this.handleResponse(response);
+    const payload = {
+        name: request.name,
+        email: request.email,
+        status: request.status,
+        role: {
+            id: request.role.id
+        },
+        address: {
+            addressId: request.address.addressId
+        },
+    };
+    if (request.password && request.password.trim() !== "") {
+        payload["password"] = request.password;
     }
+
+    console.log("UPDATE PAYLOAD:", payload);
+
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
+        method: "PUT",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(payload),
+    });
+
+    return this.handleResponse(response);
+}
+
 
     // ============================================================
     // 4. DELETE

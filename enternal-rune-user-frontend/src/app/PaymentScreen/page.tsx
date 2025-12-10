@@ -1,5 +1,7 @@
-import Payment from '@/pages/Payment'
+import Payment from '@/page-components/Payment'
 import React from 'react'
+
+export const dynamic = 'force-dynamic'
 
 const page = () => {
   return (
@@ -10,3 +12,4 @@ const page = () => {
 }
 
 export default page
+

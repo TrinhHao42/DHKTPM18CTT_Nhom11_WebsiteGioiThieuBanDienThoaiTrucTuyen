@@ -249,18 +249,6 @@ export default function NewStaffForm() {
                             </div>
                         </div>
                     </div>
-
-                    {/* 2. Job Information (Giữ nguyên) */}
-                    <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
-                            Thông tin công việc
-                        </h3>
-                        {/* Placeholder */}
-                        <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-                            (Thêm các trường Phone, DOB, v.v. tại đây nếu cần)
-                        </p>
-                    </div>
-
                     {/* 3. Address Information (Địa chỉ) */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
                         <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">

@@ -3,15 +3,9 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import toast from 'react-hot-toast';
 import { useRouter, useParams } from "next/navigation";
-// Giả định staffService đã được import đúng
-// import staffService from "@/services/staffService"; 
-// (Vì tôi không có file này, tôi chỉ giữ nguyên dòng import)
+
 import staffService from "@/services/staffService";
 
-
-// **********************************************
-// 1. KHAI BÁO INTERFACE VÀ DỮ LIỆU CỐ ĐỊNH
-// **********************************************
 
 // Interface cho các đối tượng phức tạp
 interface Role { id: number | null; roleName: string; }
@@ -58,16 +52,15 @@ const predefinedRoles: Role[] = [
 // 2. Mapping Tên hiển thị (UI) và Tên Backend (API)
 const ROLE_MAPPING_UI_TO_API: { [key: string]: string } = {
     "Quản trị viên": "ROLE_ADMIN",
-    "Quản lý": "ROLE_MANAGER",
+    "Quản lý": "ROLE_USER",
     "Nhân viên": "ROLE_STAFF",
-    "Chỉ xem": "ROLE_VIEWER",
 };
 
 const ROLE_MAPPING_API_TO_UI: { [key: string]: string } = {
     "ROLE_ADMIN": "Quản trị viên",
-    "ROLE_MANAGER": "Quản lý",
+    "ROLE_USER": "Quản lý",
     "ROLE_STAFF": "Nhân viên",
-    "ROLE_VIEWER": "Chỉ xem",
+   
 };
 
 const UIRoles = Object.keys(ROLE_MAPPING_UI_TO_API);
@@ -344,15 +337,7 @@ export default function EditStaffPage() {
                         </div>
                     </div>
 
-                    {/* 2. Job Information (Giữ nguyên) */}
-                    <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-                        <h3 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
-                            Thông tin công việc
-                        </h3>
-                        <p className="text-theme-sm text-gray-500 dark:text-gray-400">
-                            (Thêm các trường Phone, DOB, v.v. tại đây nếu cần)
-                        </p>
-                    </div>
+                   
 
                     {/* 3. Address Information (Địa chỉ) */}
                     <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
