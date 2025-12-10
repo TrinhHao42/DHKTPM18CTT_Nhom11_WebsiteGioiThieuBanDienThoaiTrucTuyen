@@ -1,151 +1,177 @@
-import { StaffResponse, StaffStatisticsResponse, StaffRequest } from "@/types/staff";
+// 
+import {
+    StaffResponse,
+    StaffStatisticsResponse,
+    StaffRequest
+} from "@/types/staff";
 
-
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/staff"; 
-
+const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/staff";
 
 class StaffService {
-    
     private getAuthHeaders(): HeadersInit {
-        // Lấy token từ localStorage hoặc nơi lưu trữ khác
-        const token = localStorage.getItem("admin_token");
+        const token = typeof window !== "undefined"
+            ? localStorage.getItem("admin_token")
+            : null;
+
         return {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
         };
     }
 
-  
     private async handleResponse<T>(response: Response): Promise<T> {
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-       
-            const errorMessage = errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
+            const errorMessage =
+                errorData.message ||
+                errorData.error ||
+                `HTTP Error: ${response.status}`;
             throw new Error(errorMessage);
         }
-        
-        if (response.status === 204) {
-             return null as T; // Trả về null hoặc giá trị phù hợp cho T
-        }
+
+        if (response.status === 204) return null as T;
+
         return response.json();
     }
 
-    // -----------------------------------------------------------------
-    // 1. READ (GET) OPERATIONS
-    // -----------------------------------------------------------------
+    // ============================================================
+    // 1. GET
+    // ============================================================
 
-    /**
-     * Lấy dữ liệu thống kê: GET /api/staff/statistics
-     */
     async getStatistics(): Promise<StaffStatisticsResponse> {
         const response = await fetch(`${API_BASE_URL}/statistics`, {
             method: "GET",
             headers: this.getAuthHeaders(),
         });
-        return this.handleResponse<StaffStatisticsResponse>(response);
+        return this.handleResponse(response);
     }
-    
-    /**
-     * Lấy danh sách nhân viên: GET /api/staff/list
-     * Backend dùng tham số 'activated' (Boolean), frontend dùng 'status' (String)
-     */
+
     async getDashboard(
         keyword?: string,
         page: number = 0,
         size: number = 10,
         status: string = "all"
     ): Promise<StaffResponse> {
-        const queryParams = new URLSearchParams();
-        
-      
-        let activatedParam: boolean | undefined;
-        if (status === "activated") {
-            activatedParam = true;
-        } else if (status === "notActivated") {
-            activatedParam = false;
-        }
-        
-        if (activatedParam !== undefined) {
-             queryParams.append("activated", activatedParam.toString());
-        }
+        const query = new URLSearchParams();
 
-        queryParams.append("page", page.toString());
-        queryParams.append("size", size.toString());
+        if (status === "activated") query.append("activated", "true");
+        else if (status === "notActivated") query.append("activated", "false");
 
-        if (keyword) {
-            queryParams.append("keyword", keyword);
-        }
+        query.append("page", page.toString());
+        query.append("size", size.toString());
+
+        if (keyword) query.append("keyword", keyword);
 
         const response = await fetch(
-            `${API_BASE_URL}/list?${queryParams.toString()}`, 
+            `${API_BASE_URL}/list?${query.toString()}`,
             {
                 method: "GET",
                 headers: this.getAuthHeaders(),
                 cache: "no-store",
             }
         );
-     
-        return this.handleResponse<StaffResponse>(response);
+
+        return this.handleResponse(response);
     }
-    
-    /**
-     * Lấy chi tiết nhân viên: GET /api/staff/{id}
-     */
-    async getStaffDetail(id: number | string): Promise<StaffResponse> {
-         const response = await fetch(`${API_BASE_URL}/${id}`, {
+
+    async getStaffById(id: number) {
+        const response = await fetch(`${API_BASE_URL}/${id}`, {
             method: "GET",
             headers: this.getAuthHeaders(),
         });
-        return this.handleResponse<StaffResponse>(response);
+        if (!response.ok) {
+            throw new Error("Không tải được thông tin nhân viên");
+        }
+        return response.json();
     }
 
-    // -----------------------------------------------------------------
-    // 2. CREATE (POST) OPERATION
-    // -----------------------------------------------------------------
+    // ============================================================
+    // 2. CREATE
+    // ============================================================
 
-    /**
-     * Thêm nhân viên mới: POST /api/staff
-     */
+    // Trong staffService.ts
+
     async createStaff(request: StaffRequest): Promise<StaffResponse> {
+        // LƯU Ý: Khi tạo mới, API thường mong đợi các trường dữ liệu đầy đủ, 
+        // KHÔNG chỉ ID, trừ khi Role/Address đã tồn tại và bạn chỉ cần tham chiếu.
+        // Dựa trên code của bạn, ta cần gửi roleName và chi tiết Address.
+
+        const payload = {
+            name: request.name,
+            email: request.email,
+            password: request.password, // Mật khẩu có thể là undefined/null, API sẽ xử lý
+            status: request.status ?? true,
+
+            // Gửi Role Name lên (Giả định Backend nhận Role Name để tự tìm ID)
+            role: {
+                roleName: request.role.roleName
+            },
+
+            // Gửi chi tiết Address lên (Giả định Backend tạo Address mới)
+            address: {
+                streetName: request.address.streetName,
+                wardName: request.address.wardName,
+                cityName: request.address.cityName,
+                countryName: request.address.countryName,
+                // addressId: null (Không cần thiết khi tạo mới)
+            },
+        };
+
+        console.log("Payload CREATE ĐÃ SỬA:", payload);
+
         const response = await fetch(API_BASE_URL, {
             method: "POST",
             headers: this.getAuthHeaders(),
-            body: JSON.stringify(request),
+            body: JSON.stringify(payload),
         });
-        return this.handleResponse<StaffResponse>(response);
+
+        return this.handleResponse(response);
     }
 
-    // -----------------------------------------------------------------
-    // 3. UPDATE (PUT) OPERATION
-    // -----------------------------------------------------------------
+    // ============================================================
+    // 3. UPDATE
+    // ============================================================
 
-    /**
-     * Cập nhật thông tin nhân viên: PUT /api/staff/{id}
-     */
-    async updateStaff(id: number | string, request: StaffRequest): Promise<StaffResponse> {
-        const response = await fetch(`${API_BASE_URL}/${id}`, {
-            method: "PUT",
-            headers: this.getAuthHeaders(),
-            body: JSON.stringify(request),
-        });
-        return this.handleResponse<StaffResponse>(response);
+    async updateStaff(id: number, request: StaffRequest): Promise<StaffResponse> {
+    const payload = {
+        name: request.name,
+        email: request.email,
+        status: request.status,
+        role: {
+            id: request.role.id
+        },
+        address: {
+            addressId: request.address.addressId
+        },
+    };
+    if (request.password && request.password.trim() !== "") {
+        payload["password"] = request.password;
     }
 
-    // -----------------------------------------------------------------
-    // 4. DELETE (DELETE) OPERATION
-    // -----------------------------------------------------------------
+    console.log("UPDATE PAYLOAD:", payload);
 
-    /**
-     * Xóa nhân viên: DELETE /api/staff/{id}
-     */
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
+        method: "PUT",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(payload),
+    });
+
+    return this.handleResponse(response);
+}
+
+
+    // ============================================================
+    // 4. DELETE
+    // ============================================================
+
     async deleteStaff(id: number | string): Promise<void> {
         const response = await fetch(`${API_BASE_URL}/${id}`, {
             method: "DELETE",
             headers: this.getAuthHeaders(),
         });
-        // handleResponse sẽ trả về null (dùng void) do backend trả về 204 No Content
-        await this.handleResponse<void>(response);
+
+        await this.handleResponse(response);
     }
 }
 

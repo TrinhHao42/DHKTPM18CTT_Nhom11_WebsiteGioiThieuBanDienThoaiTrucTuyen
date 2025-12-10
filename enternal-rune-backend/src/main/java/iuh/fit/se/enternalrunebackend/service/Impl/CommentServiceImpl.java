@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class CommentServiceImpl implements CommentService {
+public class    CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
     private final CommentImageRepository commentImageRepository;
