@@ -22,4 +22,3 @@ jobs:
           heroku_api_key: ${{ secrets.API_KEY_ADMIN }}
           heroku_app_name: ${{ secrets.APP__NAME_ADMIN }}
           heroku_email: ${{ secrets.EMAIL_ADMIN }}
-          appdir: "enternal-rune-admin-frontend"
