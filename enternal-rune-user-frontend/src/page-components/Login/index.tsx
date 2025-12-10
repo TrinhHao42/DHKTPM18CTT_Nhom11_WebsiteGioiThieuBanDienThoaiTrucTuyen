@@ -1,5 +1,5 @@
 'use client'
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation'
 import { apiLogin, apiExchangeGoogleCode, LoginResp } from "@/services/authService";
 import { saveUserSession } from "@/utils/auUtils";
@@ -11,7 +11,7 @@ type ApiError = Error & { message?: string };
 
 export default function LoginPage() {
     const router = useRouter();
-    const { login } = useAuth();
+    const { login ,token} = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -33,6 +33,11 @@ export default function LoginPage() {
             router.push("/");
         }
     };
+    useEffect(() => {
+        if (token) {
+            router.push("/"); 
+        }
+    }, [token, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
