@@ -33,9 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <script async src="https://6jh6gpx1-3001.asse.devtunnels.ms/tracking.js"
+      <script async src="http://localhost:3001/tracking.js"
         data-website-id="cmic2k2820000ml8mu0miqhlm"
-        data-api-url="https://6jh6gpx1-3001.asse.devtunnels.ms/api/analytics/track"></script>
+        data-api-url="http://localhost:3001/api/analytics/track"></script>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
