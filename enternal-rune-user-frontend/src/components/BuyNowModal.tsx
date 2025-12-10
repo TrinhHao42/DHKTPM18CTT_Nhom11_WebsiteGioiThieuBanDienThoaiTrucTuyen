@@ -139,16 +139,25 @@ const BuyNowModal: React.FC<BuyNowModalProps> = ({
                     item.productVariantResponse.color === selectedColor
                 ).slice(-1) // Get the last matching item (most recently added)
                 
+                console.log('✅ Found matching items for checkout:', matchingItems)
+                
                 if (matchingItems.length > 0) {
                     // Set checkout items and redirect to payment
                     setCheckoutItems(matchingItems)
+                    console.log('🔄 Checkout items set, redirecting to payment...')
                     toast.success('Đang chuyển đến trang thanh toán...')
+                    
+                    // Wait a bit for state to update before navigating
+                    await new Promise(resolve => setTimeout(resolve, 100))
+                    
                     router.push('/PaymentScreen')
                     onClose()
                 } else {
+                    console.error('❌ No matching items found')
                     toast.error('Không tìm thấy sản phẩm vừa thêm')
                 }
             } else {
+                console.error('❌ Cart response has no items')
                 toast.error('Không thể thêm sản phẩm vào giỏ hàng')
             }
         } catch (error: any) {

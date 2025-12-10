@@ -44,6 +44,9 @@ const Payment = () => {
 
     // Check if coming from order management with order data
     useEffect(() => {
+        console.log('🔍 Payment page loaded - checkoutItems:', checkoutItems)
+        console.log('🔍 fromOrder:', fromOrder, 'orderId:', orderId)
+        
         if (fromOrder === 'true' && orderId && orderDataParam) {
             try {
                 // Decode and parse order data from URL
@@ -71,9 +74,11 @@ const Payment = () => {
             }
         } else if (checkoutItems.length === 0 && fromOrder !== 'true') {
             // No items and not from order - redirect to cart
+            console.warn('⚠️ No checkout items found, redirecting to cart...')
             router.push('/CartScreen');
         } else {
             // Normal flow from cart
+            console.log('✅ Normal checkout flow with items:', checkoutItems.length)
             setIsLoading(false);
         }
     }, [orderId, fromOrder, orderDataParam, checkoutItems, router]);
@@ -144,6 +149,7 @@ const Payment = () => {
             if (response.success) {
                 setCreatedOrder(response);
                 toast.success("Đặt hàng thành công!");
+                console.log('✅ Order created successfully:', response);
 
                 try {
                     for (const item of checkoutItems) {
@@ -155,13 +161,15 @@ const Payment = () => {
 
                 // 👉 CHÈN SEPAY TẠI ĐÂY
                 try {
+                    console.log('🔄 Calling createSepayCheckout with response:', response);
                     const { checkoutFormfields, checkoutURL } = await createSepayCheckout(response);
+                    console.log('✅ Sepay checkout created:', { checkoutFormfields, checkoutURL });
 
                     // Tạo form để submit sang SePay
                     const form = document.createElement("form");
                     form.method = "POST";
                     form.action = checkoutURL;
-                    form.target = "_blank";
+                    form.target = '_blank';
 
                     Object.entries(checkoutFormfields).forEach(([key, value]) => {
                         const input = document.createElement("input");
@@ -172,14 +180,28 @@ const Payment = () => {
                     });
 
                     document.body.appendChild(form);
+                    console.log('📤 Submitting form to:', checkoutURL);
+                    console.log('📋 Form fields:', checkoutFormfields);
+                    
                     form.submit();
-                    document.body.removeChild(form);
+                    
+                    console.log('✅ Form submitted successfully');
+                    
+                    // Clean up form after a delay
+                    setTimeout(() => {
+                        if (form.parentNode) {
+                            document.body.removeChild(form);
+                        }
+                    }, 1000);
 
                     setShowPayment(true);
                     setCurrentStep(2);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    toast.success('Đã mở trang thanh toán trong tab mới. Nếu không thấy, vui lòng cho phép popup!');
                 } catch (sepayError: any) {
                     console.error('❌ Lỗi khi tạo SePay checkout:', sepayError);
+                    console.error('❌ Error details:', sepayError.message, sepayError.stack);
                     toast.error('Không thể tạo liên kết thanh toán. Vui lòng thử lại!');
                 }
             } else {

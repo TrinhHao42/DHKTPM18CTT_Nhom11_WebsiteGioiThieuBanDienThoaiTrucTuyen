@@ -30,22 +30,6 @@ export default function ProductCard({ product }: ProductCardProps) {
         window.location.href = `/products/${product.prodId}`;
     };
 
-    const handleBuyNowClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        
-        // Get available colors from optimized API or fallback to legacy structure
-        const availableColors = product.availableColors ? 
-            product.availableColors.split(', ').filter(color => color.trim()) :
-            (product.prodColor || []);
-            
-        if (!availableColors || availableColors.length === 0) {
-            console.error('No color variants available for this product');
-            return;
-        }
-
-        setShowBuyNowModal(true);
-    };
-
     return (
         <div
             className="group cursor-pointer w-full bg-white overflow-hidden rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-500"
@@ -125,12 +109,12 @@ export default function ProductCard({ product }: ProductCardProps) {
                 </div>
 
                 <div className="flex gap-2">
-                    <button
-                        onClick={handleBuyNowClick}
+                    <Link
+                        href={`/products/${product.prodId}`}
                         className="cursor-pointer flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-3 rounded-xl font-semibold text-sm hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2 group/btn">
                         <ShoppingCart className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
                         <span>Mua ngay</span>
-                    </button>
+                    </Link>
 
                     <Link
                         href={`/CompareScreen?id=${product.prodId}`}
