@@ -1,0 +1,32 @@
+name: Deploy Admin
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "enternal-rune-admin-frontend/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Admin
+        run: |
+          cd enternal-rune-admin-frontend
+          npm install
+
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v4.1.6
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.APP_ADMIN }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          appdir: "enternal-rune-admin-frontend"
