@@ -68,23 +68,15 @@ export default function FloatChatButton() {
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error calling AI API:", error);
-      let errorText = "Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.";
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { data?: { message?: string } }; message?: string };
-        errorText = axiosError.response?.data?.message || axiosError.message || errorText;
-      } else if (error instanceof Error) {
-        errorText = error.message || errorText;
-      }
       const errorMessage = {
         id: (Date.now() + 1).toString(),
-        text: errorText,
+        text: "Hệ thống đang bị lỗi, vui lòng thử lại sau.",
         isUser: false,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-      // Scroll to bottom sau khi AI message được thêm
       setTimeout(() => {
         if (chatContainerRef.current) {
           chatContainerRef.current.scrollTop =
