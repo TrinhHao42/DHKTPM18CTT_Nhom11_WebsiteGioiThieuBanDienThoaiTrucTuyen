@@ -18,8 +18,9 @@ public class ChatService {
 
     public ChatService(ChatClient.Builder chatClientBuilder,
                        VectorStore vectorStore,
-                       ProductVectorService vectorService) {
-        this.chatClient = chatClientBuilder.build();
+                       ProductVectorService vectorService,
+                       ProductTool productTool) {
+        this.chatClient = chatClientBuilder.defaultTools(productTool).build();
         this.vectorStore = vectorStore;
         this.vectorService = vectorService;
     }
@@ -37,19 +38,12 @@ public class ChatService {
                     - Không bịa, không suy đoán ngoài dữ liệu (quan trọng).
                     - Nếu không có dữ liệu → xin lỗi và đề nghị kiểm tra lại trong hệ thống.
                     - Luôn nói chuyện thân thiện, chuyên nghiệp.
-                    - Luôn gợi ý ít nhất 2 sản phẩm liên quan từ dữ liệu.
-                    - Hỗ trợ: hướng dẫn mua hàng, tạo tài khoản, kiểm tra đơn, thanh toán, bảo hành.
                     - Luôn kết thúc bằng lời mời khách xem thêm sản phẩm tại ETERNAL RUNE.
-                    
-                    MỤC TIÊU:
-                    - Tư vấn sản phẩm chính hãng, giá cạnh tranh, dịch vụ hậu mãi tốt.
-                    - Hỗ trợ khách tìm sản phẩm phù hợp nhất dựa trên dữ liệu thật.
                     """)
                 .user(userInput)
                 .advisors(qaAdvisor)
                 .call()
                 .content();
     }
-
 }
 

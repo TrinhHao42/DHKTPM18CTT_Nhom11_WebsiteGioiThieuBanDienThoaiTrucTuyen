@@ -31,8 +31,7 @@ public class ConversationController {
     @PostMapping
     public Conversation createConversation(@RequestParam String customerId) {
         List<Conversation> existingConversations = conversationRepository.findByCustomerId(customerId);
-        
-        // Tìm conversation chưa đóng
+
         for (Conversation conv : existingConversations) {
             if ("PENDING".equals(conv.getStatus()) || "IN_PROGRESS".equals(conv.getStatus())) {
                 return conv;

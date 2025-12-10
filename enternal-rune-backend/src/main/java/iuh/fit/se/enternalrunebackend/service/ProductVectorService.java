@@ -16,32 +16,42 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProductVectorService {
 
-    private final VectorStore vectorStore;
-    private final ProductService productService;
+  private final VectorStore vectorStore;
+  private final ProductService productService;
+  private static final int BATCH_SIZE = 99;
 
-    @EventListener(ApplicationReadyEvent.class)
-    @Transactional // BẮT BUỘC: giữ session mở
-    public void syncProductsToVector() {
-        if(vectorStore.similaritySearch("products").isEmpty()) {
-            List<Product> products = productService.getAllProductsWithActivePrice();
-            List<Document> documents = products.stream()
-                    .map(p -> Document.builder()
-                            .id(UUID.randomUUID().toString())  // id duy nhất
-                            .text(p.getProdName() + " - " + p.getProdDescription() +
-                                    ". Giá: " + p.getProductPrices().getFirst().getPpPrice())
-                            .metadata(Map.of(
-                                    "entity", "product",
-                                    "productId", p.getProdId(),
-                                    "price", p.getProductPrices().getFirst().getPpPrice(),
-                                    "brand", p.getProdBrand().getBrandName(),
-                                    "description", p.getProdDescription()
-                            ))
-                            .build())
-                    .toList();
+  @EventListener(ApplicationReadyEvent.class)
+  @Transactional
+  public void syncProductsToVector() {
+    if (vectorStore.similaritySearch("products").isEmpty()) {
 
-            vectorStore.add(documents);
-            System.out.println("Đã nhúng " + documents.size() + " sản phẩm vào vector_store");
-        }
+      List<Product> products = productService.getAllProductsWithActivePrice();
 
+      List<Document> documents = products.stream()
+          .map(p -> Document.builder()
+              .id(UUID.randomUUID().toString())
+              .text("Tên sản phẩm: " + p.getProdName()
+                  + " - Thương hiệu: " + p.getProdBrand().getBrandName()
+                  + " - Giá: " + p.getProductPrices().getFirst().getPpPrice())
+              .metadata(Map.of(
+                  "entity", "product",
+                  "productId", p.getProdId(),
+                  "name", p.getProdName(),
+                  "model", p.getProdModel(),
+                  "price", p.getProductPrices().getFirst().getPpPrice(),
+                  "brand", p.getProdBrand().getBrandName()))
+              .build())
+          .toList();
+
+      for (int i = 0; i < documents.size(); i += BATCH_SIZE) {
+        int end = Math.min(i + BATCH_SIZE, documents.size());
+        List<Document> batch = documents.subList(i, end);
+
+        vectorStore.add(batch);
+        System.out.println("Đã nhúng batch " + (i / BATCH_SIZE + 1)
+            + " (" + batch.size() + " items)");
+      }
+      System.out.println("Tổng cộng đã nhúng " + documents.size() + " sản phẩm vào vector_store");
     }
+  }
 }
