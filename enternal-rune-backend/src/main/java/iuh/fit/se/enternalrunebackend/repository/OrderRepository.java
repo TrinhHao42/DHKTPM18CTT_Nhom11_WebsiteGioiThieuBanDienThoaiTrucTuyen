@@ -50,8 +50,27 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
            "LEFT JOIN FETCH pv.prodvImg " +
            "LEFT JOIN FETCH pv.prodvPrice " +
            "WHERE o.orderUser.userId = :customerId " +
-           "ORDER BY o.orderDate DESC")
+           "ORDER BY o.orderDate DESC, o.orderId DESC")
     Page<Order> findOrdersByCustomerIdWithDetails(@Param("customerId") Long customerId, Pageable pageable);
+
+    @Query("SELECT DISTINCT o FROM Order o " +
+           "LEFT JOIN FETCH o.orderShippingAddress " +
+           "LEFT JOIN FETCH o.orderUser " +
+           "LEFT JOIN FETCH o.orderDetails od " +
+           "LEFT JOIN FETCH od.odProductVariant pv " +
+           "LEFT JOIN FETCH pv.prodvImg " +
+           "LEFT JOIN FETCH pv.prodvPrice " +
+           "WHERE o.orderUser.userId = :customerId " +
+           "AND EXISTS (SELECT 1 FROM OrderShippingHistory ssh " +
+           "            JOIN ssh.shippingStatus ss " +
+           "            WHERE ssh.order = o " +
+           "            AND ss.statusCode = :shippingStatus " +
+           "            AND ssh.createdAt = (SELECT MAX(ssh2.createdAt) FROM OrderShippingHistory ssh2 WHERE ssh2.order = o)) " +
+           "ORDER BY o.orderDate DESC, o.orderId DESC")
+    Page<Order> findOrdersByCustomerIdAndShippingStatusWithDetails(
+        @Param("customerId") Long customerId, 
+        @Param("shippingStatus") String shippingStatus, 
+        Pageable pageable);
     
     /**
      * Optimized query to fetch orders with all necessary joins for admin list
@@ -256,7 +275,7 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
                    AND ssh2.createdAt = (SELECT MAX(ssh3.createdAt) 
                                         FROM OrderShippingHistory ssh3 
                                         WHERE ssh3.order.orderId = o.orderId)))
-    ORDER BY o.orderDate DESC
+    ORDER BY o.orderDate DESC, o.orderId DESC
     """)
     Page<OrderListResponse> searchOrdersWithDTO(
             @Param("keyword") String keyword,

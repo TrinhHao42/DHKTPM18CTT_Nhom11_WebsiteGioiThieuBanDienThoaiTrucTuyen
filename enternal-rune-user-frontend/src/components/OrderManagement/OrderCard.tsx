@@ -257,19 +257,6 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
         }
     }
 
-    const handleReturn = async () => {
-        if (!user?.userId) {
-            toast.error('Vui lòng đăng nhập để thực hiện thao tác này')
-            return
-        }
-
-        if (order.currentPaymentStatus.statusCode === PaymentStatus.PENDING) {
-            setShowRefundModal(true)
-        } else if (order.currentPaymentStatus.statusCode === PaymentStatus.PAID) {
-            setShowRefundModal(true)
-        }
-    }
-
     const handleRefundRequest = async (reason: string) => {
         if (!user?.userId) return
 
@@ -331,19 +318,13 @@ const OrderCard = ({ order, router }: OrderCardProps) => {
             setShowReturnModal(false)
         }
     }
-
-    const handleRetry = () => {
-        handlePayment()
-    }
-
+    
     const formatDate = (date: Date | string) => {
         const d = new Date(date)
         return d.toLocaleDateString('vi-VN', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
         })
     }
 

@@ -49,11 +49,19 @@ export const getOrderPaymentStatus = async (orderId: number): Promise<PaymentSta
     return response.data;
 }
 
-export const getUserOrders = async (userId: number, page: number = 0, size: number = 5): Promise<any> => {
+export const getUserOrders = async (
+    userId: number, 
+    page: number = 0, 
+    size: number = 5,
+    shippingStatus?: string
+): Promise<any> => {
     try {
-        const response = await AxiosInstance.get(`/orders/user/${userId}`, {
-            params: { page, size }
-        });
+        const params: any = { page, size };
+        if (shippingStatus && shippingStatus !== 'all') {
+            params.shippingStatus = shippingStatus;
+        }
+        
+        const response = await AxiosInstance.get(`/orders/user/${userId}`, { params });
         return response.data;
     } catch (error) {
         console.error('Error fetching user orders:', error);

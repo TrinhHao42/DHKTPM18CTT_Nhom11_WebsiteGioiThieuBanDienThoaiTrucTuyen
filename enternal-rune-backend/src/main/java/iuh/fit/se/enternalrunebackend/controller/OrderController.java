@@ -49,16 +49,17 @@ public class OrderController {
 
     /**
      * Lấy danh sách orders của user với phân trang
-     * GET /orders/user/{userId}?page=0&size=5
+     * GET /orders/user/{userId}?page=0&size=5&shippingStatus=PROCESSING
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<?> getUserOrdersFullHistories(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) String shippingStatus
     ) {
         try {
-            var ordersPage = orderService.getOrdersByUserIdPaginated(userId, page, size);
+            var ordersPage = orderService.getOrdersByUserIdPaginated(userId, page, size, shippingStatus);
             
             Map<String, Object> response = new HashMap<>();
             response.put("content", ordersPage.getContent());
