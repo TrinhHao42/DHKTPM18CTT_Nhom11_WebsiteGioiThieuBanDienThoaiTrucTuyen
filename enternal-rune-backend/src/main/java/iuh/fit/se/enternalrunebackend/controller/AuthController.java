@@ -66,27 +66,20 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(loginRequest.email, loginRequest.password)
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
         // Tạo token
         String token = jwtUtil.generateToken(userDetails.getUsername());
-
         // Lấy roles
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-
-
         var user = userService.findByEmailWithAddresses(userDetails.getUsername());
         if (!user.isUserActive()) {
             throw new RuntimeException("Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email của bạn.");
         }
-
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);
         response.put("roles", roles);
-
         UserResponse loginUser = UserResponse.toUserResponse(user);
 
         response.put("user", loginUser);
