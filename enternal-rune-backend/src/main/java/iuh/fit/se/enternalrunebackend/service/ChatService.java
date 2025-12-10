@@ -18,8 +18,9 @@ public class ChatService {
 
     public ChatService(ChatClient.Builder chatClientBuilder,
                        VectorStore vectorStore,
-                       ProductVectorService vectorService) {
-        this.chatClient = chatClientBuilder.build();
+                       ProductVectorService vectorService,
+                       ProductTool productTool) {
+        this.chatClient = chatClientBuilder.defaultTools(productTool).build();
         this.vectorStore = vectorStore;
         this.vectorService = vectorService;
     }
