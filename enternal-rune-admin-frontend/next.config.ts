@@ -3,11 +3,6 @@ module.exports = {
     // Temporarily ignore build errors for Docker build
     ignoreBuildErrors: true,
   },
-  experimental: {
-    outputFileTracingIncludes: {
-      '/': ['./public/**', './.next/static/**'],
-    },
-  },
   images: {
     remotePatterns: [
       {
@@ -24,7 +19,6 @@ module.exports = {
       },
     ],
   },
-  output: 'standalone',
   turbopack: {
     rules: {
       '*.svg': {
