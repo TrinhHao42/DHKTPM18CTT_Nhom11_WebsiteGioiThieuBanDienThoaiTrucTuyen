@@ -36,7 +36,7 @@ export default function DiscountDetailModal({ isOpen, onClose, coupon }: Props) 
     );
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-fadeIn">
             <div className="w-full max-w-lg rounded-2xl bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-xl border border-gray-200/50 dark:border-gray-700 p-6 animate-scaleIn">
 
                 {/* Header */}

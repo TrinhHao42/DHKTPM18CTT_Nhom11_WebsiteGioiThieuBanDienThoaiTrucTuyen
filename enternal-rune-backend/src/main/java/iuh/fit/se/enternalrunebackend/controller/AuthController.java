@@ -79,6 +79,9 @@ public class AuthController {
 
 
         var user = userService.findByEmail(userDetails.getUsername());
+        if (!user.isUserActive()) {
+            throw new RuntimeException("Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email của bạn.");
+        }
 
 
         Map<String, Object> response = new HashMap<>();

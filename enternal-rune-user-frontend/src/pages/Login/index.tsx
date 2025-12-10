@@ -5,7 +5,7 @@ import { apiLogin, apiExchangeGoogleCode, LoginResp } from "@/services/authServi
 import { saveUserSession } from "@/utils/auUtils";
 import { User } from "@/types/User";
 import { useAuth } from "@/context/AuthContext";
-
+import { useToast } from "@/hooks/useToast";
 type ApiError = Error & { message?: string };
 export default function LoginPage() {
   const router = useRouter();
@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  
+  const toast = useToast()
   const handleAuthSuccess = (res: LoginResp) => {
     // 1. Lưu vào AuthContext (sẽ tự động trigger load cart)
     login(res.token, res.user as User);
@@ -37,11 +37,11 @@ export default function LoginPage() {
     try {
       const res: LoginResp = await apiLogin({ email, password });
       saveUserSession(res.token, res.user as User, res.roles?.[0] || "ROLE_USER");
-      alert("Đăng nhập thành công!");
+      toast.success("Đăng nhập thành công!");
       handleAuthSuccess(res);
     } catch (err) {
       const error = err as ApiError;
-      alert(error.message || "Đăng nhập thất bại");
+      toast.error(error.message || "Đăng nhập thất bại");
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ export default function LoginPage() {
             Chào mừng trở lại!
           </h1>
           <p className="text-slate-500 mb-8">
-            Tiếp tục mua sắm các sản phẩm công nghệ tại EnternalRune.
+            Tiếp tục mua sắm các sản phẩm công nghệ tại Tailadmin.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -128,7 +128,7 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8 text-center text-xs text-slate-400">
-            &copy; {new Date().getFullYear()} EnternalRune. All rights reserved.
+            &copy; {new Date().getFullYear()} Tailadmin. All rights reserved.
           </div>
         </div>
       </div>

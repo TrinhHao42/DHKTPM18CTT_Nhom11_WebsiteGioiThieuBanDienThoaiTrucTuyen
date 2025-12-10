@@ -2,21 +2,21 @@
 import { useState } from "react";
 import { apiSendResetCode } from "@/services/authService";
 import { useRouter } from 'next/navigation'
-
+import { useToast } from "@/hooks/useToast";
 export default function ForgotPassword() {
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-
+    const toast = useToast();
     const handle = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
         try {
             await apiSendResetCode(email);
-            alert("Yêu cầu đã được gửi. Vui lòng kiểm tra email của bạn để nhận mã khôi phục.");
+            toast.info("Yêu cầu đã được gửi. Vui lòng kiểm tra email của bạn để nhận mã khôi phục.");
             router.push(`/ResetPasswordScreen?email=${encodeURIComponent(email)}`);
         } catch (err: any) {
-            alert(err.message || "Không thể gửi mã khôi phục. Vui lòng thử lại.");
+            toast.error(err.message || "Không thể gửi mã khôi phục. Vui lòng thử lại.");
         } finally {
             setLoading(false);
         }

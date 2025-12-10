@@ -1,31 +1,35 @@
+// 
 export interface AddressResponse {
-    addressId: number|null;
+    addressId: number | null;
     streetName: string;
     wardName: string;
     cityName: string;
     countryName: string;
 }
+
 export interface Role {
-    id?: number;
-    roleName: string
+    id: number;
+    roleName: string;
 }
+
 export interface StaffRequest {
     name: string;
     email: string;
-    role: Role;
     status: boolean;
-    password: string;
+    password?: string;          // ⬅ password optional (dùng khi create)
+    role: Role;
     address: AddressResponse;
 }
+
 export interface StaffResponse {
-    id?: number;
+    id: number;
     name: string;
     email: string;
-    role: Role;
     status: boolean;
-    password: string;
+    role: Role;
     address: AddressResponse;
 }
+
 export interface StaffStatisticsResponse {
     totalStaff: number;
     totalStaffActivated: number;

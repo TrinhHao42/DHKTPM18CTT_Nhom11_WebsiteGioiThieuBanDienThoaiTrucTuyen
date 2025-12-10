@@ -39,9 +39,6 @@ public class AccountServiceImpl implements AccountService {
 
         // Mã hóa mật khẩu
         String encryptPassword = passwordEncoder.encode(userRequest.getPassword());
-
-
-
         // Tạo user
         User user = new User();
         user.setName(userRequest.getName());
