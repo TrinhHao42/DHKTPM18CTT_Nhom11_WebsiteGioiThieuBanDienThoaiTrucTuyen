@@ -103,18 +103,15 @@ const AssistanceChat = () => {
           user.userEmail
         );
 
-        // 2. Kiểm tra xem có conversation active không
-        const conversations = await getConversationsByCustomer(user.userId.toString());
-        const activeConv = conversations.find(
-          conv => conv.status === 'PENDING' || conv.status === 'IN_PROGRESS'
-        );
+        // 2. Lấy conversation của user này
+        const myConversation = await getConversationsByCustomer(user.userId.toString());
 
-        if (activeConv) {
-          // Nếu có conversation active, load lịch sử và kết nối
-          setConversationId(activeConv.id);
+        if (myConversation) {
+          // Nếu có conversation, load lịch sử và kết nối
+          setConversationId(myConversation.id);
 
           // Load message history
-          const history = await getMessagesByConversation(activeConv.id);
+          const history = await getMessagesByConversation(myConversation.id);
           setMessages(history.map(convertBackendMessage));
 
           // Setup WebSocket
@@ -130,7 +127,7 @@ const AssistanceChat = () => {
           wsService.connect();
 
           // Subscribe to conversation messages
-          await wsService.subscribeToConversation(activeConv.id, (newMessage: BackendMessage) => {
+          await wsService.subscribeToConversation(myConversation.id, (newMessage: BackendMessage) => {
             setMessages((prev) => {
               const exists = prev.some(msg => msg.id === newMessage.id);
               if (exists) return prev;
@@ -138,7 +135,7 @@ const AssistanceChat = () => {
             });
           });
         } else {
-          // Không có conversation active, chỉ setup WebSocket connection
+          // Không có conversation, chỉ setup WebSocket connection
           // Conversation sẽ được tạo khi user gửi tin nhắn đầu tiên
           wsService.onConnect(() => {
             setIsConnected(true);

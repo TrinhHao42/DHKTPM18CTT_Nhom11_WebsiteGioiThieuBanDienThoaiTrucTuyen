@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface ConversationRepository extends MongoRepository<Conversation, String> {
 
-    List<Conversation> findByCustomerId(String customerId);
+    Optional<Conversation> findByCustomerId(String customerId);
 
     List<Conversation> findByAgentId(String agentId);
 }

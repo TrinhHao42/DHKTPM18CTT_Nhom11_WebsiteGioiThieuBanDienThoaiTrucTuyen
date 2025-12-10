@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,20 +31,22 @@ public class ConversationController {
 
     @PostMapping
     public Conversation createConversation(@RequestParam String customerId) {
-        List<Conversation> existingConversations = conversationRepository.findByCustomerId(customerId);
-
-        for (Conversation conv : existingConversations) {
-            if ("PENDING".equals(conv.getStatus()) || "IN_PROGRESS".equals(conv.getStatus())) {
-                return conv;
-            }
+        // Tìm conversation của customer này (mỗi customer chỉ có 1 conversation)
+        Optional<Conversation> existingConversation = conversationRepository.findByCustomerId(customerId);
+        
+        // Nếu đã có, trả về
+        if (existingConversation.isPresent()) {
+            return existingConversation.get();
         }
         
+        // Nếu chưa có, tạo mới
         Conversation c = new Conversation();
         c.setCustomerId(customerId);
         c.setStatus("PENDING");
         c.setCreatedAt(Instant.now());
         Conversation saved = conversationRepository.save(c);
-
+        
+        // Broadcast conversation mới cho admin qua WebSocket
         messagingTemplate.convertAndSend("/topic/conversations", saved);
         
         return saved;
@@ -56,8 +59,9 @@ public class ConversationController {
     }
 
     @GetMapping("/customer/{customerId}")
-    public List<Conversation> getByCustomer(@PathVariable String customerId) {
-        return conversationRepository.findByCustomerId(customerId);
+    public Conversation getByCustomer(@PathVariable String customerId) {
+        return conversationRepository.findByCustomerId(customerId)
+                .orElse(null);
     }
 
     @GetMapping
@@ -68,16 +72,24 @@ public class ConversationController {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return conversationRepository.findAll(pageable);
     }
+
+    // Endpoint mới: Lấy unread count cho mỗi conversation
+    // Trả về Map<conversationId, unreadCount>
     @GetMapping("/unread-counts")
     public Map<String, Integer> getUnreadCounts(@RequestParam String agentId) {
         Map<String, Integer> unreadCounts = new HashMap<>();
+        
+        // Lấy tất cả conversations
         List<Conversation> allConversations = conversationRepository.findAll();
         
         for (Conversation conversation : allConversations) {
+            // Lấy message cuối cùng của conversation này
             List<Message> messages = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversation.getId());
             
             if (!messages.isEmpty()) {
                 Message lastMessage = messages.get(messages.size() - 1);
+                
+                // Nếu message cuối từ CUSTOMER hoặc từ AGENT khác (không phải agentId hiện tại)
                 if (lastMessage.getSenderRole() == Role.CUSTOMER ||
                    (lastMessage.getSenderRole() == Role.AGENT && !lastMessage.getSenderId().equals(agentId))) {
                     unreadCounts.put(conversation.getId(), 1);
@@ -108,6 +120,8 @@ public class ConversationController {
         }
 
         Conversation updated = conversationRepository.save(conversation);
+        
+        // Broadcast conversation đã update qua WebSocket
         messagingTemplate.convertAndSend("/topic/conversations", updated);
         
         return updated;

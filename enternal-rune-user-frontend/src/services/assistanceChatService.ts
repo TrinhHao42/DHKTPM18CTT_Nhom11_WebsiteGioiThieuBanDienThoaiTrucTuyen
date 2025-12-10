@@ -46,7 +46,7 @@ export const getConversation = async (id: string): Promise<Conversation> => {
   return response.data;
 };
 
-export const getConversationsByCustomer = async (customerId: string): Promise<Conversation[]> => {
+export const getConversationsByCustomer = async (customerId: string): Promise<Conversation | null> => {
   const response = await AxiosInstance.get(`/api/conversations/customer/${customerId}`);
   return response.data;
 };
