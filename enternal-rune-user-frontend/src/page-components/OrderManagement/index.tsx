@@ -32,7 +32,12 @@ const OrderManagement = () => {
 
             try {
                 setLoading(true)
-                const data = await getUserOrders(user.userId, currentPage, pageSize);
+                const data = await getUserOrders(
+                    user.userId, 
+                    currentPage, 
+                    pageSize, 
+                    filterStatus === 'all' ? undefined : filterStatus
+                );
                 console.log(data.content)
                 setOrders(data.content || [])
                 setTotalPages(data.totalPages || 0)
@@ -48,13 +53,13 @@ const OrderManagement = () => {
         }
 
         fetchOrders()
-    }, [user, currentPage])
+    }, [user, currentPage, filterStatus])
 
-    // 🔵 Filter UI theo ShippingStatus từ API
-    const filteredOrders =
-        filterStatus === 'all'
-            ? orders
-            : orders.filter(order => order.currentShippingStatus.statusCode === filterStatus)
+    // Reset to page 0 when filter changes
+    const handleFilterChange = (status: 'all' | ShippingStatus) => {
+        setFilterStatus(status);
+        setCurrentPage(0);
+    };
 
     if (loading) {
         return (
@@ -113,30 +118,20 @@ const OrderManagement = () => {
                         ].map(tab => (
                             <button
                                 key={tab.code}
-                                onClick={() => setFilterStatus(tab.code as any)}
+                                onClick={() => handleFilterChange(tab.code as any)}
                                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${filterStatus === tab.code
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                     }`}
                             >
                                 {tab.label}
-                                {(() => {
-                                    const count = orders.filter(o =>
-                                        tab.code === 'all'
-                                            ? true
-                                            : o.currentShippingStatus.statusCode === tab.code
-                                    ).length;
-
-                                    return count > 0 ? ` (${count})` : "";
-                                })()}
-
                             </button>
                         ))}
                     </div>
                 </div>
 
                 {/* Order List */}
-                {filteredOrders.length === 0 ? (
+                {orders.length === 0 ? (
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
                         <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -149,7 +144,7 @@ const OrderManagement = () => {
                 ) : (
                     <>
                         <div className="space-y-4">
-                            {filteredOrders.map((order, index) => (
+                            {orders.map((order, index) => (
                                 <OrderCard key={index} order={order} router={router} />
                             ))}
                         </div>

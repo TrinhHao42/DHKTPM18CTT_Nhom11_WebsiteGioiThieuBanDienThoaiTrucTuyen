@@ -13,7 +13,7 @@ import java.util.Map;
 public interface OrderService {
     DashboardSummaryResponse getSummaryForMonth(int year, int month);
     Order createOrder(CreateOrderRequest request);
-    Page<OrderResponse> getOrdersByUserIdPaginated(Long userId, int page, int size);
+    Page<OrderResponse> getOrdersByUserIdPaginated(Long userId, int page, int size, String shippingStatus);
     OrderResponse getOrderById(int orderId);
     OrderStatisticsResponse getOrderStatistics();
     void deleteById(int id);

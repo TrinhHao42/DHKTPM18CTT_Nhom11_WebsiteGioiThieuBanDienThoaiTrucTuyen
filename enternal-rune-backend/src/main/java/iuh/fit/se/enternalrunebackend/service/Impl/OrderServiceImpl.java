@@ -246,9 +246,15 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderResponse> getOrdersByUserIdPaginated(Long userId, int page, int size) {
+    public Page<OrderResponse> getOrdersByUserIdPaginated(Long userId, int page, int size, String shippingStatus) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
-        Page<Order> orderPage = orderRepository.findOrdersByCustomerIdWithDetails(userId, pageable);
+        
+        Page<Order> orderPage;
+        if (shippingStatus != null && !shippingStatus.isEmpty() && !shippingStatus.equals("all")) {
+            orderPage = orderRepository.findOrdersByCustomerIdAndShippingStatusWithDetails(userId, shippingStatus, pageable);
+        } else {
+            orderPage = orderRepository.findOrdersByCustomerIdWithDetails(userId, pageable);
+        }
 
         return orderPage.map(this::convertToOrderResponse);
     }

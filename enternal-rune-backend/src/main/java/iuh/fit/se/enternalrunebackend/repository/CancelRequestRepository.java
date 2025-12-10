@@ -19,7 +19,7 @@ public interface CancelRequestRepository extends JpaRepository<CancelRequest, Lo
            "LEFT JOIN FETCH cr.order o " +
            "LEFT JOIN FETCH o.orderUser ou " +
            "LEFT JOIN FETCH cr.user u " +
-           "ORDER BY cr.createdAt DESC")
+           "ORDER BY cr.createdAt DESC, cr.cancelRequestId DESC")
     Page<CancelRequest> findAllByOrderByCreatedAtDesc(Pageable pageable);
     
     @Query("SELECT DISTINCT cr FROM CancelRequest cr " +
@@ -27,7 +27,7 @@ public interface CancelRequestRepository extends JpaRepository<CancelRequest, Lo
            "LEFT JOIN FETCH o.orderUser ou " +
            "LEFT JOIN FETCH cr.user u " +
            "WHERE cr.status = :status " +
-           "ORDER BY cr.createdAt DESC")
+           "ORDER BY cr.createdAt DESC, cr.cancelRequestId DESC")
     Page<CancelRequest> findByStatusOrderByCreatedAtDesc(@Param("status") RequestStatus status, Pageable pageable);
     
     @Query("SELECT cr FROM CancelRequest cr " +
@@ -49,13 +49,13 @@ public interface CancelRequestRepository extends JpaRepository<CancelRequest, Lo
     @Query("SELECT new iuh.fit.se.enternalrunebackend.dto.response.CancelRequestResponse(" +
            "cr.cancelRequestId, cr.order.orderId, cr.user.userId, cr.user.name, cr.user.email, " +
            "cr.reason, cr.status, cr.adminNote, cr.createdAt, cr.updatedAt, cr.processedBy) " +
-           "FROM CancelRequest cr JOIN cr.order o JOIN cr.user u ORDER BY cr.createdAt DESC")
+           "FROM CancelRequest cr JOIN cr.order o JOIN cr.user u ORDER BY cr.createdAt DESC, cr.cancelRequestId DESC")
     Page<CancelRequestResponse> findAllWithDTO(Pageable pageable);
     
     @Query("SELECT new iuh.fit.se.enternalrunebackend.dto.response.CancelRequestResponse(" +
            "cr.cancelRequestId, cr.order.orderId, cr.user.userId, cr.user.name, cr.user.email, " +
            "cr.reason, cr.status, cr.adminNote, cr.createdAt, cr.updatedAt, cr.processedBy) " +
-           "FROM CancelRequest cr JOIN cr.order o JOIN cr.user u WHERE cr.status = :status ORDER BY cr.createdAt DESC")
+           "FROM CancelRequest cr JOIN cr.order o JOIN cr.user u WHERE cr.status = :status ORDER BY cr.createdAt DESC, cr.cancelRequestId DESC")
     Page<CancelRequestResponse> findByStatusWithDTO(@Param("status") RequestStatus status, Pageable pageable);
 }
 

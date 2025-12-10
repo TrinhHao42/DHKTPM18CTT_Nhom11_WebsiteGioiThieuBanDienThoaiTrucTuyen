@@ -19,7 +19,7 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequest, Lo
            "LEFT JOIN FETCH rr.order o " +
            "LEFT JOIN FETCH o.orderUser ou " +
            "LEFT JOIN FETCH rr.user u " +
-           "ORDER BY rr.createdAt DESC")
+           "ORDER BY rr.createdAt DESC, rr.returnRequestId DESC")
     Page<ReturnRequest> findAllByOrderByCreatedAtDesc(Pageable pageable);
     
     @Query("SELECT DISTINCT rr FROM ReturnRequest rr " +
@@ -27,7 +27,7 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequest, Lo
            "LEFT JOIN FETCH o.orderUser ou " +
            "LEFT JOIN FETCH rr.user u " +
            "WHERE rr.status = :status " +
-           "ORDER BY rr.createdAt DESC")
+           "ORDER BY rr.createdAt DESC, rr.returnRequestId DESC")
     Page<ReturnRequest> findByStatusOrderByCreatedAtDesc(@Param("status") RequestStatus status, Pageable pageable);
     
     @Query("SELECT rr FROM ReturnRequest rr " +
@@ -49,13 +49,13 @@ public interface ReturnRequestRepository extends JpaRepository<ReturnRequest, Lo
     @Query("SELECT new iuh.fit.se.enternalrunebackend.dto.response.ReturnRequestResponse(" +
            "rr.returnRequestId, rr.order.orderId, rr.user.userId, rr.user.name, rr.user.email, " +
            "rr.reason, rr.imageUrl, rr.status, rr.adminNote, rr.createdAt, rr.updatedAt, rr.processedBy) " +
-           "FROM ReturnRequest rr JOIN rr.order o JOIN rr.user u ORDER BY rr.createdAt DESC")
+           "FROM ReturnRequest rr JOIN rr.order o JOIN rr.user u ORDER BY rr.createdAt DESC, rr.returnRequestId DESC")
     Page<ReturnRequestResponse> findAllWithDTO(Pageable pageable);
     
     @Query("SELECT new iuh.fit.se.enternalrunebackend.dto.response.ReturnRequestResponse(" +
            "rr.returnRequestId, rr.order.orderId, rr.user.userId, rr.user.name, rr.user.email, " +
            "rr.reason, rr.imageUrl, rr.status, rr.adminNote, rr.createdAt, rr.updatedAt, rr.processedBy) " +
-           "FROM ReturnRequest rr JOIN rr.order o JOIN rr.user u WHERE rr.status = :status ORDER BY rr.createdAt DESC")
+           "FROM ReturnRequest rr JOIN rr.order o JOIN rr.user u WHERE rr.status = :status ORDER BY rr.createdAt DESC, rr.returnRequestId DESC")
     Page<ReturnRequestResponse> findByStatusWithDTO(@Param("status") RequestStatus status, Pageable pageable);
 }
 
