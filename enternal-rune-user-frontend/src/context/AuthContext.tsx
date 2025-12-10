@@ -68,7 +68,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [setToken, setUser]);
 
-  // ✅ Thêm địa chỉ mới cho user
   const addUserAddress = useCallback(async (address: Omit<Address, 'addressId'>) => {
     if (!user || !token) {
       throw new Error("Vui lòng đăng nhập để thêm địa chỉ");
