@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install Heroku CLI
         run: |
           curl https://cli-assets.heroku.com/install.sh | sh
@@ -20,5 +20,5 @@ jobs:
         uses: akhileshns/heroku-deploy@v3.14.15
         with:
           heroku_api_key: ${{ secrets.API_KEY_ADMIN }}
-          heroku_app_name: ${{ secrets.APP__NAME_ADMIN }}
+          heroku_app_name: ${{ secrets.APP_NAME_ADMIN }}
           heroku_email: ${{ secrets.EMAIL_ADMIN }}
