@@ -26,6 +26,33 @@ public class CancelRequestResponse {
     LocalDateTime updatedAt;
     Long processedBy;
     
+    // Constructor for JPQL DTO projection (list view - minimal data)
+    public CancelRequestResponse(
+        Long cancelRequestId,
+        Integer orderId,
+        Long userId,
+        String userName,
+        String userEmail,
+        String reason,
+        RequestStatus status,
+        String adminNote,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt,
+        Long processedBy
+    ) {
+        this.cancelRequestId = cancelRequestId;
+        this.orderId = orderId;
+        this.userId = userId;
+        this.userName = userName;
+        this.userEmail = userEmail;
+        this.reason = reason;
+        this.status = status;
+        this.adminNote = adminNote;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.processedBy = processedBy;
+    }
+    
     // Order details
     OrderSummary orderSummary;
     

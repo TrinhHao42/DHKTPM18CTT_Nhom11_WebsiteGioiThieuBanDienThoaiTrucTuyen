@@ -14,6 +14,8 @@ import java.util.List;
 
 public interface UserService extends UserDetailsService {
     User findByEmail(String email);
+    User findByEmailWithRoles(String email); // For JWT generation with roles loaded
+    User findByEmailWithAddresses(String email); // For login with addresses loaded
     AddressResponse addUserAddress(Long userId, AddressRequest addressRequest);
     UserResponse getUserWithAddresses(Long userId);
 //    List<UserDashboardResponse> getAllUsersDashboard();

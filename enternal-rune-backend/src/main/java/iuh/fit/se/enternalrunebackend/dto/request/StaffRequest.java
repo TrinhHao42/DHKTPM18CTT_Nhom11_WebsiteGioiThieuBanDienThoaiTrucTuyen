@@ -14,5 +14,5 @@ public class StaffRequest {
     private Role role;
     private boolean status;
     private String password;
-    private AddressResponse  address;
+    private AddressRequest  address;
 }

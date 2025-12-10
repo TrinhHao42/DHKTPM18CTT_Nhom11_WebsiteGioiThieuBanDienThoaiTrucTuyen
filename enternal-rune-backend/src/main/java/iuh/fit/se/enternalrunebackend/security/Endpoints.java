@@ -31,6 +31,7 @@ public class Endpoints {
             "/account/register",
             "/api/auth/**",
             "/ai/generate",
+            "/payment/webhookPayment",
             // ==== TẠO CONVERSATION CHAT, TEST WS ====
             "/api/messages/**",
             "/api/conversations/**",
@@ -41,7 +42,8 @@ public class Endpoints {
             "/api/chat/**",
             "/upload/**",
             // ==== ADMIN COMMENTS (không cần auth) ====
-            "/api/admin/comments/**"
+            "/api/admin/comments/**",
+            "/products/dashboard/**",
     };
 
     // PATCH không cần đăng nhập
@@ -80,7 +82,8 @@ public class Endpoints {
     public static final String[] ADMIN_POST_ENDPOINTS = {
             "/products/dashboard/**",
             "/api/discounts/**",
-            "/api/staff/**"
+            "/api/staff/**",
+            "/upload/**",
     };
     
     public static final String[] ADMIN_PUT_ENDPOINTS = {
@@ -89,7 +92,8 @@ public class Endpoints {
             "/api/discounts/**",
             "/orders/admin/*/shipping-status",
             "/api/notifications/**",
-            "/api/staff/**"
+            "/api/staff/**",
+            "/upload/**",
     };
     
     public static final String[] ADMIN_DELETE_ENDPOINTS = {
@@ -97,6 +101,7 @@ public class Endpoints {
             "/api/dashboard-user/**",
             "/products/dashboard/**",
             "/api/discounts/**",
-            "/api/staff/**"
+            "/api/staff/**",
+            "/upload/**",
     };
 }

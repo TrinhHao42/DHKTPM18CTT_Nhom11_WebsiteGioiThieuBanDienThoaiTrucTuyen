@@ -3,7 +3,22 @@ module.exports = {
     // Temporarily ignore build errors for Docker build
     ignoreBuildErrors: true,
   },
-  output: 'standalone',
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn2.cellphones.com.vn',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+      },
+    ],
+  },
   turbopack: {
     rules: {
       '*.svg': {
@@ -12,13 +27,4 @@ module.exports = {
       },
     },
   },
-  images: {
-    // Danh sách các tên miền bên ngoài được phép tải hình ảnh
-    domains: [
-      'cdn2.cellphones.com.vn', 
-      // Nếu bạn có các tên miền khác (ví dụ: cdn.example.com), bạn cũng nên thêm vào đây
-      'res.cloudinary.com',
-      'placehold.co'
-    ],
-  },
-}
+};

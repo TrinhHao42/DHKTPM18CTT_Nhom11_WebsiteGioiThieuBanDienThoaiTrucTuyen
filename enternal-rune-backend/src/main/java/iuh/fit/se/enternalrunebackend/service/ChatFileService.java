@@ -51,19 +51,18 @@ public class ChatFileService {
 
         String imageUrl = (String) uploadResult.get("secure_url");
 
-        // 2. Tạo Message kiểu IMAGE
+    
         Message message = new Message();
         message.setConversationId(conversationId);
         message.setSenderId(senderId);
         message.setSenderRole(senderRole);
-        message.setContent(caption); // có thể null nếu không có caption
+        message.setContent(caption); 
         message.setType("IMAGE");
         message.setFileUrl(imageUrl);
         message.setCreatedAt(Instant.now());
 
         Message saved = messageRepository.save(message);
-
-        // 3. Broadcast qua WebSocket
+        
         String destination = "/topic/conversations/" + conversationId;
         messagingTemplate.convertAndSend(destination, saved);
 

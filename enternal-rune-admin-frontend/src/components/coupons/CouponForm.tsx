@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 // Giả định kiểu dữ liệu và service đã được định nghĩa
 import { DiscountResponse } from "@/types/discount";
 import discountService from "@/services/discountService";
+import { useToast } from "@/hooks/useToast";
 
 interface CouponFormData {
   discountCode: string;
@@ -22,6 +23,9 @@ interface CouponFormProps {
   onSuccess: () => void;
   onCancel: () => void;
 }
+
+// Kiểu dữ liệu cho lỗi theo trường
+type FieldErrors = Partial<Record<keyof CouponFormData, string>>;
 
 const initialFormData: CouponFormData = {
   discountCode: "",
@@ -43,7 +47,11 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
   const [formData, setFormData] = useState<CouponFormData>(initialFormData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // NEW STATE: Quản lý lỗi cụ thể cho từng trường
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
   const isEditMode = !!discountId;
+  const toast = useToast();
 
   // 2. LOAD DATA (Dùng cho chế độ Edit)
   useEffect(() => {
@@ -89,61 +97,130 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
       ...prev,
       [name]: newValue,
     }));
+
+    // Tự động xóa lỗi của trường khi người dùng bắt đầu nhập/thay đổi
+    if (fieldErrors[name as keyof CouponFormData]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name as keyof CouponFormData];
+        return newErrors;
+      });
+      // Nếu không còn lỗi trường nào nữa, xóa luôn lỗi chung
+      if (Object.keys(fieldErrors).length === 1 && error === "Vui lòng kiểm tra lại các trường được đánh dấu đỏ.") {
+        setError(null);
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setFieldErrors({}); // RESET lỗi trường
 
-    // 4. VALIDATION
-    if (!formData.discountCode || formData.discountValue <= 0) {
-      setError("Vui lòng nhập đầy đủ Mã và Giá trị giảm giá (> 0).");
+    const finalData = { ...formData };
+    const newFieldErrors: FieldErrors = {};
+    let hasError = false;
+
+    // --- VALIDATION LOGIC CHI TIẾT ---
+
+    // 1. Mã và Tên
+    if (!finalData.discountCode) {
+      newFieldErrors.discountCode = "Mã giảm giá là bắt buộc.";
+      hasError = true;
+    }
+    if (!finalData.discountName) {
+      newFieldErrors.discountName = "Tên mã giảm giá là bắt buộc.";
+      hasError = true;
+    }
+
+    // 2. Giá trị giảm giá
+    if (finalData.discountValue <= 0) {
+      newFieldErrors.discountValue = "Giá trị giảm giá phải lớn hơn 0.";
+      hasError = true;
+    }
+
+    if (finalData.discountValueType === 'PERCENT') {
+      if (finalData.discountValue > 100) {
+        newFieldErrors.discountValue = "Giá trị phần trăm không được vượt quá 100.";
+        hasError = true;
+      }
+      // Giảm tối đa
+      if (finalData.discountMaxAmount < 0) {
+        newFieldErrors.discountMaxAmount = "Giảm tối đa không được âm.";
+        hasError = true;
+      }
+    } else if (finalData.discountValueType === 'FIXED') {
+      // Đảm bảo Max Amount bằng 0 khi là FIXED
+      if (finalData.discountMaxAmount !== 0) {
+        // Tự động sửa lỗi này cho người dùng nếu cần, không cần đặt lỗi.
+        finalData.discountMaxAmount = 0;
+      }
+    }
+
+    // 3. Số lượng sử dụng tối đa
+    if (finalData.discountQuantityLimit < 1) {
+      newFieldErrors.discountQuantityLimit = "Số lượng sử dụng tối đa phải lớn hơn hoặc bằng 1.";
+      hasError = true;
+    }
+
+    // 4. Kiểm tra ngày
+    const startDate = new Date(finalData.discountStartDate);
+    const endDate = new Date(finalData.discountEndDate);
+
+    if (startDate > endDate) {
+      newFieldErrors.discountEndDate = "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.";
+      newFieldErrors.discountStartDate = "Ngày bắt đầu phải trước ngày kết thúc.";
+      hasError = true;
+    }
+
+    // Nếu CÓ lỗi validation, cập nhật state và dừng
+    if (hasError) {
+      setFieldErrors(newFieldErrors);
+      setError("Vui lòng kiểm tra lại các trường được đánh dấu đỏ."); // Thông báo lỗi chung ở trên
       setLoading(false);
       return;
     }
 
-    // Kiểm tra ngày kết thúc không được trước ngày bắt đầu
-    if (new Date(formData.discountStartDate) > new Date(formData.discountEndDate)) {
-      setError("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.");
-      setLoading(false);
-      return;
-    }
-
-    const payload = {
-      ...formData,
-      discountValue: Number(formData.discountValue),
-      discountMaxAmount: Number(formData.discountMaxAmount),
-      discountQuantityLimit: Number(formData.discountQuantityLimit),
-    };
-
+    const payload = finalData;
 
     try {
-      
+
       if (isEditMode) {
-        // Giả định service.update trả về đối tượng đã cập nhật
-       await discountService.update(discountId!, payload);
-        alert(`Cập nhật mã ${payload.discountCode} thành công!`);
+        await discountService.update(discountId!, payload);
+        toast.success(`Cập nhật mã ${payload.discountCode} thành công!`);
       } else {
-        // Giả định service.create trả về đối tượng đã tạo
         await discountService.create(payload);
-        alert(`Tạo mã ${payload.discountCode} thành công!`);
+        toast.success(`Tạo mã ${payload.discountCode} thành công!`);
       }
 
       window.scrollTo({ top: 0, behavior: "smooth" });
       (document.activeElement as HTMLElement)?.blur();
 
-      // GỌI onSuccess và truyền đối tượng đã cập nhật
-      onSuccess(); // <--- Dữ liệu đã được cập nhật/tạo mới
+      onSuccess();
     } catch (err) {
       console.error("Submit error:", err);
-      setError(`Lỗi khi ${isEditMode ? 'cập nhật' : 'tạo mới'} mã giảm giá.`);
+      const apiError = (err as any).message || `Lỗi khi ${isEditMode ? 'cập nhật' : 'tạo mới'} mã giảm giá.`;
+      setError(apiError);
     } finally {
       setLoading(false);
     }
   };
 
   // 5. RENDER LOGIC
+  // Hàm trợ giúp để tạo className cho input
+  const getInputClassName = (fieldName: keyof CouponFormData, baseClasses: string, disabled: boolean = false) => {
+    const errorClass = fieldErrors[fieldName]
+      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+      : 'border-gray-300 dark:border-gray-600 focus:border-brand-500 focus:ring-brand-500';
+
+    const disabledClass = disabled
+      ? 'bg-gray-100 dark:bg-gray-700/50 text-gray-500'
+      : 'dark:bg-gray-700 dark:text-white';
+
+    return `${baseClasses} ${errorClass} ${disabled ? disabledClass : ''}`;
+  };
+
   if (loading && isEditMode) {
     return <div className="p-8 text-center text-lg font-medium text-gray-500 dark:text-gray-400">Đang tải thông tin mã giảm giá...</div>;
   }
@@ -154,16 +231,20 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
         {isEditMode ? "📝 Chỉnh sửa Mã giảm giá" : "✨ Tạo Mã giảm giá mới"}
       </h2>
 
+      {/* Thông báo lỗi chung (Nếu có lỗi trường nào đó, nó sẽ hiển thị) */}
       {error && (
         <div className="p-3 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-900 dark:text-red-300">
           {error}
         </div>
       )}
 
+      ---
+
       {/* Group: CƠ BẢN */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">Thông tin cơ bản</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
           {/* Discount Code */}
           <div>
             <label htmlFor="discountCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Mã giảm giá (Code) <span className="text-red-500">*</span></label>
@@ -173,16 +254,18 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
               name="discountCode"
               value={formData.discountCode}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm ${isEditMode
-                  ? 'bg-gray-100 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 text-gray-500'
-                  : 'border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-brand-500 focus:ring-brand-500'
-                }`}
+              // Áp dụng lớp CSS dựa trên fieldErrors
+              className={getInputClassName('discountCode', 'mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm', isEditMode)}
               placeholder="VD: FREESHIP05"
               readOnly={isEditMode}
               required
             />
+            {fieldErrors.discountCode && (
+              <p className="mt-1 text-xs text-red-500 dark:text-red-400 font-medium">{fieldErrors.discountCode}</p>
+            )}
             {isEditMode && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Mã giảm giá không thể chỉnh sửa.</p>}
           </div>
+
           {/* Discount Name */}
           <div>
             <label htmlFor="discountName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tên mã giảm giá <span className="text-red-500">*</span></label>
@@ -192,12 +275,18 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
               name="discountName"
               value={formData.discountName}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              // Áp dụng lớp CSS dựa trên fieldErrors
+              className={getInputClassName('discountName', 'mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm')}
               required
             />
+            {fieldErrors.discountName && (
+              <p className="mt-1 text-xs text-red-500 dark:text-red-400 font-medium">{fieldErrors.discountName}</p>
+            )}
           </div>
         </div>
       </div>
+
+      ---
 
       {/* Group: GIÁ TRỊ VÀ GIỚI HẠN */}
       <div className="space-y-4">
@@ -218,6 +307,7 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
               <option value="PERCENT">Phần trăm (%)</option>
             </select>
           </div>
+
           {/* Discount Value */}
           <div className="col-span-2">
             <label htmlFor="discountValue" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Giá trị giảm giá <span className="text-red-500">*</span></label>
@@ -230,7 +320,8 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
                 max={formData.discountValueType === 'PERCENT' ? "100" : undefined}
                 value={formData.discountValue}
                 onChange={handleChange}
-                className="block w-full rounded-lg border border-gray-300 pr-14 pl-3 py-2 focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                // Áp dụng lớp CSS dựa trên fieldErrors
+                className={getInputClassName('discountValue', 'block w-full rounded-lg border pr-14 pl-3 py-2')}
                 required
               />
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -239,6 +330,9 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
                 </span>
               </div>
             </div>
+            {fieldErrors.discountValue && (
+              <p className="mt-1 text-xs text-red-500 dark:text-red-400 font-medium">{fieldErrors.discountValue}</p>
+            )}
           </div>
         </div>
 
@@ -253,14 +347,16 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
               min="0"
               value={formData.discountMaxAmount}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm ${formData.discountValueType === 'FIXED'
-                  ? 'bg-gray-100 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 text-gray-500'
-                  : 'border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:border-brand-500 focus:ring-brand-500'
-                }`}
+              // Áp dụng lớp CSS dựa trên fieldErrors và trạng thái disabled
+              className={getInputClassName('discountMaxAmount', 'mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm', formData.discountValueType === 'FIXED')}
               disabled={formData.discountValueType === 'FIXED'}
             />
+            {fieldErrors.discountMaxAmount && (
+              <p className="mt-1 text-xs text-red-500 dark:text-red-400 font-medium">{fieldErrors.discountMaxAmount}</p>
+            )}
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Chỉ áp dụng cho loại **Phần trăm**. Đặt **0** nếu không giới hạn.</p>
           </div>
+
           {/* Quantity Limit */}
           <div>
             <label htmlFor="discountQuantityLimit" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Số lượng sử dụng tối đa <span className="text-red-500">*</span></label>
@@ -271,13 +367,19 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
               min="1"
               value={formData.discountQuantityLimit}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              // Áp dụng lớp CSS dựa trên fieldErrors
+              className={getInputClassName('discountQuantityLimit', 'mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm')}
               required
             />
+            {fieldErrors.discountQuantityLimit && (
+              <p className="mt-1 text-xs text-red-500 dark:text-red-400 font-medium">{fieldErrors.discountQuantityLimit}</p>
+            )}
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Tổng số lần mã có thể được sử dụng.</p>
           </div>
         </div>
       </div>
+
+      ---
 
       {/* Group: THỜI GIAN VÀ MỤC TIÊU */}
       <div className="space-y-4">
@@ -293,10 +395,15 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
               name="discountStartDate"
               value={formData.discountStartDate}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              // Áp dụng lớp CSS dựa trên fieldErrors
+              className={getInputClassName('discountStartDate', 'mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm')}
               required
             />
+            {fieldErrors.discountStartDate && (
+              <p className="mt-1 text-xs text-red-500 dark:text-red-400 font-medium">{fieldErrors.discountStartDate}</p>
+            )}
           </div>
+
           {/* End Date */}
           <div>
             <label htmlFor="discountEndDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Ngày kết thúc <span className="text-red-500">*</span></label>
@@ -306,10 +413,15 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
               name="discountEndDate"
               value={formData.discountEndDate}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              // Áp dụng lớp CSS dựa trên fieldErrors
+              className={getInputClassName('discountEndDate', 'mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm')}
               required
             />
+            {fieldErrors.discountEndDate && (
+              <p className="mt-1 text-xs text-red-500 dark:text-red-400 font-medium">{fieldErrors.discountEndDate}</p>
+            )}
           </div>
+
           {/* Target Type */}
           <div>
             <label htmlFor="discountTargetType" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Áp dụng cho</label>
@@ -325,6 +437,7 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
               <option value="EVENT">Sự kiện/Chiến dịch</option>
             </select>
           </div>
+
           {/* Active Status (Sử dụng Toggle Switch) */}
           <div className="flex flex-col justify-end">
             <label htmlFor="discountActive" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Trạng thái Kích hoạt</label>
@@ -351,6 +464,7 @@ export default function CouponForm({ discountId, onSuccess, onCancel }: CouponFo
         </div>
       </div>
 
+      ---
 
       {/* Action Buttons */}
       <div className="pt-6 flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700">

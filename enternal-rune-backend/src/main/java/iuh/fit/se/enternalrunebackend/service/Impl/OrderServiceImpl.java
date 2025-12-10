@@ -112,9 +112,11 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order createOrder(CreateOrderRequest request) {
-        // 1. Validate và lấy User
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User không tồn tại với ID: " + request.getUserId()));
+        // 1. Validate và lấy User with addresses
+        User user = userRepository.findByIdWithAddresses(request.getUserId());
+        if (user == null) {
+            throw new RuntimeException("User không tồn tại với ID: " + request.getUserId());
+        }
 
         // 2. Validate và lấy Address
         Address address = addressRepository.findById(request.getAddressId())
@@ -244,9 +246,15 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<OrderResponse> getOrdersByUserIdPaginated(Long userId, int page, int size) {
+    public Page<OrderResponse> getOrdersByUserIdPaginated(Long userId, int page, int size, String shippingStatus) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
-        Page<Order> orderPage = orderRepository.findOrdersByCustomerIdWithDetails(userId, pageable);
+        
+        Page<Order> orderPage;
+        if (shippingStatus != null && !shippingStatus.isEmpty() && !shippingStatus.equals("all")) {
+            orderPage = orderRepository.findOrdersByCustomerIdAndShippingStatusWithDetails(userId, shippingStatus, pageable);
+        } else {
+            orderPage = orderRepository.findOrdersByCustomerIdWithDetails(userId, pageable);
+        }
 
         return orderPage.map(this::convertToOrderResponse);
     }
@@ -254,8 +262,16 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(int orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+        // Load order with all details in optimized queries
+        Order order = orderRepository.findByIdWithOrderDetails(orderId);
+        if (order == null) {
+            throw new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId);
+        }
+        // Load payment history
+        order = orderRepository.findByIdWithPaymentHistory(orderId);
+        // Load shipping history
+        order = orderRepository.findByIdWithShippingHistory(orderId);
+        
         return convertToOrderResponse(order);
     }
 
@@ -303,12 +319,6 @@ public class OrderServiceImpl implements OrderService {
         List<OrderDetailResponse> orderDetailInfos = order.getOrderDetails().stream()
                 .map(detail -> {
                     ProductVariant variant = detail.getOdProductVariant();
-
-                    // Get image URL
-                    String imageUrl = null;
-                    if (variant.getProdvImg() != null && variant.getProdvImg().getImageData() != null) {
-                        imageUrl = variant.getProdvImg().getImageData();
-                    }
 
                     // Map ProductVariant info
                     ProductVariantResponse variantInfo = ProductVariantResponse.toProductVariantResponse(variant);
@@ -358,29 +368,8 @@ public class OrderServiceImpl implements OrderService {
             String shippingStatusCode,
             Pageable pageable
     ) {
-        Page<Order> ordersPage = orderRepository.searchOrders(keyword, paymentStatusCode, shippingStatusCode, pageable);
-
-        List<OrderListResponse> dtoList = ordersPage.getContent().stream().map(order -> {
-            int totalProduct = order.getOrderDetails()
-                    .stream()
-                    .mapToInt(OrderDetail::getOdQuantity)
-                    .sum();
-
-            PaymentStatus currentPayment = order.getCurrentPaymentStatus();
-            ShippingStatus currentShipping = order.getCurrentShippingStatus();
-
-            return OrderListResponse.builder()
-                    .orderId(order.getOrderId())
-                    .orderDate(order.getOrderDate())
-                    .totalAmount(order.getOrderTotalAmount())
-                    .totalProducts(totalProduct)
-                    .userName(order.getOrderUser().getName())
-                    .userEmail(order.getOrderUser().getEmail())
-                    .currentPaymentStatus(currentPayment != null ? new OrderStatusInfo(currentPayment.getStatusCode(), currentPayment.getStatusName()) : null)
-                    .currentShippingStatus(currentShipping != null ? new OrderStatusInfo(currentShipping.getStatusCode(), currentShipping.getStatusName()) : null)
-                    .build();
-        }).toList();
-        return new PageImpl<>(dtoList, pageable, ordersPage.getTotalElements());
+        // Use DTO projection to avoid N+1 queries
+        return orderRepository.searchOrdersWithDTO(keyword, paymentStatusCode, shippingStatusCode, pageable);
     }
 
     @Override
@@ -412,8 +401,15 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public OrderResponse getOrderDetail(int orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+        // Load order with all details in optimized queries to avoid N+1
+        Order order = orderRepository.findByIdWithOrderDetails(orderId);
+        if (order == null) {
+            throw new RuntimeException("Order not found");
+        }
+        // Load payment history in separate query (can't JOIN FETCH multiple collections)
+        order = orderRepository.findByIdWithPaymentHistory(orderId);
+        // Load shipping history
+        order = orderRepository.findByIdWithShippingHistory(orderId);
 
         // Map Payment Status History
         List<OrderStatusInfo> paymentHistory = order.getPaymentStatusHistories().stream()

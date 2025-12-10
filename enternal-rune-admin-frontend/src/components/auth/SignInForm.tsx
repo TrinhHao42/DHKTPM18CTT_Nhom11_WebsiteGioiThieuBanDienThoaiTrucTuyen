@@ -18,14 +18,14 @@ export default function SignInForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (error) {
-      toast.error(error);
+    if (isAuthenticated) {
+      router.push("/");
     }
-  }, [error]);
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +52,9 @@ export default function SignInForm() {
       // Redirect to dashboard after successful login
       router.push("/");
     } catch (err: any) {
-      setError(err.message || "Đăng nhập thất bại. Vui lòng thử lại.");
+      const errorMessage = err.message || "Đăng nhập thất bại. Vui lòng thử lại.";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -82,9 +84,6 @@ export default function SignInForm() {
           <div>
           
             <form onSubmit={handleSubmit}>
-              {error && (
-                toast.error( error )
-              )}
               
               <div className="space-y-6">
                 <div>

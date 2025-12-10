@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from 'next/navigation'
 import { apiRegister } from "@/services/authService";
+import { useToast } from "@/hooks/useToast";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -9,21 +10,59 @@ export default function RegisterPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
+    const toast = useToast()
 
+    // -----------------------------
+    // 🔥 VALIDATION HÀM MẠNH
+    // -----------------------------
+    const validatePassword = (pwd: string) => {
+        const rules = [
+            { regex: /.{8,}/, message: "Mật khẩu phải có ít nhất 8 ký tự" },
+            { regex: /[A-Z]/, message: "Mật khẩu phải chứa ít nhất 1 chữ hoa" },
+            { regex: /[a-z]/, message: "Mật khẩu phải chứa ít nhất 1 chữ thường" },
+            { regex: /[0-9]/, message: "Mật khẩu phải chứa ít nhất 1 số" },
+            { regex: /[^A-Za-z0-9]/, message: "Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt" },
+        ];
+
+        for (let rule of rules) {
+            if (!rule.regex.test(pwd)) return rule.message;
+        }
+        return null; 
+    };
+
+    // -----------------------------
+    // 🔥 SUBMIT FORM
+    // -----------------------------
     const handle = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        // Validate email
+        if (!/\S+@\S+\.\S+/.test(email)) {
+            toast.error("Email không hợp lệ");
+            return;
+        }
+
+        // Validate password
+        const pwdError = validatePassword(password);
+        if (pwdError) {
+            toast.error(pwdError);
+            return;
+        }
+
         setLoading(true);
+
         try {
             await apiRegister({ name, email, password });
-            alert("Đăng ký thành công! Hãy đăng nhập để bắt đầu trải nghiệm.");
+            toast.success("Đăng ký thành công! Hãy đăng nhập để bắt đầu trải nghiệm.");
             router.push("/LoginScreen");
-        } catch (err: any) { 
-            alert(err.message || "Đăng ký thất bại");
-        } finally { setLoading(false); }
+        } catch (err: any) {
+            toast.error(err.message || "Đăng ký thất bại");
+        } finally { 
+            setLoading(false); 
+        }
     };
 
     return (
-        // Nền sáng nhẹ nhàng, thân thiện
         <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-10">
 
             <div className="w-full max-w-lg bg-white p-8 sm:p-10 rounded-2xl shadow-2xl border border-slate-100">
@@ -32,7 +71,7 @@ export default function RegisterPage() {
                     Tạo Tài Khoản Mới 📝
                 </h2>
                 <p className="text-center text-slate-500 mb-8">
-                    Tham gia **EnternalRune** để nhận các ưu đãi độc quyền.
+                    Tham gia Tailadmin để nhận các ưu đãi độc quyền.
                 </p>
 
                 <form onSubmit={handle} className="space-y-5">
@@ -56,9 +95,10 @@ export default function RegisterPage() {
 
                     <input
                         className="w-full p-4 rounded-xl border border-slate-300 bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-100 outline-none transition duration-150 text-slate-700 placeholder:text-slate-400"
-                        placeholder="Mật khẩu (Tối thiểu 6 ký tự)"
+                        placeholder="Mật khẩu (Tối thiểu 8 ký tự, 1 chữ hoa, 1 số, 1 ký tự đặc biệt)"
                         type="password"
                         value={password}
+                        minLength={8}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />

@@ -214,6 +214,12 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Tracking data recorded successfully',
       timestamp: eventTimestamp.toISOString()
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      }
     });
     
   } catch (error) {
@@ -226,7 +232,14 @@ export async function POST(request: NextRequest) {
       
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        }
+      }
     );
   }
 }
