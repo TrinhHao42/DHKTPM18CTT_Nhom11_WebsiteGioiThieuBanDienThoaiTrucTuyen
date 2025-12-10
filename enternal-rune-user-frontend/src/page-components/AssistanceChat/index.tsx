@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   createConversation,
+  getConversation,
   getConversationsByCustomer,
   getMessagesByConversation,
   registerOrUpdateChatUser,
@@ -104,18 +105,39 @@ const AssistanceChat = () => {
         );
 
         // 2. Kiểm tra xem có conversation active không
-        const conversations = await getConversationsByCustomer(user.userId.toString());
-        const activeConv = conversations.find(
+        const currentUserId = user.userId.toString();
+        const conversations = await getConversationsByCustomer(currentUserId);
+        
+        // Validate tất cả conversations thuộc về user hiện tại
+        const validConversations = conversations.filter(conv => conv.customerId === currentUserId);
+        if (validConversations.length !== conversations.length) {
+          console.warn('⚠️ Found conversations not belonging to current user:', {
+            currentUserId,
+            totalConversations: conversations.length,
+            validConversations: validConversations.length
+          });
+        }
+        
+        const activeConv = validConversations.find(
           conv => conv.status === 'PENDING' || conv.status === 'IN_PROGRESS'
         );
 
         if (activeConv) {
-          // Nếu có conversation active, load lịch sử và kết nối
-          setConversationId(activeConv.id);
+          // Double check conversation thuộc về user hiện tại
+          if (activeConv.customerId !== currentUserId) {
+            console.error('❌ Active conversation mismatch:', {
+              conversationId: activeConv.id,
+              expectedCustomerId: currentUserId,
+              actualCustomerId: activeConv.customerId
+            });
+            // Bỏ qua conversation này, sẽ tạo mới khi user gửi tin nhắn
+          } else {
+            // Nếu có conversation active, load lịch sử và kết nối
+            setConversationId(activeConv.id);
 
-          // Load message history
-          const history = await getMessagesByConversation(activeConv.id);
-          setMessages(history.map(convertBackendMessage));
+            // Load message history
+            const history = await getMessagesByConversation(activeConv.id);
+            setMessages(history.map(convertBackendMessage));
 
           // Setup WebSocket
           wsService.onConnect(() => {
@@ -129,15 +151,18 @@ const AssistanceChat = () => {
           // Connect to WebSocket
           wsService.connect();
 
-          // Subscribe to conversation messages
-          await wsService.subscribeToConversation(activeConv.id, (newMessage: BackendMessage) => {
-            setMessages((prev) => {
-              const exists = prev.some(msg => msg.id === newMessage.id);
-              if (exists) return prev;
-              return [...prev, convertBackendMessage(newMessage)];
+            // Subscribe to conversation messages
+            await wsService.subscribeToConversation(activeConv.id, (newMessage: BackendMessage) => {
+              setMessages((prev) => {
+                const exists = prev.some(msg => msg.id === newMessage.id);
+                if (exists) return prev;
+                return [...prev, convertBackendMessage(newMessage)];
+              });
             });
-          });
-        } else {
+          }
+        }
+        
+        if (!activeConv || activeConv.customerId !== currentUserId) {
           // Không có conversation active, chỉ setup WebSocket connection
           // Conversation sẽ được tạo khi user gửi tin nhắn đầu tiên
           wsService.onConnect(() => {
@@ -163,6 +188,8 @@ const AssistanceChat = () => {
     // Cleanup on unmount
     return () => {
       if (wsService) {
+        // Unsubscribe conversation trước khi disconnect
+        wsService.unsubscribeFromConversation();
         wsService.disconnect();
       }
     };
@@ -174,6 +201,7 @@ const AssistanceChat = () => {
 
     const wsService = wsServiceRef.current;
     const messageContent = inputMessage;
+    const currentUserId = user.userId.toString();
     
     // Clear input immediately for better UX
     setInputMessage('');
@@ -183,8 +211,15 @@ const AssistanceChat = () => {
       let currentConvId = conversationId;
       
       if (!currentConvId) {
-        const newConversation = await createConversation(user.userId.toString());
+        const newConversation = await createConversation(currentUserId);
         currentConvId = newConversation.id;
+        
+        // Validate conversation vừa tạo thuộc về user hiện tại
+        if (newConversation.customerId !== currentUserId) {
+          console.error('❌ Conversation mismatch: created conversation belongs to different user');
+          throw new Error('Lỗi: Conversation không thuộc về bạn');
+        }
+        
         setConversationId(currentConvId);
 
         // Subscribe to the new conversation
@@ -195,14 +230,64 @@ const AssistanceChat = () => {
             return [...prev, convertBackendMessage(newMessage)];
           });
         });
+      } else {
+        // Validate conversationId có thuộc về user hiện tại không
+        try {
+          const conv = await getConversation(currentConvId);
+          if (conv.customerId !== currentUserId) {
+            console.error('❌ Conversation mismatch:', {
+              conversationId: currentConvId,
+              expectedCustomerId: currentUserId,
+              actualCustomerId: conv.customerId
+            });
+            // Reset và tạo conversation mới
+            setConversationId(null);
+            setMessages([]);
+            const newConversation = await createConversation(currentUserId);
+            currentConvId = newConversation.id;
+            setConversationId(currentConvId);
+            
+            await wsService.subscribeToConversation(currentConvId, (newMessage: BackendMessage) => {
+              setMessages((prev) => {
+                const exists = prev.some(msg => msg.id === newMessage.id);
+                if (exists) return prev;
+                return [...prev, convertBackendMessage(newMessage)];
+              });
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error validating conversation:', error);
+          // Nếu không validate được, tạo conversation mới
+          setConversationId(null);
+          setMessages([]);
+          const newConversation = await createConversation(currentUserId);
+          currentConvId = newConversation.id;
+          setConversationId(currentConvId);
+          
+          await wsService.subscribeToConversation(currentConvId, (newMessage: BackendMessage) => {
+            setMessages((prev) => {
+              const exists = prev.some(msg => msg.id === newMessage.id);
+              if (exists) return prev;
+              return [...prev, convertBackendMessage(newMessage)];
+            });
+          });
+        }
       }
 
+      // Double check trước khi gửi
+      console.log('📤 Sending message:', {
+        conversationId: currentConvId,
+        senderId: currentUserId,
+        content: messageContent.substring(0, 50) + '...'
+      });
+
       // Send message via WebSocket - server will broadcast it back to all clients
-      wsService.sendMessage(currentConvId, user.userId.toString(), messageContent);
+      wsService.sendMessage(currentConvId, currentUserId, messageContent);
     } catch (error) {
       console.error('❌ Error sending message:', error);
       // Khôi phục tin nhắn nếu có lỗi
       setInputMessage(messageContent);
+      alert('Không thể gửi tin nhắn. Vui lòng thử lại.');
     }
   };
 

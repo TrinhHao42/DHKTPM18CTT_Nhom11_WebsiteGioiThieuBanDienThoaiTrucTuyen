@@ -7,6 +7,7 @@ const WEBSOCKET_URL = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080
 export class ChatWebSocketService {
   private client: Client | null = null;
   private conversationId: string | null = null;
+  private subscription: any = null; // Lưu subscription để có thể unsubscribe
   private onMessageCallback: ((message: Message) => void) | null = null;
   private onConnectCallback: (() => void) | null = null;
   private onDisconnectCallback: (() => void) | null = null;
@@ -48,12 +49,18 @@ export class ChatWebSocketService {
   }
 
   disconnect(): void {
+    // Unsubscribe trước khi disconnect
+    this.unsubscribeFromConversation();
+    
     if (this.client && this.client.active) {
       this.client.deactivate();
     }
   }
 
   subscribeToConversation(conversationId: string, onMessage: (message: Message) => void): Promise<void> {
+    // Unsubscribe conversation cũ nếu có
+    this.unsubscribeFromConversation();
+
     this.conversationId = conversationId;
     this.onMessageCallback = onMessage;
 
@@ -65,9 +72,25 @@ export class ChatWebSocketService {
         }
 
         try {
-          this.client.subscribe(`/topic/conversations/${conversationId}`, (message: IMessage) => {
+          // Unsubscribe subscription cũ nếu có
+          if (this.subscription) {
+            this.subscription.unsubscribe();
+            this.subscription = null;
+          }
+
+          // Subscribe conversation mới
+          this.subscription = this.client.subscribe(`/topic/conversations/${conversationId}`, (message: IMessage) => {
             try {
               const receivedMessage: Message = JSON.parse(message.body);
+              
+              // Validate message thuộc về conversation đang subscribe
+              if (receivedMessage.conversationId !== conversationId) {
+                console.warn('⚠️ Received message for different conversation:', {
+                  subscribedConversationId: conversationId,
+                  messageConversationId: receivedMessage.conversationId
+                });
+                return;
+              }
              
               if (this.onMessageCallback) {
                 this.onMessageCallback(receivedMessage);
@@ -77,6 +100,7 @@ export class ChatWebSocketService {
             }
           });
           
+          console.log('✅ Subscribed to conversation:', conversationId);
           resolve();
         } catch (error) {
           console.error('❌ Error subscribing:', error);
@@ -96,6 +120,20 @@ export class ChatWebSocketService {
         };
       }
     });
+  }
+
+  unsubscribeFromConversation(): void {
+    if (this.subscription) {
+      try {
+        this.subscription.unsubscribe();
+        console.log('✅ Unsubscribed from conversation:', this.conversationId);
+      } catch (error) {
+        console.error('❌ Error unsubscribing:', error);
+      }
+      this.subscription = null;
+    }
+    this.conversationId = null;
+    this.onMessageCallback = null;
   }
 
   sendMessage(conversationId: string, senderId: string, content: string): void {

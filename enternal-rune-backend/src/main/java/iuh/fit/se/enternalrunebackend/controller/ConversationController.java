@@ -6,13 +6,16 @@ import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Message;
 import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Role;
 import iuh.fit.se.enternalrunebackend.repository.repositoriesForAssistanceChat.ConversationRepository;
 import iuh.fit.se.enternalrunebackend.repository.repositoriesForAssistanceChat.MessageRepository;
+import iuh.fit.se.enternalrunebackend.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -27,9 +30,19 @@ public class ConversationController {
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final SecurityUtil securityUtil;
 
     @PostMapping
     public Conversation createConversation(@RequestParam String customerId) {
+        // Kiểm tra user hiện tại có phải là customerId không
+        Long currentUserId = securityUtil.getCurrentUserId()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập"));
+        
+        String currentUserIdStr = currentUserId.toString();
+        if (!currentUserIdStr.equals(customerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền tạo conversation cho user khác");
+        }
+
         List<Conversation> existingConversations = conversationRepository.findByCustomerId(customerId);
 
         for (Conversation conv : existingConversations) {
@@ -51,12 +64,42 @@ public class ConversationController {
 
     @GetMapping("/{id}")
     public Conversation getConversation(@PathVariable String id) {
-        return conversationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Not found"));
+        Conversation conversation = conversationRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation không tồn tại"));
+        
+        // Kiểm tra quyền truy cập: chỉ customer owner hoặc agent được assign mới được xem
+        Long currentUserId = securityUtil.getCurrentUserId()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập"));
+        
+        String currentUserIdStr = currentUserId.toString();
+        
+        // Customer chỉ được xem conversation của chính mình
+        if (conversation.getCustomerId() != null && conversation.getCustomerId().equals(currentUserIdStr)) {
+            return conversation;
+        }
+        
+        // Agent được assign có thể xem
+        if (conversation.getAgentId() != null && conversation.getAgentId().equals(currentUserIdStr)) {
+            return conversation;
+        }
+        
+        // Admin/Staff có thể xem tất cả (có thể thêm role check ở đây nếu cần)
+        // Hiện tại chỉ cho phép customer và agent được assign
+        
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền truy cập conversation này");
     }
 
     @GetMapping("/customer/{customerId}")
     public List<Conversation> getByCustomer(@PathVariable String customerId) {
+        // Kiểm tra user hiện tại có phải là customerId không
+        Long currentUserId = securityUtil.getCurrentUserId()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập"));
+        
+        String currentUserIdStr = currentUserId.toString();
+        if (!currentUserIdStr.equals(customerId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền xem conversation của user khác");
+        }
+        
         return conversationRepository.findByCustomerId(customerId);
     }
 
