@@ -6,7 +6,7 @@ import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Message;
 import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Role;
 import iuh.fit.se.enternalrunebackend.repository.repositoriesForAssistanceChat.ConversationRepository;
 import iuh.fit.se.enternalrunebackend.repository.repositoriesForAssistanceChat.MessageRepository;
-import iuh.fit.se.enternalrunebackend.util.SecurityUtil;
+import iuh.fit.se.enternalrunebackend.util.AssistanceChatSecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,12 +30,12 @@ public class ConversationController {
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
-    private final SecurityUtil securityUtil;
+    private final AssistanceChatSecurityUtil assistanceChatSecurityUtil;
 
     @PostMapping
     public Conversation createConversation(@RequestParam String customerId) {
         // Kiểm tra user hiện tại có phải là customerId không
-        Long currentUserId = securityUtil.getCurrentUserId()
+        Long currentUserId = assistanceChatSecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập"));
         
         String currentUserIdStr = currentUserId.toString();
@@ -68,7 +68,7 @@ public class ConversationController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Conversation không tồn tại"));
         
         // Kiểm tra quyền truy cập: chỉ customer owner hoặc agent được assign mới được xem
-        Long currentUserId = securityUtil.getCurrentUserId()
+        Long currentUserId = assistanceChatSecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập"));
         
         String currentUserIdStr = currentUserId.toString();
@@ -92,7 +92,7 @@ public class ConversationController {
     @GetMapping("/customer/{customerId}")
     public List<Conversation> getByCustomer(@PathVariable String customerId) {
         // Kiểm tra user hiện tại có phải là customerId không
-        Long currentUserId = securityUtil.getCurrentUserId()
+        Long currentUserId = assistanceChatSecurityUtil.getCurrentUserId()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Chưa đăng nhập"));
         
         String currentUserIdStr = currentUserId.toString();

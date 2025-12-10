@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 @Component
 @RequiredArgsConstructor
-public class SecurityUtil {
+public class AssistanceChatSecurityUtil {
 
     private final UserRepository userRepository;
 

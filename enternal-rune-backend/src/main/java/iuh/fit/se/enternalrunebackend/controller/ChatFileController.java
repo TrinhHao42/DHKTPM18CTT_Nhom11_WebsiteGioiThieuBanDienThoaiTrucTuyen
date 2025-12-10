@@ -5,7 +5,7 @@ import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Message;
 import iuh.fit.se.enternalrunebackend.entity.entityForAssistanceChat.Role;
 import iuh.fit.se.enternalrunebackend.repository.repositoriesForAssistanceChat.ConversationRepository;
 import iuh.fit.se.enternalrunebackend.service.ChatFileService;
-import iuh.fit.se.enternalrunebackend.util.SecurityUtil;
+import iuh.fit.se.enternalrunebackend.util.AssistanceChatSecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -22,7 +22,7 @@ public class ChatFileController {
 
     private final ChatFileService chatFileService;
     private final ConversationRepository conversationRepository;
-    private final SecurityUtil securityUtil;
+    private final AssistanceChatSecurityUtil assistanceChatSecurityUtil;
     
     @PostMapping("/conversations/{conversationId}/image")
     public ResponseEntity<Message> uploadImage(
@@ -64,7 +64,7 @@ public class ChatFileController {
 
         // Validate senderId từ request phải khớp với user hiện tại (nếu có authentication)
         // Lưu ý: Với HTTP endpoint, có thể validate từ SecurityContext
-        Long currentUserId = securityUtil.getCurrentUserId().orElse(null);
+        Long currentUserId = assistanceChatSecurityUtil.getCurrentUserId().orElse(null);
         if (currentUserId != null) {
             String currentUserIdStr = currentUserId.toString();
             if (senderRole == Role.CUSTOMER && !currentUserIdStr.equals(senderId)) {
