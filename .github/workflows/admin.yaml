@@ -23,10 +23,15 @@ jobs:
           cd enternal-rune-admin-frontend
           npm install
 
+      - name: Build Admin
+        run: |
+          cd enternal-rune-admin-frontend
+          npm run build
+
       - name: Deploy to Heroku
         uses: akhileshns/heroku-deploy@v4.1.6
         with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ secrets.APP_ADMIN }}
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          heroku_api_key: ${{ secrets.API_KEY_ADMIN }}
+          heroku_app_name: ${{ secrets.APP__NAME_ADMIN }}
+          heroku_email: ${{ secrets.EMAIL_ADMIN }}
           appdir: "enternal-rune-admin-frontend"
