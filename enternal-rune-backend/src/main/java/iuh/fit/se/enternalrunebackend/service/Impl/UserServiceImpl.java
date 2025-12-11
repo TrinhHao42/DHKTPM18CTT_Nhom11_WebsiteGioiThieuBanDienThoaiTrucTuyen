@@ -228,19 +228,34 @@ public class UserServiceImpl implements UserService {
                         a.getCountryName()
                 )).toList();
 
-        // Tính tổng order và tiền
-        List<Order> orders = orderRepository.findByOrderUser_UserId(user.getUserId());
-        int totalOrder = orders.size();
-        BigDecimal totalPrice = orders.stream()
-                .map(Order::getOrderTotalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // OPTIMIZED: Tính tổng order và tiền trong 1 query thay vì load tất cả orders
+        List<Object[]> statsList = orderRepository.getUserOrderStats(userId);
+        
+        // Handle different return types from database
+        int totalOrderCount = 0;
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        
+        if (statsList != null && !statsList.isEmpty()) {
+            Object[] stats = statsList.get(0); // Get first row
+            
+            // COUNT can return Long or Integer depending on database
+            if (stats[0] instanceof Number) {
+                totalOrderCount = ((Number) stats[0]).intValue();
+            }
+            // SUM can return BigDecimal, Double, or null
+            if (stats[1] instanceof BigDecimal) {
+                totalPrice = (BigDecimal) stats[1];
+            } else if (stats[1] instanceof Number) {
+                totalPrice = BigDecimal.valueOf(((Number) stats[1]).doubleValue());
+            }
+        }
 
         return new UserDetailResponse(
                 user.getName(),
                 user.getEmail(),
                 user.isUserActive(),
                 addressResponses,
-                totalOrder,
+                totalOrderCount,
                 totalPrice
         );
     }

@@ -23,7 +23,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
       // Kiểm tra role admin
       const isAdmin = roles.some(
-        (role) => role === "ROLE_ADMIN" || role === "ADMIN"
+        (role) => role === "ROLE_ADMIN" || role === "ADMIN" || role === "ROLE_STAFF" || role === "STAFF"
       );
 
       if (!isAdmin) {
@@ -47,7 +47,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Nếu chưa xác thực hoặc không phải admin, không hiển thị gì (sẽ redirect)
-  if (!isAuthenticated || !roles.some((role) => role === "ROLE_ADMIN" || role === "ADMIN")) {
+  if (!isAuthenticated || !roles.some((role) => role === "ROLE_ADMIN" || role === "ADMIN"  || role === "ROLE_STAFF" || role === "STAFF")) {
     return null;
   }
 

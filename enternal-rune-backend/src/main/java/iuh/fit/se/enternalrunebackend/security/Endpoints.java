@@ -85,6 +85,10 @@ public class Endpoints {
             "/api/staff/**",
             "/upload/**",
     };
+
+    public static final String[] STAFF_POST_ENDPOINTS = {
+
+    };
     
     public static final String[] ADMIN_PUT_ENDPOINTS = {
             "/api/dashboard-order/**",
