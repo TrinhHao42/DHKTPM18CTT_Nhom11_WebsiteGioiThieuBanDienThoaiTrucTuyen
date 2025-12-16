@@ -9,15 +9,10 @@ interface WebSocketContextType {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: ReactNode }) {
-    // Only connect WebSocket in production or when backend is running
-    // For now, disable auto-connect to prevent reconnect loop when backend is down
     const wsUrl = useMemo(() => {
-        // Check if we're in browser and want to enable WebSocket
+
         if (typeof window !== 'undefined') {
-            // You can add conditions here, e.g., only connect when user is logged in
-            // For now, return empty string to disable WebSocket until needed
-            // return 'ws://localhost:8080/notifications?role=user';
-            return ''; // Disabled for now - enable when backend WebSocket is ready
+            return '';
         }
         return '';
     }, []);

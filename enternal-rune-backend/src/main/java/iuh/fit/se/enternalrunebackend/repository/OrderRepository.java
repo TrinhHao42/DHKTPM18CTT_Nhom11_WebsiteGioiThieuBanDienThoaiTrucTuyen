@@ -328,6 +328,15 @@ public interface OrderRepository extends JpaRepository<Order,Integer> ,JpaSpecif
 
     List<Order> findByOrderUser_UserId(Long userId);
     
+    /**
+     * OPTIMIZED: Get user order statistics in ONE query
+     * Returns: List<Object[]> with single row [totalOrders, totalAmount]
+     */
+    @Query("SELECT COUNT(o), COALESCE(SUM(o.orderTotalAmount), 0) " +
+           "FROM Order o " +
+           "WHERE o.orderUser.userId = :userId")
+    List<Object[]> getUserOrderStats(@Param("userId") Long userId);
+    
     // Dashboard queries
     @Query("SELECT COUNT(o) FROM Order o " +
            "WHERE EXTRACT(YEAR FROM o.orderDate) = :year " +

@@ -204,47 +204,6 @@ export default function CustomerDetailPage() {
               </div>
             </div>
           </div>
-
-          {/* Shipping Addresses */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]">
-            <h4 className="text-lg font-semibold text-gray-800 dark:text-white/90 mb-4">
-              Địa chỉ giao hàng ({customer.addresses?.length || 0})
-            </h4>
-            {customer.addresses && customer.addresses.length > 0 ? (
-              <div className="space-y-3">
-                {customer.addresses.map((address, index) => (
-                  <div
-                    key={address.id || index}
-                    className="rounded-lg border border-gray-200 dark:border-gray-700 p-4"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium text-gray-800 dark:text-white/90">
-                          {address.recipientName}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          {address.phoneNumber}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                          {address.detailAddress}, {address.ward}, {address.district},{" "}
-                          {address.province}
-                        </p>
-                      </div>
-                      {address.isDefault && (
-                        <Badge size="sm" color="primary">
-                          Mặc định
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Chưa có địa chỉ giao hàng
-              </p>
-            )}
-          </div>
         </div>
       </div>
     </div>
